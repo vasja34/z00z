@@ -1,0 +1,42 @@
+{
+  "ok_new": {
+    "input": {
+      "success": true
+    },
+    "expected_code": "IMPORT_ACCEPTED_NEW"
+  },
+  "ok_dup": {
+    "input": {
+      "success": true,
+      "message": "asset_already_exists"
+    },
+    "expected_code": "IMPORT_ALREADY_EXISTS"
+  },
+  "ok_rejected": {
+    "input": {
+      "success": false,
+      "message": "IMPORT_REJECTED_POLICY"
+    },
+    "expected_code": "IMPORT_REJECTED_POLICY"
+  },
+  "replay_dup": {
+    "input": {
+      "message": "asset_already_exists"
+    },
+    "expected_code": "IMPORT_ALREADY_EXISTS"
+  },
+  "replay_unknown": {
+    "input": {
+      "message": "some_other_message"
+    },
+    "expected_code": "IMPORT_UNKNOWN_ERROR"
+  },
+  "err_token": {
+    "input": "rpc failed IMPORT_REJECTED_BAD_SIG row",
+    "expected_code": "IMPORT_REJECTED_BAD_SIG"
+  },
+  "err_default": {
+    "input": "rpc timeout while calling import",
+    "expected_code": "IMPORT_RPC_ERROR"
+  }
+}

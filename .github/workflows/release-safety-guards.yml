@@ -1,0 +1,27 @@
+name: release-safety-guards
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  phase-065-release-safety-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Audit release feature guards
+        run: bash scripts/audit/audit_release_feature_guards.sh
+
+      - name: Run production hardening tests
+        run: cargo test --release -p z00z_wallets --test test_production_hardening -- --nocapture
+
+      - name: Run live boundary claim tests
+        run: cargo test --release -p z00z_wallets --test test_live_boundary_claims -- --nocapture

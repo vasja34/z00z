@@ -1,0 +1,897 @@
+$schema: http://json-schema.org/draft-07/schema#
+title: Z00Z Genesis Config YAML Schema
+description: 'Standalone schema for canonical genesis manifest YAML files.
+
+  '
+allOf:
+- $ref: '#/definitions/genesis_manifest'
+definitions:
+  non_empty_string:
+    type: string
+    minLength: 1
+  underscore_name_value:
+    type: string
+    pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+  domain_name_value:
+    type: string
+    pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*(?:\.[a-z0-9]+(?:_[a-z0-9]+)*)+$
+  string_list:
+    type: array
+    items:
+      $ref: '#/definitions/non_empty_string'
+  metadata_string_map:
+    type: object
+    propertyNames:
+      minLength: 1
+    additionalProperties:
+      $ref: '#/definitions/non_empty_string'
+  byte:
+    type: integer
+    minimum: 0
+    maximum: 255
+  byte4:
+    type: array
+    minItems: 4
+    maxItems: 4
+    items:
+      $ref: '#/definitions/byte'
+  byte32:
+    type: array
+    minItems: 32
+    maxItems: 32
+    items:
+      $ref: '#/definitions/byte'
+  relative_config_ref:
+    type: string
+    pattern: ^(?!/)(?!.*\.\.)[A-Za-z0-9._/-]+$
+  object_family:
+    type: string
+    enum:
+    - asset
+    - voucher
+    - right
+  asset_class:
+    type: string
+    enum:
+    - Coin
+    - Token
+    - Nft
+    - Void
+  required_signature:
+    type: string
+    enum:
+    - owner
+    - issuer
+    - holder
+    - beneficiary
+    - controller
+  lifecycle_effect:
+    type: string
+    enum:
+    - no_state_change
+    - offer
+    - accept
+    - transfer
+    - redeem
+    - partial_redeem
+    - refund
+    - expire
+    - grant
+    - delegate
+    - use
+    - revoke
+    - challenge
+  voucher_lifecycle:
+    type: string
+    enum:
+    - pending_acceptance
+    - active
+    - partially_redeemed
+    - redeemed
+    - rejected
+    - refunded
+    - expired
+  expiry_rule:
+    type: string
+    enum:
+    - none
+    - valid_until
+    - fixed_epoch
+  replay_protection:
+    type: string
+    enum:
+    - none
+    - nonce
+    - nonce_and_root
+  conservation:
+    type: string
+    enum:
+    - final_value
+    - conditional_value
+    - zero_value_authority
+  condition_kind:
+    type: string
+    enum:
+    - time_window
+    - acceptance_required
+    - replay_nonce
+    - maximum_uses
+    - right_scope
+    - disclosure_commitment
+    - external_attestation
+  condition_trust_tier:
+    type: string
+    enum:
+    - deterministic
+    - verifier_attested
+  unknown_policy_validator:
+    type: string
+    enum:
+    - fail_closed
+  unknown_policy_wallet:
+    type: string
+    enum:
+    - quarantine
+  right_class:
+    type: string
+    enum:
+    - machine_capability
+    - data_access
+    - service_entitlement
+    - validator_mandate
+    - one_time_use
+  right_action:
+    type: string
+    enum:
+    - grant
+    - use
+    - delegate
+    - revoke
+    - expire
+    - challenge
+    - disclose
+  thread_count:
+    oneOf:
+    - type: integer
+      minimum: 1
+    - type: string
+      enum:
+      - auto
+  profile_anchor:
+    oneOf:
+    - $ref: '#/definitions/non_empty_string'
+    - type: array
+      minItems: 1
+      uniqueItems: true
+      items:
+        $ref: '#/definitions/non_empty_string'
+  profile_window:
+    type: object
+    required:
+    - valid_from
+    - valid_until
+    additionalProperties: false
+    properties:
+      valid_from:
+        type: integer
+        minimum: 0
+      valid_until:
+        type: integer
+        minimum: 0
+  witness_requirement:
+    oneOf:
+    - type: string
+      enum:
+      - acceptance_proof
+      - replay_nonce
+      - prior_state_root
+      - disclosure_commitment
+    - type: object
+      required:
+      - signature
+      additionalProperties: false
+      properties:
+        signature:
+          $ref: '#/definitions/required_signature'
+    - type: object
+      required:
+      - right_reference
+      additionalProperties: false
+      properties:
+        right_reference:
+          $ref: '#/definitions/underscore_name_value'
+    - type: object
+      required:
+      - verifier_attestation
+      additionalProperties: false
+      properties:
+        verifier_attestation:
+          $ref: '#/definitions/underscore_name_value'
+  condition_descriptor:
+    type: object
+    required:
+    - label
+    - kind
+    - trust_tier
+    additionalProperties: false
+    properties:
+      label:
+        $ref: '#/definitions/underscore_name_value'
+      kind:
+        $ref: '#/definitions/condition_kind'
+      trust_tier:
+        $ref: '#/definitions/condition_trust_tier'
+      verifier:
+        $ref: '#/definitions/underscore_name_value'
+      metadata:
+        $ref: '#/definitions/metadata_string_map'
+  right_scope:
+    oneOf:
+    - type: object
+      required:
+      - object_family
+      additionalProperties: false
+      properties:
+        object_family:
+          $ref: '#/definitions/object_family'
+    - type: object
+      required:
+      - specific_object
+      additionalProperties: false
+      properties:
+        specific_object:
+          $ref: '#/definitions/underscore_name_value'
+    - type: object
+      required:
+      - policy
+      additionalProperties: false
+      properties:
+        policy:
+          $ref: '#/definitions/underscore_name_value'
+    - type: object
+      required:
+      - domain
+      additionalProperties: false
+      properties:
+        domain:
+          $ref: '#/definitions/domain_name_value'
+  right_requirement:
+    type: object
+    required:
+    - right_policy
+    - allowed_actions
+    - scope
+    - delegation_allowed
+    - attenuation_only
+    additionalProperties: false
+    properties:
+      right_policy:
+        $ref: '#/definitions/underscore_name_value'
+      allowed_actions:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/right_action'
+      scope:
+        $ref: '#/definitions/right_scope'
+      max_uses:
+        type: integer
+        minimum: 1
+      delegation_allowed:
+        type: boolean
+      attenuation_only:
+        type: boolean
+  attestation_requirement:
+    type: object
+    required:
+    - label
+    - verifier
+    additionalProperties: false
+    properties:
+      label:
+        $ref: '#/definitions/underscore_name_value'
+      verifier:
+        $ref: '#/definitions/underscore_name_value'
+  unknown_policy_handling:
+    type: object
+    required:
+    - validator
+    - wallet
+    additionalProperties: false
+    properties:
+      validator:
+        $ref: '#/definitions/unknown_policy_validator'
+      wallet:
+        $ref: '#/definitions/unknown_policy_wallet'
+  action_descriptor:
+    type: object
+    required:
+    - label
+    - allowed_input_families
+    - allowed_output_families
+    - lifecycle_effect
+    - witness_requirements
+    - receiver_must_accept
+    - preserves_beneficiary
+    - preserves_refund_authority
+    additionalProperties: false
+    properties:
+      label:
+        $ref: '#/definitions/underscore_name_value'
+      allowed_input_families:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/object_family'
+      allowed_output_families:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/object_family'
+      lifecycle_effect:
+        $ref: '#/definitions/lifecycle_effect'
+      witness_requirements:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/witness_requirement'
+      receiver_must_accept:
+        type: boolean
+      preserves_beneficiary:
+        type: boolean
+      preserves_refund_authority:
+        type: boolean
+  action_pool:
+    type: object
+    required:
+    - label
+    - actions
+    additionalProperties: false
+    properties:
+      label:
+        $ref: '#/definitions/underscore_name_value'
+      actions:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/action_descriptor'
+  policy_template:
+    type: object
+    required:
+    - label
+    - primary_family
+    - allowed_input_families
+    - allowed_output_families
+    - expiry_rule
+    - replay_protection
+    - conservation
+    additionalProperties: false
+    properties:
+      label:
+        $ref: '#/definitions/underscore_name_value'
+      primary_family:
+        $ref: '#/definitions/object_family'
+      allowed_input_families:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/object_family'
+      allowed_output_families:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/object_family'
+      conditions:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/condition_descriptor'
+      required_rights:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/right_requirement'
+      required_signatures:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/required_signature'
+      required_attestations:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/attestation_requirement'
+      expiry_rule:
+        $ref: '#/definitions/expiry_rule'
+      replay_protection:
+        $ref: '#/definitions/replay_protection'
+      conservation:
+        $ref: '#/definitions/conservation'
+      unknown_policy_handling:
+        $ref: '#/definitions/unknown_policy_handling'
+  policy_entry:
+    type: object
+    required:
+    - domain_name
+    - action_pool
+    - template
+    additionalProperties: false
+    properties:
+      domain_name:
+        $ref: '#/definitions/domain_name_value'
+      action_pool:
+        $ref: '#/definitions/action_pool'
+      template:
+        $ref: '#/definitions/policy_template'
+  asset_policy:
+    type: object
+    required:
+    - decimals
+    - serials
+    - nominal
+    additionalProperties: false
+    properties:
+      decimals:
+        type: integer
+        minimum: 0
+        maximum: 32
+      serials:
+        type: integer
+        minimum: 1
+        maximum: 1000000000
+      nominal:
+        type: integer
+        minimum: 0
+        maximum: 1000000000000
+      policy_flags:
+        type: integer
+        minimum: 0
+        maximum: 255
+      has_policy_flags:
+        type: boolean
+      allow_burn:
+        type: boolean
+      is_gas:
+        type: boolean
+      is_mintable:
+        type: boolean
+  asset_entry:
+    type: object
+    required:
+    - id
+    - class
+    - name
+    - symbol
+    - domain_name
+    - policy
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/definitions/non_empty_string'
+      class:
+        $ref: '#/definitions/asset_class'
+      name:
+        $ref: '#/definitions/non_empty_string'
+      symbol:
+        $ref: '#/definitions/non_empty_string'
+      domain_name:
+        $ref: '#/definitions/domain_name_value'
+      description:
+        $ref: '#/definitions/non_empty_string'
+      policy:
+        $ref: '#/definitions/asset_policy'
+      metadata:
+        $ref: '#/definitions/metadata_string_map'
+  assets_list:
+    type: array
+    minItems: 1
+    items:
+      $ref: '#/definitions/asset_entry'
+  rights_entry:
+    type: object
+    required:
+    - id
+    - right_class
+    - issuer_scope
+    - provider_scope
+    - holder_fixture
+    - control_fixture
+    - count
+    - domain_name
+    - valid_from
+    - valid_until
+    - revocation_policy_id
+    - transition_policy_id
+    - challenge_policy_id
+    - disclosure_policy_id
+    - retention_policy_id
+    - payload_commitment_seed
+    - metadata
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/definitions/underscore_name_value'
+      right_class:
+        $ref: '#/definitions/right_class'
+      issuer_scope:
+        $ref: '#/definitions/underscore_name_value'
+      provider_scope:
+        $ref: '#/definitions/underscore_name_value'
+      holder_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      control_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      beneficiary_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      count:
+        type: integer
+        minimum: 1
+      domain_name:
+        $ref: '#/definitions/domain_name_value'
+      valid_from:
+        type: integer
+        minimum: 0
+      valid_until:
+        type: integer
+        minimum: 0
+      challenge_from:
+        type: integer
+        minimum: 0
+      challenge_until:
+        type: integer
+        minimum: 0
+      revocation_policy_id:
+        $ref: '#/definitions/underscore_name_value'
+      transition_policy_id:
+        $ref: '#/definitions/underscore_name_value'
+      challenge_policy_id:
+        $ref: '#/definitions/underscore_name_value'
+      disclosure_policy_id:
+        $ref: '#/definitions/underscore_name_value'
+      retention_policy_id:
+        $ref: '#/definitions/underscore_name_value'
+      payload_commitment_seed:
+        $ref: '#/definitions/underscore_name_value'
+      metadata:
+        allOf:
+        - $ref: '#/definitions/metadata_string_map'
+        - required:
+          - purpose
+  rights_list:
+    type: array
+    minItems: 1
+    items:
+      $ref: '#/definitions/rights_entry'
+  voucher_validity:
+    type: object
+    required:
+    - valid_from
+    - valid_until
+    additionalProperties: false
+    properties:
+      valid_from:
+        type: integer
+        minimum: 0
+      valid_until:
+        type: integer
+        minimum: 0
+  voucher_acceptance:
+    type: object
+    required:
+    - receiver_must_accept
+    - allow_reject
+    - refund_target_fixture
+    additionalProperties: false
+    properties:
+      receiver_must_accept:
+        type: boolean
+      allow_reject:
+        type: boolean
+      refund_target_fixture:
+        $ref: '#/definitions/underscore_name_value'
+  voucher_backing:
+    oneOf:
+    - type: object
+      required:
+      - reserve_commitment
+      additionalProperties: false
+      properties:
+        reserve_commitment:
+          $ref: '#/definitions/byte32'
+    - type: object
+      required:
+      - consumed_asset
+      additionalProperties: false
+      properties:
+        consumed_asset:
+          type: object
+          required:
+          - definition_id
+          - serial_id
+          additionalProperties: false
+          properties:
+            definition_id:
+              $ref: '#/definitions/byte32'
+            serial_id:
+              type: integer
+              minimum: 0
+    - type: object
+      required:
+      - genesis_reserve
+      additionalProperties: false
+      properties:
+        genesis_reserve:
+          type: object
+          required:
+          - reserve_id
+          additionalProperties: false
+          properties:
+            reserve_id:
+              $ref: '#/definitions/underscore_name_value'
+  voucher_entry:
+    type: object
+    required:
+    - id
+    - domain_name
+    - issuer_fixture
+    - holder_fixture
+    - beneficiary_fixture
+    - backing
+    - face_value
+    - remaining_value
+    - policy_label
+    - lifecycle
+    - validity
+    - acceptance
+    - replay_nonce
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/definitions/underscore_name_value'
+      domain_name:
+        $ref: '#/definitions/domain_name_value'
+      issuer_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      holder_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      beneficiary_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      backing:
+        $ref: '#/definitions/voucher_backing'
+      face_value:
+        type: integer
+        minimum: 1
+      remaining_value:
+        type: integer
+        minimum: 0
+      policy_label:
+        $ref: '#/definitions/underscore_name_value'
+      lifecycle:
+        $ref: '#/definitions/voucher_lifecycle'
+      validity:
+        $ref: '#/definitions/voucher_validity'
+      acceptance:
+        $ref: '#/definitions/voucher_acceptance'
+      replay_nonce:
+        $ref: '#/definitions/byte32'
+      disclosure_commitment:
+        $ref: '#/definitions/byte32'
+      audit_commitment:
+        $ref: '#/definitions/byte32'
+  wallet_profile:
+    type: object
+    required:
+    - id
+    - object_family
+    - live_anchor
+    - transitions
+    - fail_closed
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/definitions/non_empty_string'
+      object_family:
+        $ref: '#/definitions/object_family'
+      live_anchor:
+        $ref: '#/definitions/profile_anchor'
+      transitions:
+        $ref: '#/definitions/string_list'
+      fail_closed:
+        $ref: '#/definitions/string_list'
+      product_anchor:
+        $ref: '#/definitions/non_empty_string'
+      backing_kind:
+        $ref: '#/definitions/non_empty_string'
+      transferability:
+        $ref: '#/definitions/non_empty_string'
+      redeem_target:
+        $ref: '#/definitions/non_empty_string'
+      expiry_rule:
+        $ref: '#/definitions/non_empty_string'
+      disclosure_policy:
+        $ref: '#/definitions/non_empty_string'
+      retention_policy:
+        $ref: '#/definitions/non_empty_string'
+      provider_scope:
+        $ref: '#/definitions/non_empty_string'
+      beneficiary_scope:
+        $ref: '#/definitions/non_empty_string'
+      audit_trail:
+        $ref: '#/definitions/non_empty_string'
+      challenge_window:
+        $ref: '#/definitions/non_empty_string'
+      action_whitelist:
+        $ref: '#/definitions/string_list'
+      quota:
+        $ref: '#/definitions/non_empty_string'
+      service_scope:
+        $ref: '#/definitions/non_empty_string'
+      replay_mode:
+        $ref: '#/definitions/non_empty_string'
+      locked_asset_id:
+        $ref: '#/definitions/non_empty_string'
+      locked_amount:
+        $ref: '#/definitions/non_empty_string'
+      binding_surfaces:
+        $ref: '#/definitions/string_list'
+      payload_binding:
+        $ref: '#/definitions/non_empty_string'
+      lock_window:
+        $ref: '#/definitions/profile_window'
+      revoke_mode:
+        $ref: '#/definitions/non_empty_string'
+      ordinary_spend:
+        $ref: '#/definitions/non_empty_string'
+      accept_policy:
+        $ref: '#/definitions/non_empty_string'
+      partial_redeem:
+        $ref: '#/definitions/non_empty_string'
+      residual_policy:
+        $ref: '#/definitions/non_empty_string'
+  policy_profile:
+    type: object
+    required:
+    - id
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/definitions/non_empty_string'
+      enforced_actions:
+        $ref: '#/definitions/string_list'
+      selected_fields:
+        $ref: '#/definitions/string_list'
+      require_purpose:
+        type: boolean
+      require_expiry:
+        type: boolean
+      bind_policy_id:
+        type: boolean
+      bind_checkpoint_anchor:
+        type: boolean
+      bind_retained_document_hash:
+        type: boolean
+      disclosure_receipt_required:
+        type: boolean
+      retention_profile:
+        $ref: '#/definitions/non_empty_string'
+      retained_object_type:
+        $ref: '#/definitions/non_empty_string'
+      required_bindings:
+        $ref: '#/definitions/string_list'
+      retention_years:
+        type: integer
+        minimum: 1
+      disclosure_receipt_type:
+        $ref: '#/definitions/non_empty_string'
+      applies_to_profiles:
+        $ref: '#/definitions/string_list'
+  chain_config:
+    type: object
+    required:
+    - id
+    - type
+    - name
+    - magic_bytes
+    - domains
+    additionalProperties: false
+    properties:
+      id:
+        type: integer
+        minimum: 1
+        maximum: 3
+      type:
+        type: string
+        enum:
+        - mainnet
+        - testnet
+        - devnet
+      name:
+        $ref: '#/definitions/non_empty_string'
+      magic_bytes:
+        $ref: '#/definitions/byte4'
+      domains:
+        type: object
+        required:
+        - genesis_seed
+        additionalProperties: false
+        properties:
+          genesis_seed:
+            $ref: '#/definitions/byte32'
+  outputs_config:
+    type: object
+    required:
+    - assets_export_path
+    - snapshot_export_path
+    additionalProperties: false
+    properties:
+      assets_export_path:
+        $ref: '#/definitions/non_empty_string'
+      snapshot_export_path:
+        $ref: '#/definitions/non_empty_string'
+      logging_path:
+        $ref: '#/definitions/non_empty_string'
+  performance_config:
+    type: object
+    required:
+    - num_threads
+    additionalProperties: false
+    properties:
+      num_threads:
+        $ref: '#/definitions/thread_count'
+  manifest_refs:
+    type: object
+    additionalProperties: false
+    properties:
+      assets:
+        $ref: '#/definitions/relative_config_ref'
+      rights:
+        $ref: '#/definitions/relative_config_ref'
+      policies:
+        $ref: '#/definitions/relative_config_ref'
+      vouchers:
+        $ref: '#/definitions/relative_config_ref'
+  genesis_manifest:
+    type: object
+    required:
+    - chain
+    - outputs
+    - performance
+    additionalProperties: false
+    properties:
+      version:
+        type: integer
+        minimum: 1
+      manifest_refs:
+        $ref: '#/definitions/manifest_refs'
+      chain:
+        $ref: '#/definitions/chain_config'
+      assets:
+        $ref: '#/definitions/assets_list'
+      rights:
+        $ref: '#/definitions/rights_list'
+      policies:
+        type: array
+        items:
+          $ref: '#/definitions/policy_entry'
+      vouchers:
+        type: array
+        items:
+          $ref: '#/definitions/voucher_entry'
+      wallet_profiles:
+        type: array
+        items:
+          $ref: '#/definitions/wallet_profile'
+      policy_profiles:
+        type: array
+        items:
+          $ref: '#/definitions/policy_profile'
+      outputs:
+        $ref: '#/definitions/outputs_config'
+      performance:
+        $ref: '#/definitions/performance_config'

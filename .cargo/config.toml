@@ -1,0 +1,37 @@
+[target.wasm32-unknown-unknown]
+runner = "wasm-bindgen-test-runner"
+
+[build]
+# Keep every workspace and subcrate Cargo invocation under one canonical root.
+target-dir = "target/workspace"
+# Enable test-fast feature for all tests by default
+rustflags = [
+  "--cfg",
+  "test_fast",
+  "-A",
+  "unknown_lints",
+  "-A",
+  "clippy::too_many_arguments",
+  "-A",
+  "clippy::empty_line_after_doc_comments",
+  "-A",
+  "clippy::manual_repeat_n",
+  "-A",
+  "clippy::cloned_ref_to_slice_refs",
+  "-A",
+  "clippy::to_string_in_format_args",
+]
+
+[alias]
+# Test command that automatically enables test-fast feature
+t = "test --features test-fast"
+rt = "test --release --features test-fast"
+
+# Clippy helpers
+# NOTE: `crates/z00z_crypto/tari/` is a protected vendored subtree; we do not modify it.
+# These aliases provide warning-free clippy runs without touching vendored sources.
+clippy-clean = "clippy --release --all-targets --all-features --workspace -- -A clippy::empty_line_after_doc_comments -A clippy::manual_repeat_n -A clippy::cloned_ref_to_slice_refs -A clippy::to_string_in_format_args"
+clippy-clean-fast = "clippy --release --all-targets --features test-fast --workspace -- -A clippy::too_many_arguments -A clippy::empty_line_after_doc_comments -A clippy::manual_repeat_n -A clippy::cloned_ref_to_slice_refs -A clippy::to_string_in_format_args"
+
+# Same as clippy-clean, but also silences the vendored `tari_jellyfish` too-many-args lint.
+clippy-clean-all = "clippy --release --all-targets --all-features --workspace -- -A clippy::too_many_arguments -A clippy::empty_line_after_doc_comments -A clippy::manual_repeat_n -A clippy::cloned_ref_to_slice_refs -A clippy::to_string_in_format_args"

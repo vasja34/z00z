@@ -1,0 +1,1560 @@
+# Query: (?:v\\d+.|.v\\d+.|._v\\d+$)
+# Flags: RegExp
+# Including: *.rs
+# Excluding: *.md
+# ContextLines: 1
+
+490 results - 130 files
+
+crates/z00z_core/bin/assets/assets_generation_cli_phase.rs:
+  181  fn generate_nonce(definition_id: &[u8; 32], serial_id: u32) -> Nonce {
+  182:     hash_domain!(ExampleNonceDomain, "z00z.core.examples.nonce.v1", 1);
+  183
+
+crates/z00z_core/src/lib.rs:
+  20  //! │  assets    → Multi-asset outputs, commitments, proofs      │
+  21: //! │  genesis  → Deterministic initial state construction [v2] │
+  22  //! │  state     → Epoch-based state management                  │
+
+crates/z00z_core/src/assets/asset_crypto.rs:
+  91      /// Deterministically derives asset_id from:
+  92:     /// - domain ("z00z.core.assets.asset_id.v1")
+  93      /// - nonce (unique per Asset)
+
+crates/z00z_core/src/assets/gas.rs:
+    9  //! - **GasUsage**: Transaction counters (inputs, outputs, range_proof_bits)
+   10: //! - **GasAsset**: Native coin wrapper enforcing v1 rule (only coins pay fees)
+   11  //!
+
+  208
+  209: /// Gas is always paid with the native coin in v1; this wrapper enforces that constraint when wallets declare fees.
+  210  #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+
+  275      fn mk_native_fee_def() -> AssetDefinition {
+  276:         native_fee_def("z00z_coin_devnet_v1").expect("valid native fee asset")
+  277      }
+
+  287              20_000,
+  288:             "z00z_coin_devnet_v1".to_string(),
+  289              1,
+
+  305              20_000,
+  306:             "z00z_coin_devnet_v1".to_string(),
+  307              1,
+
+  323              20_000,
+  324:             "z00z_coin_devnet_v1".to_string(),
+  325              1,
+
+crates/z00z_core/src/assets/mod.rs:
+  241  pub mod commitment;
+  242: // NOTE: crypto.rs DELETED in v1.134.0 - use z00z_crypto public API instead
+  243  pub mod definition;
+
+  254
+  255: // 🆕 New modules (refactoring v1.152.0)
+  256  mod assets_config; // Config parsing helpers (pub(crate) only)
+
+  265          domain_name,
+  266:         "z00z_coin_devnet_v1" | "z00z_coin_testnet_v1" | "z00z_coin_mainnet_v1"
+  267      ) {
+
+  307
+  308: // NOTE: crypto.rs DELETED in v1.134.0 - use z00z_crypto public API instead
+  309  // Hash domains (AssetIdHashDomain, ChecksumHashDomain) moved to z00z_crypto internal
+
+crates/z00z_core/src/assets/nonce.rs:
+  255  /// **Domain Separation:**
+  256: /// - Domain: "z00z.core.assets.nonce.genesis.v1"
+  257  /// - Label: "genesis_nonce"
+
+crates/z00z_core/src/assets/test_registry_suite.rs:
+  480
+  481:     let snapshot_v5 = RegistrySnapshot {
+  482          version: RegistryVersion {
+
+  491      registry
+  492:         .update_from_snapshot(snapshot_v5)
+  493          .expect("should accept version 5");
+
+  510      let result = registry.update_from_snapshot(downgrade_snapshot);
+  511:     assert!(result.is_err(), "downgrade to v1 should be rejected");
+  512      assert!(
+
+  558
+  559:     println!("✅ Downgrade prevention test passed: v5 → attempted v1 rejected, v5 dup rejected, v6 accepted");
+  560  }
+
+crates/z00z_core/src/assets/wire_pkg_serde_impls.rs:
+  262                          .map(hex::encode)
+  263:                         .map_err(|_| "enc_pack: invalid v1 bytes".to_string())
+  264                  })
+
+crates/z00z_core/src/genesis/mod.rs:
+  1  #![allow(clippy::module_inception)]
+  2: //! # Genesis Module v3.8 (Security Hardening Release)
+  3  //!
+
+crates/z00z_core/tests/assets/mod.rs:
+  1: // pub mod asset_derivation; // DEPRECATED: tested derive_asset_hash() which was removed in v1.134.0
+  2  #[path = "test_amount.rs"]
+
+crates/z00z_core/tests/assets/test_fixtures.rs:
+  58  // Domain separation for asset test operations.
+  59: hash_domain!(AssetTestDomain, "z00z.core.assets.test.v1", 1);
+  60
+
+  62  /// Ensures asset ID derivation doesn't collide with other hash domains.
+  63: pub const DOMAIN: &[u8] = b"z00z.core.assets.test.v1";
+  64
+
+crates/z00z_core/tests/assets/test_integration_assets_test1.rs:
+  36
+  37: hash_domain!(TestNonceDomain, "z00z.core.tests.nonce.v1", 1);
+  38
+
+crates/z00z_core/tests/assets/test_integration_assets_test9.rs:
+  15
+  16: hash_domain!(TestNonceDomain, "z00z.core.tests.nonce.v1", 1);
+  17
+
+crates/z00z_core/tests/assets/test_integration_assets_test10.rs:
+  15
+  16: hash_domain!(TestNonceDomain, "z00z.core.tests.nonce.v1", 1);
+  17
+
+crates/z00z_core/tests/assets/test_integration_assets_test12.rs:
+   94
+   95:             let def = create_test_definition_with_name(id, &format!("Asset v1_{}", i));
+   96              initial_defs.push(def);
+
+   98                  id,
+   99:                 &format!("Asset v1_{}", i),
+  100              ));
+
+  152                  for (i, id) in seed_ids_updater.iter().enumerate() {
+  153:                     let def = create_test_definition_with_name(*id, &format!("Asset v1_{}", i));
+  154                      new_defs.push(def);
+
+  231              .update_from_snapshot(initial_snapshot)
+  232:             .expect("should update to v1");
+  233
+
+  243              .update_from_snapshot(second_snapshot)
+  244:             .expect("should update to v2");
+  245
+
+  255              .update_from_snapshot(latest_snapshot)
+  256:             .expect("should update to v5");
+  257
+
+  465              .expect("should be Some");
+  466:         assert_eq!(first_arc.name, "Asset", "Arc should point to v1 definition");
+  467
+
+  472              .update_from_snapshot(second_snapshot)
+  473:             .expect("should update to v2");
+  474
+
+  477              first_arc.name, "Asset",
+  478:             "Old Arc should still point to v1 data (immutable)"
+  479          );
+
+  496
+  497:         println!("[OK] Arc validity preserved: v1 Arc still valid after update to v2");
+  498      }
+
+crates/z00z_core/tests/assets/test_integration_assets_test13.rs:
+  21
+  22: hash_domain!(TestNonceDomain, "z00z.core.tests.nonce.v1", 1);
+  23
+
+crates/z00z_core/tests/assets/test_integration_assets_test15.rs:
+  28
+  29: hash_domain!(TestNonceDomain, "z00z.core.tests.nonce.v1", 1);
+  30
+
+crates/z00z_core/tests/assets/test_wire_format_snapshots.rs:
+  341
+  342: /// Test version migration (v1 → v2 future-proofing)
+  343  #[test]
+  344  fn test_version_field_preserved() {
+  345:     let v1_json = r#"{
+  346          "id": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+
+  359
+  360:     let wire: DefinitionWire = serde_json::from_str(v1_json).unwrap();
+  361      assert_eq!(wire.version, 1, "Version field must be preserved");
+
+crates/z00z_core/tests/genesis/test_claim_flow.rs:
+   31  //! 5. **Commitment construction formula** - C = v·H + r·G (Pedersen commitment is correct)
+   32: //! 6. **Homomorphic addition property** - C(v1,r1) + C(v2,r2) = C(v1+v2, r1+r2)
+   33  //! 7. **Input-output equivalence** - C_in == C_out1 + C_out2 (commitment space equality)
+
+  327      println!("\n🔬 CHECK #6: Homomorphic Addition Property");
+  328:     println!("   Proving: C(v1,r1) + C(v2,r2) = C(v1+v2, r1+r2)");
+  329
+
+crates/z00z_core/tests/genesis/test_crypto_security.rs:
+  102  ///
+  103: /// Verifies: C(v1, r1) + C(v2, r2) = C(v1+v2, r1+r2)
+  104  #[test]
+
+  129          c_expected.as_bytes(),
+  130:         "Commitment addition must be homomorphic: C(v1,r1) + C(v2,r2) = C(v1+v2, r1+r2)"
+  131      );
+
+crates/z00z_crypto/src/aead_aad.rs:
+   6      let mut out = Vec::with_capacity(16 + domain.len() + 1 + context.len());
+   7:     out.extend_from_slice(b"z00z.aead.v1\0");
+   8      out.extend_from_slice(domain.as_bytes());
+
+  18  fn aad_fixed_size(domain: &str, context_len: usize) -> Option<usize> {
+  19:     const PREFIX_LEN: usize = b"z00z.aead.v1\0".len();
+  20
+
+crates/z00z_crypto/src/aead_transport.rs:
+  6
+  7: const ASSET_PACK_DOMAIN: &str = "z00z.asset.pack.v1";
+  8
+
+crates/z00z_crypto/src/argon2_kdf.rs:
+  19
+  20:     let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
+  21
+
+crates/z00z_crypto/src/backend_tari.rs:
+  319      ///
+  320:     /// Format: `z00z.derive.v1\0<domain_len:u64le><domain><chunk_len:u64le><chunk>...`
+  321      ///
+
+  326      /// Version history:
+  327:     /// - v1 (2026-02): Initial length-prefixed format
+  328      fn derive_hash(&self, domain: &[u8], data: &[&[u8]]) -> [u8; 32] {
+
+  333          // Version prefix for format stability
+  334:         hasher.update(b"z00z.derive.v1\0");
+  335
+
+crates/z00z_crypto/src/domains.rs:
+   22  //!
+   23: //! - Wallet keys: `z00z.wallet.key.v1`
+   24: //! - Asset IDs: `z00z.asset.id.v1`
+   25: //! - Transaction hashes: `z00z.tx.hash.v1`
+   26  //!
+
+   53  // Core Tari crypto backend domain.
+   54: hash_domain!(TariCryptoHashDomain, "z00z.crypto.tari.v1", 1);
+   55
+
+   60  // Wallet key derivation domain.
+   61: hash_domain!(WalletKeyDomain, "z00z.wallet.key.v1", 1);
+   62
+   63  // Wallet backup encryption domain.
+   64: hash_domain!(WalletBackupDomain, "z00z.wallet.backup.v1", 1);
+   65
+   66  // Wallet encryption domain.
+   67: hash_domain!(WalletEncryptDomain, "z00z.wallet.encrypt.v1", 1);
+   68
+
+   71      StealthTag16ProdDomain,
+   72:     "z00z.wallet.stealth.tag16.prod.v1",
+   73      1
+
+   78      StealthLeafAdProdDomain,
+   79:     "z00z.wallet.stealth.leaf_ad.prod.v1",
+   80      1
+
+   87  // Asset ID generation domain.
+   88: hash_domain!(AssetIdHashDomain, "z00z.asset.id.v1", 1);
+   89
+   90  // Asset commitment domain.
+   91: hash_domain!(AssetCommitDomain, "z00z.asset.commitment.v1", 1);
+   92
+   93  // Asset blinding factor domain.
+   94: hash_domain!(AssetBlindDomain, "z00z.asset.blinding.v1", 1);
+   95
+   96  // Asset checksum domain.
+   97: hash_domain!(ChecksumHashDomain, "z00z.asset.checksum.v1", 1);
+   98
+
+  103  // Transaction hash domain.
+  104: hash_domain!(TxHashDomain, "z00z.tx.hash.v1", 1);
+  105
+  106  // Transaction signature domain.
+  107: hash_domain!(TxSignatureDomain, "z00z.tx.signature.v1", 1);
+  108
+  109  // Transaction kernel domain.
+  110: hash_domain!(TxKernelDomain, "z00z.tx.kernel.v1", 1);
+  111
+  112  // Claim statement hash domain.
+  113: hash_domain!(ClaimStmtDomain, "z00z.claim.statement.v1", 1);
+  114
+  115  // Claim proof placeholder domain.
+  116: hash_domain!(ClaimProofDomain, "z00z.claim.proof.v1", 1);
+  117
+  118  // Claim authority placeholder signature domain.
+  119: hash_domain!(ClaimSigDomain, "z00z.claim.sig.v1", 1);
+  120
+
+  125  // OnionNet session key domain.
+  126: hash_domain!(OnionSessionDomain, "z00z.net.session.v1", 1);
+  127
+  128  // Peer ID generation domain.
+  129: hash_domain!(PeerIdDomain, "z00z.net.peer_id.v1", 1);
+  130
+
+  136  // Use this when the specific use case needs runtime flexibility.
+  137: hash_domain!(GenericDeriveDomain, "z00z.crypto.derive.v1", 1);
+  138
+
+  145  // For specific consensus operations, use dedicated domains (ReceiverIdDomain, etc.)
+  146: hash_domain!(ConsensusHashDomain, "z00z.consensus.hash.v1", 1);
+  147
+
+  150  // For specific scalar derivations, use dedicated domains (ViewKeyDomain, etc.)
+  151: hash_domain!(HashToScalarDomain, "z00z.consensus.h2s.v1", 1);
+  152
+
+  187  hash_domain!(Stage4OutSeedDomain, "Z00Z/STAGE4/OUTSEED", 1); // Stage-4 deterministic output seed
+  188: hash_domain!(TxProofDomain, "Z00Z/TXPROOF/V1", 1); // TxProof Fiat-Shamir challenge
+  189: hash_domain!(CheckpointDomain, "Z00Z/CHECKPOINT/V1", 1); // CheckpointProof
+  190
+  191  // Identity & Requests
+  192: hash_domain!(ReqDomain, "Z00Z/REQv1", 1); // PaymentRequest signature domain
+  193  hash_domain!(RcardDomain, "Z00Z/RCARD", 1); // ReceiverCard signature domain
+
+  199  // Test nonce generation domain.
+  200: hash_domain!(TestNonceDomain, "z00z.test.nonce.v1", 1);
+  201
+
+  242              b"Z00Z/STAGE4/OUTSEED",
+  243:             b"Z00Z/TXPROOF/V1",
+  244:             b"Z00Z/CHECKPOINT/V1",
+  245              // Identity & Requests
+  246:             b"Z00Z/REQv1",
+  247              b"Z00Z/RCARD",
+
+  373                  TxProofDomain::domain(),
+  374:                 "Z00Z/TXPROOF/V1",
+  375                  "TxProofDomain mismatch",
+
+  378                  CheckpointDomain::domain(),
+  379:                 "Z00Z/CHECKPOINT/V1",
+  380                  "CheckpointDomain mismatch",
+  381              ),
+  382:             (ReqDomain::domain(), "Z00Z/REQv1", "ReqDomain mismatch"),
+  383              (RcardDomain::domain(), "Z00Z/RCARD", "RcardDomain mismatch"),
+
+crates/z00z_crypto/src/hash.rs:
+  107  /// ```text
+  108: /// z00z.hash.v1\0<domain_len:u64le><domain><label_len:u64le><label>
+  109  /// ```
+
+  112  /// Version history:
+  113: /// - v1 (2026-02): Initial length-prefixed format
+  114  ///
+
+  122      let mut out = Vec::with_capacity(32 + domain.len() + label.len() + 16);
+  123:     out.extend_from_slice(b"z00z.hash.v1\0");
+  124
+
+crates/z00z_crypto/src/kdf_domains.rs:
+   8  //!
+   9: //! Version suffix (`.v1`, `.v2`, ...) allows future changes (algorithm, output length,
+  10  //! or semantic boundaries) without collisions.
+
+  23  //! // ❌ WRONG: Hardcoded strings (error-prone, no compile-time validation)
+  24: //! // let key = hkdf_expand_32(&master_key, &[], b"z00z.wallet.key.v1")?;
+  25  //! # Ok::<_, z00z_crypto::kdf::KdfError>(())
+
+  28  /// Wallet master key derivation.
+  29: pub const HKDF_INFO_WALLET_KEY: &[u8] = b"z00z.wallet.key.v1";
+  30
+  31  /// Wallet encryption key derivation.
+  32: pub const HKDF_INFO_WALLET_ENCRYPTION: &[u8] = b"z00z.wallet.encryption.v1";
+  33
+  34  /// Transaction signing key derivation.
+  35: pub const HKDF_INFO_TX_SIGNING: &[u8] = b"z00z.tx.signing.v1";
+  36
+  37  /// Backup key derivation.
+  38: pub const HKDF_INFO_BACKUP: &[u8] = b"z00z.backup.key.v1";
+  39
+  40  /// OnionNet session key derivation.
+  41: pub const HKDF_INFO_ONIONNET_SESSION: &[u8] = b"z00z.onionnet.session.v1";
+  42
+  43  /// Asset blinding factor derivation.
+  44: pub const HKDF_INFO_ASSET_BLINDING: &[u8] = b"z00z.asset.blinding.v1";
+  45
+  46: /// RedB wallet DATA key derivation (v2 info scheme).
+  47  ///
+
+  49  /// cross-component consistency when needed.
+  50: pub const HKDF_INFO_REDB_DATA: &[u8] = b"z00z.wallet.redb.data.v2";
+  51
+  52: /// RedB wallet INDEX key derivation (v2 info scheme).
+  53: pub const HKDF_INFO_REDB_INDEX: &[u8] = b"z00z.wallet.redb.index.v2";
+  54
+  55: /// RedB wallet INTEGRITY key derivation (v2 info scheme).
+  56: pub const HKDF_INFO_REDB_INTEGRITY: &[u8] = b"z00z.wallet.redb.integrity.v2";
+
+crates/z00z_crypto/src/kdf.rs:
+  149  const H2S_LABEL: &str = "H2S";
+  150: const KDF_CONS_SALT: &[u8] = b"z00z/consensus/kdf/v1";
+  151: const KDF_WLT_SALT: &[u8] = b"z00z/wallet/kdf/v1";
+  152: const KDF_WLT_VAR_SALT: &[u8] = b"z00z/wallet/kdf_var/v1";
+  153
+
+crates/z00z_crypto/src/lib_api.rs:
+  48
+  49: /// Generate a deterministic V1 range proof using caller-provided RNG.
+  50  ///
+
+crates/z00z_crypto/src/test_hash_hmac_rfc4231_suite.rs:
+   55      let domain = "wallet.auth";
+   56:     let label = "v1";
+   57      let msg = b"message-to-authenticate";
+
+   66      let domain = "wallet.auth";
+   67:     let label = "v1";
+   68      let msg = b"message-to-authenticate";
+
+   79      let domain = "wallet.auth";
+   80:     let label = "v1";
+   81      let msg = b"message-to-authenticate";
+
+  127      let domain = "auth";
+  128:     let label = "v1";
+  129      let msg = b"data";
+
+crates/z00z_crypto/src/test_hash_suite.rs:
+   28      let msg = b"hello";
+   29:     let first = hmac_sha256(key, "auth", "v1", msg);
+   30:     let second = hmac_sha256(key, "auth", "v1", msg);
+   31      assert_eq!(first, second);
+   32
+   33:     let third = hmac_sha256(key, "auth", "v1", b"hello2");
+   34      assert_ne!(first, third);
+
+   45
+   46:     let third = hmac_sha256(key, "wallet.index", "v1", msg);
+   47      assert_ne!(first, third);
+
+   60      let msg = b"test";
+   61:     let first = hmac_sha256(&long_key, "test", "v1", msg);
+   62:     let second = hmac_sha256(&long_key, "test", "v1", msg);
+   63      assert_eq!(first, second);
+
+  105      for _ in 0..1000 {
+  106:         let _ = hmac_sha256(key, "test.domain", "v1", msg);
+  107      }
+
+crates/z00z_crypto/src/test_kdf_suite.rs:
+  95
+  96:     let key_v1 = hkdf_expand_32(&ikm, &salt, kdf_domains::HKDF_INFO_WALLET_ENCRYPTION).unwrap();
+  97:     let key_v2 = hkdf_expand_32(&ikm, &salt, b"z00z.wallet.encryption.v2").unwrap();
+  98
+  99:     assert_ne!(key_v1.reveal(), key_v2.reveal());
+  100  }
+
+crates/z00z_crypto/src/test_types_suite.rs:
+  236  fn test_do_s_protection_limits() {
+  237:     let max_v1 = MAX_PROOF_SIZE;
+  238:     let max_v2 = MAX_PROOF_SIZE_EXTENDED;
+  239:     assert!(max_v1 > 1000);
+  240:     assert!(max_v2 > max_v1);
+  241:     let v1_actual_max = 800;
+  242:     assert!(MAX_PROOF_SIZE > v1_actual_max * 10);
+  243  }
+
+crates/z00z_crypto/src/zkpack.rs:
+  79          };
+  80:         let bytes = enc.to_bytes().expect("fixed v1 bytes");
+  81          assert_eq!(bytes.len(), ZKPACK_TOTAL_LEN);
+
+  90          };
+  91:         let bytes = enc.to_bytes().expect("fixed v1 bytes");
+  92:         let dec = ZkPackEncrypted::from_bytes(&bytes).expect("valid fixed v1 bytes");
+  93          assert_eq!(enc, dec);
+
+crates/z00z_crypto/src/claim/mod.rs:
+  1: mod v2;
+  2: pub use v2::{
+  3      claim_stmt_hash, ClaimAuthoritySig, ClaimError, ClaimProofVer, ClaimRootVer, ClaimSourceProof,
+
+crates/z00z_crypto/src/claim/v2.rs:
+   19  impl ClaimRootVer {
+   20:     pub const V1: Self = Self(1);
+   21:     pub const V2: Self = Self(2);
+   22
+
+   41  impl ClaimProofVer {
+   42:     pub const V1: Self = Self(1);
+   43:     pub const V2: Self = Self(2);
+   44
+
+   59  pub enum ClaimError {
+   60:     #[error("claim-v2 decode failed")]
+   61      DecodeFail,
+   62:     #[error("claim-v2 root version must be non-zero")]
+   63      BadRootVer,
+   64:     #[error("claim-v2 proof version must be non-zero")]
+   65      BadProofVer,
+   66:     #[error("claim-v2 tx version must be non-zero")]
+   67      BadTxVer,
+   68:     #[error("claim-v2 output leaf list must be non-empty")]
+   69      NoOutputs,
+   70:     #[error("claim-v2 proof bytes must be non-empty")]
+   71      ProofEmpty,
+   72:     #[error("claim-v2 authority signature is invalid")]
+   73      SigInvalid,
+   74:     #[error("claim-v2 root version mismatch")]
+   75      RootVerMix,
+   76:     #[error("claim-v2 proof version mismatch")]
+   77      ProofVerMix,
+   78:     #[error("claim-v2 source root mismatch")]
+   79      SourceRootMix,
+   80:     #[error("claim-v2 backend signing failed: {0}")]
+   81      SignBackend(String),
+
+  354      let bytes = stmt.to_bytes()?;
+  355:     let hash = DomainHasher256::<ClaimStmtDomain>::new_with_label("claim_v2")
+  356          .chain(&bytes)
+
+crates/z00z_crypto/tari/crypto/src/hashing.rs:
+  196  ///
+  197: /// assert_eq!(CardHashDomain::domain_separation_tag(""), "com.cards.v1");
+  198: /// assert_eq!(CardHashDomain::domain_separation_tag("card_id"), "com.cards.v1.card_id");
+  199  /// let card = Card {
+
+  236  ///     CardHashDomain::domain_separation_tag("schnorr_challenge"),
+  237: ///     "com.cards.v1.schnorr_challenge"
+  238  /// );
+
+  467  ///     MacDomain::domain_separation_tag("api.auth"),
+  468: ///     "com.tari.mac.v1.api.auth"
+  469  /// );
+
+  705          assert_eq!(MacDomain::domain(), "com.tari.mac");
+  706:         assert_eq!(MacDomain::domain_separation_tag(""), "com.tari.mac.v1");
+  707:         assert_eq!(MacDomain::domain_separation_tag("test"), "com.tari.mac.v1.test");
+  708      }
+
+  746          hash_domain!(GenericHashDomain, "com.tari.generic");
+  747:         assert_eq!(GenericHashDomain::domain_separation_tag(""), "com.tari.generic.v1");
+  748          let hash = DomainSeparatedHasher::<Blake2b<U32>, GenericHashDomain>::new_with_label("test_hasher")
+
+  770          hash_domain!(MyDemoHasher, "com.macro.test");
+  771:         assert_eq!(MyDemoHasher::domain_separation_tag(""), "com.macro.test.v1");
+  772          util::hash_test::<DomainSeparatedHasher<Blake2b<U32>, MyDemoHasher>>(
+
+  797          hash_domain!(MyDemoHasher, "com.macro.test");
+  798:         assert_eq!(MyDemoHasher::domain_separation_tag(""), "com.macro.test.v1");
+  799          util::hash_test::<DomainSeparatedHasher<Blake2b<U32>, MyDemoHasher>>(
+
+  804          hash_domain!(MyDemoHasher2, "com.macro.test", 2);
+  805:         assert_eq!(MyDemoHasher2::domain_separation_tag(""), "com.macro.test.v2");
+  806          util::hash_test::<DomainSeparatedHasher<Blake2b<U32>, MyDemoHasher2>>(
+
+  811          hash_domain!(TariHasher, "com.tari.hasher");
+  812:         assert_eq!(TariHasher::domain_separation_tag(""), "com.tari.hasher.v1");
+  813          util::hash_test::<DomainSeparatedHasher<Blake2b<U32>, TariHasher>>(
+
+  843              .chain(26u64.to_le_bytes())
+  844:             .chain("com.tari.generic.v1.mytest".as_bytes())
+  845              .chain(9u64.to_le_bytes())
+
+  865          }
+  866:         let domain = "com.discworld.v42.turtles";
+  867          assert_eq!(MyDemoHasher::domain_separation_tag("turtles"), domain);
+
+  916          let mac = Mac::<Blake2b<U32>>::generate(key, "test message", "test");
+  917:         assert_eq!(MacDomain::domain_separation_tag("test"), "com.tari.mac.v1.test");
+  918          assert_eq!(
+
+crates/z00z_crypto/tari/crypto/src/ristretto/ristretto_keys.rs:
+  1001              RistrettoKdf::domain_separation_tag("test"),
+  1002:             "com.tari.kdf.ristretto.v1.test"
+  1003          );
+
+crates/z00z_crypto/tari/crypto/src/ristretto/pedersen/commitment_factory.rs:
+  147      /// and
+  148:     /// `open(k1+k2, v1+v2)` is true for _C_
+  149      #[test]
+
+  152          for _ in 0..100 {
+  153:             let v1 = RistrettoSecretKey::random(&mut rng);
+  154:             let v2 = RistrettoSecretKey::random(&mut rng);
+  155:             let v_sum = &v1 + &v2;
+  156              let k1 = RistrettoSecretKey::random(&mut rng);
+
+  159              let factory = PedersenCommitmentFactory::default();
+  160:             let c1 = factory.commit(&k1, &v1);
+  161:             let c2 = factory.commit(&k2, &v2);
+  162              let c_sum = &c1 + &c2;
+  163              let c_sum2 = factory.commit(&k_sum, &v_sum);
+  164:             assert!(factory.open(&k1, &v1, &c1));
+  165:             assert!(factory.open(&k2, &v2, &c2));
+  166              assert_eq!(c_sum, c_sum2);
+
+  175      /// and
+  176:     /// `open(k1+k2, v1)` is true for _C_
+  177      #[test]
+
+  180          // Left-hand side
+  181:         let v1 = RistrettoSecretKey::random(&mut rng);
+  182          let k1 = RistrettoSecretKey::random(&mut rng);
+  183          let factory = PedersenCommitmentFactory::default();
+  184:         let c1 = factory.commit(&k1, &v1);
+  185          let (k2, k2_pub) = RistrettoPublicKey::random_keypair(&mut rng);
+
+  187          // Right-hand side
+  188:         let c2 = factory.commit(&(&k1 + &k2), &v1);
+  189          // Test
+  190          assert_eq!(c_sum, c2);
+  191:         assert!(factory.open(&(&k1 + &k2), &v1, &c2));
+  192      }
+
+crates/z00z_crypto/tari/crypto/src/ristretto/pedersen/extended_commitment_factory.rs:
+  334      /// $$
+  335:     ///   C = C1 + C2 = sum((k1_i+k2_i).G_i) + (v1+v2).H
+  336      /// $$
+  337      /// and
+  338:     /// `open(k1_i+k2_i, v1+v2)` is true for _C_
+  339      #[test]
+
+  343              for _ in 0..25 {
+  344:                 let v1 = RistrettoSecretKey::random(&mut rng);
+  345:                 let v2 = RistrettoSecretKey::random(&mut rng);
+  346:                 let v_sum = &v1 + &v2;
+  347                  let k1_vec = vec![RistrettoSecretKey::random(&mut rng); extension_degree as usize];
+
+  355                  // ExtendedHomomorphicCommitmentFactory
+  356:                 let c1_extended = factory.commit_extended(&k1_vec, &v1).unwrap();
+  357:                 let c2_extended = factory.commit_extended(&k2_vec, &v2).unwrap();
+  358                  let c_sum_extended = &c1_extended + &c2_extended;
+  359                  let c_sum2_extended = factory.commit_extended(&k_sum_i, &v_sum).unwrap();
+  360:                 assert!(factory.open_extended(&k1_vec, &v1, &c1_extended).unwrap());
+  361:                 assert!(factory.open_extended(&k2_vec, &v2, &c2_extended).unwrap());
+  362                  assert_eq!(c_sum_extended, c_sum2_extended);
+
+  366                  if extension_degree == ExtensionDegree::DefaultPedersen {
+  367:                     let c1 = factory.commit(&k1_vec[0], &v1);
+  368                      assert_eq!(c1, c1_extended);
+  369:                     let c2 = factory.commit(&k2_vec[0], &v2);
+  370                      assert_eq!(c2, c2_extended);
+
+  374                      assert_eq!(c_sum2, c_sum2_extended);
+  375:                     assert!(factory.open(&k1_vec[0], &v1, &c1));
+  376:                     assert!(factory.open(&k2_vec[0], &v2, &c2));
+  377                      assert_eq!(c_sum, c_sum2);
+
+  388      /// and
+  389:     /// `open(k1+k2, v1)` is true for _C_
+  390      #[test]
+
+  393          // Left-hand side
+  394:         let v1 = RistrettoSecretKey::random(&mut rng);
+  395          let k1 = RistrettoSecretKey::random(&mut rng);
+  396          let factory = ExtendedPedersenCommitmentFactory::default();
+  397:         let c1 = factory.commit(&k1, &v1);
+  398          let (k2, k2_pub) = RistrettoPublicKey::random_keypair(&mut rng);
+
+  400          // Right-hand side
+  401:         let c2 = factory.commit(&(&k1 + &k2), &v1);
+  402          // Test
+  403          assert_eq!(c_sum, c2);
+  404:         assert!(factory.open(&(&k1 + &k2), &v1, &c2));
+  405      }
+
+  433      /// with`ExtensionDegree::DefaultPedersen`. $$
+  434:     ///   C = C_1 + P = (v1.H + sum(k1_i.G_i)) + k2.G_0 = v1.H + (k2 + sum(k1_i))).G
+  435      /// $$
+  436      /// and
+  437:     /// `open(k1+k2, v1)` is true for _C_
+  438      /// Note: Homomorphism with public key only holds for extended commitments with`ExtensionDegree::DefaultPedersen`
+
+  443              // Left-hand side
+  444:             let v1 = RistrettoSecretKey::random(&mut rng);
+  445              let k1_vec = vec![RistrettoSecretKey::random(&mut rng); extension_degree as usize];
+  446              let factory = ExtendedPedersenCommitmentFactory::new_with_extension_degree(extension_degree).unwrap();
+  447:             let c1 = factory.commit_extended(&k1_vec, &v1).unwrap();
+  448              let mut k2_vec = Vec::with_capacity(extension_degree as usize);
+
+  463              }
+  464:             let c2 = factory.commit_extended(&k_sum_vec, &v1).unwrap();
+  465              // Test
+  466:             assert!(factory.open_extended(&k_sum_vec, &v1, &c2).unwrap());
+  467              match extension_degree {
+
+crates/z00z_crypto/tari/crypto/src/signatures/schnorr.rs:
+  370              SchnorrSigChallenge::domain_separation_tag("test"),
+  371:             "com.tari.schnorr_signature.v1.test"
+  372          );
+
+crates/z00z_crypto/tari/utils/src/byte_array.rs:
+  138      fn from_to_different_sizes() {
+  139:         let v4 = vec![0u8, 1, 2, 3];
+  140:         let a4 = <[u8; 4]>::from_vec(&v4).unwrap();
+  141:         assert_eq!(a4.to_vec(), v4);
+  142:         let v10 = vec![0u8, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  143:         let a10 = <[u8; 10]>::from_vec(&v10).unwrap();
+  144:         assert_eq!(a10.to_vec(), v10);
+  145          fn check(_: impl ByteArray) {}
+
+crates/z00z_crypto/tests/test_claim_v2_contract.rs:
+   15          chain_id: 0x0102_0304,
+   16:         root_ver: ClaimRootVer::V1,
+   17:         proof_ver: ClaimProofVer::V1,
+   18          tx_ver: 2,
+
+   50      want.extend_from_slice(&0x0102_0304u32.to_le_bytes());
+   51:     want.push(ClaimRootVer::V1.as_u8());
+   52:     want.push(ClaimProofVer::V1.as_u8());
+   53      want.extend_from_slice(&2u32.to_le_bytes());
+
+   66
+   67:     let bytes = stmt.to_bytes().expect("claim-v2 bytes");
+   68      assert_eq!(bytes, want);
+   69      assert_eq!(
+   70:         ClaimStmt::from_bytes(&bytes).expect("claim-v2 decode"),
+   71          stmt
+
+   79      let auth_sk = RistrettoSecretKey::random(&mut rng);
+   80:     let auth = ClaimAuthoritySig::sign(&stmt, &auth_sk, &mut rng).expect("claim-v2 sign");
+   81
+   82:     auth.verify(&stmt).expect("claim-v2 verify");
+   83
+
+   87      assert_sig_invalid_for_mutation(&auth, &stmt, "root_ver mutation must fail", |wrong| {
+   88:         wrong.root_ver = ClaimRootVer::V2;
+   89      });
+   90      assert_sig_invalid_for_mutation(&auth, &stmt, "proof_ver mutation must fail", |wrong| {
+   91:         wrong.proof_ver = ClaimProofVer::V2;
+   92      });
+
+  169      let root_mix = ClaimSourceProof::new(
+  170:         ClaimRootVer::V2,
+  171          fill(0xAB),
+  172:         ClaimProofVer::V1,
+  173          vec![1u8, 2, 3],
+
+  176      let proof_mix = ClaimSourceProof::new(
+  177:         ClaimRootVer::V1,
+  178          fill(0xCD),
+  179:         ClaimProofVer::V2,
+  180          vec![4u8, 5, 6],
+
+  191      let root_mix = ClaimSourceProof::new(
+  192:         ClaimRootVer::V1,
+  193          fill(0xEE),
+  194:         ClaimProofVer::V1,
+  195          vec![1u8, 2, 3],
+
+crates/z00z_crypto/tests/test_fail_closed.rs:
+   4  fn try_hash_scalar_non_zero() {
+   5:     let scalar_a = try_hash_to_scalar_domain(b"phase25", &[b"claim", b"v2"]).unwrap();
+   6:     let scalar_b = try_hash_to_scalar_domain(b"phase25", &[b"claim", b"v2"]).unwrap();
+   7
+
+  16
+  17:     let mac_a = try_hmac_sha256(key, "wallet.auth", "v1", msg).unwrap();
+  18      let mac_b = try_hmac_sha256_raw(key, msg).unwrap();
+
+crates/z00z_crypto/tests/zkpack_domain_verification.rs:
+  26
+  27:     // Verify versions (all should be v1)
+  28      assert_eq!(PackKeyDomain::version(), 1);
+
+  32      // Verify versioned format (Tari adds .v{version} automatically)
+  33:     assert_eq!(PackKeyDomain::domain_separation_tag(""), "Z00Z/PACKKEY.v1");
+  34      assert_eq!(
+  35          PackNonceDomain::domain_separation_tag(""),
+  36:         "Z00Z/PACKNONCE.v1"
+  37      );
+  38:     assert_eq!(PackMacDomain::domain_separation_tag(""), "Z00Z/PKMAC.v1");
+  39
+
+crates/z00z_simulator/src/claim_pkg_consumer.rs:
+  458              tx: ClaimTxWire {
+  459:                 tx_type: "claim_tx_v1".to_string(),
+  460                  inputs: vec![ClaimInputWire {
+
+  483                  proof: ClaimProofWire {
+  484:                     proof_type: "genesis_claim_v1".to_string(),
+  485                      proof_hex: String::new(),
+
+crates/z00z_simulator/src/scenario_1/stage_2_utils/flow.rs:
+  16      let mut bytes = z00z_crypto::hash::poseidon2_hash(
+  17:         b"z00z.wallet.receiver_secret.v1",
+  18          &[wallet_id.0.as_bytes(), seed_bip39.reveal()],
+
+  32                  bytes = z00z_crypto::hash::poseidon2_hash(
+  33:                     b"z00z.wallet.receiver_secret.retry.v1",
+  34                      &[
+
+crates/z00z_simulator/src/scenario_1/stage_3_utils/claim_pkg.rs:
+  149  ) -> Result<(), String> {
+  150:     pkg.tx.proof.proof_type = "claim_source".to_string();
+  151      pkg.tx.proof.proof_hex = hex::encode(proof.to_bytes().map_err(|e| e.to_string())?);
+
+  302      let mut tx = ClaimTxWire {
+  303:         tx_type: "claim_tx_v1".to_string(),
+  304          inputs: vec![ClaimInputWire {
+
+  319          proof: ClaimProofWire {
+  320:             proof_type: "claim_source".to_string(),
+  321              proof_hex: String::new(),
+
+crates/z00z_simulator/tests/test_claim_pkg_crypto_support.rs:
+  154
+  155:     pkg.tx.proof.proof_type = "claim_source".to_string();
+  156      pkg.tx.proof.proof_hex = hex::encode(proof.to_bytes().expect("proof bytes"));
+
+  229
+  230:     assert_eq!(proof.root_ver(), ClaimRootVer::V1);
+  231:     assert_eq!(proof.proof_ver(), ClaimProofVer::V1);
+  232      assert_ne!(proof.source_root(), [0u8; 32]);
+
+  348      let bad = ClaimSourceProof::new(
+  349:         ClaimRootVer::V2,
+  350          proof.source_root(),
+
+  373          proof.source_root(),
+  374:         ClaimProofVer::V2,
+  375          proof.proof_blob().to_vec(),
+
+crates/z00z_storage/benches/common/fixture.rs:
+  12
+  13: hash_domain!(BenchDefDom, "z00z.storage.bench.def.v1", 1);
+  14: hash_domain!(BenchAssetDom, "z00z.storage.bench.asset.v1", 1);
+  15
+
+crates/z00z_storage/src/assets/keys.rs:
+  6
+  7: hash_domain!(StorDefKeyDom, "z00z.storage.key.definition.v1", 1);
+  8: hash_domain!(StorSerKeyDom, "z00z.storage.key.serial.v1", 1);
+  9
+
+crates/z00z_storage/src/assets/proof.rs:
+  204      let root_bytes = root.into_bytes();
+  205:     hash_zk::<StorProofBindDom>("proof_root_bind_v1", &[&root_bytes, &backend_root])
+  206  }
+
+crates/z00z_storage/src/assets/store.rs:
+  81
+  82: hash_domain!(StorAssetNsDom, "z00z.storage.ns.asset.v1", 1);
+  83: hash_domain!(StorSerNsDom, "z00z.storage.ns.serial.v1", 1);
+  84: hash_domain!(StorDefNsDom, "z00z.storage.ns.definition.v1", 1);
+  85: hash_domain!(StorPathNsDom, "z00z.storage.ns.path.v1", 1);
+  86
+
+crates/z00z_storage/src/assets/store_internal/store_query.rs:
+  193      pub fn claim_source_root(&self) -> Result<ClaimSourceRoot, AssetStoreError> {
+  194:         Ok(ClaimSourceRoot::new(ClaimRootVer::V1, self.root()?))
+  195      }
+
+  202          let proof_blob = self.proof_blob(path)?.encode()?;
+  203:         // Storage remains the authoritative issuer of V1 inner proof semantics
+  204          // until a separate protocol migration explicitly changes that contract.
+
+  207              claim_root.into_bytes(),
+  208:             ClaimProofVer::V1,
+  209              proof_blob,
+
+crates/z00z_storage/src/assets/store_internal/test_whitebox_state.rs:
+  224
+  225:     assert_eq!(store.root_at(1).expect("root v1"), root_a);
+  226:     assert_eq!(store.root_at(2).expect("root v2"), root_b);
+  227      assert_eq!(
+
+  230              .get(&1)
+  231:             .expect("model v1")
+  232              .root()
+  233:             .expect("model root v1"),
+  234          root_a
+
+  239              .get(&2)
+  240:             .expect("model v2")
+  241              .root()
+  242:             .expect("model root v2"),
+  243          root_b
+
+crates/z00z_storage/src/checkpoint/build.rs:
+  343      .with_claim_root(ClaimSourceRoot::new(
+  344:         ClaimRootVer::V1,
+  345          AssetStateRoot::new(new_root.into_bytes()),
+
+crates/z00z_storage/src/checkpoint/ids.rs:
+   16
+   17: const DRAFT_ID_LABEL: &str = "checkpoint_draft_id_v1";
+   18: const CHECKPOINT_ID_LABEL: &str = "checkpoint_final_id_v1";
+   19: const EXEC_ID_LABEL: &str = "checkpoint_exec_id_v1";
+   20  const ID_CLASS_DRAFT: &[u8] = b"draft";
+
+  317      fn test_exec_stable_same_bytes() {
+  318:         let first = derive_exec_id(b"exec-input-v1");
+  319:         let second = derive_exec_id(b"exec-input-v1");
+  320
+
+crates/z00z_storage/src/checkpoint/link.rs:
+  12  const LINK_BIND_VER: u8 = 1;
+  13: const LINK_BIND_LABEL: &str = "checkpoint_link_bind_v1";
+  14
+
+crates/z00z_storage/tests/test_checkpoint_draft_build.rs:
+  168      let replay = store.replay_entries(&loaded).expect("replay");
+  169:     let want_proof = b"verified-proof-v1".to_vec();
+  170      let exec = exec_with_proof(snap_id, loaded.prev_root, want_proof.clone());
+
+crates/z00z_storage/tests/test_checkpoint_ids.rs:
+  214      let two = dir.path().join("checkpoint_exec_copy.bin");
+  215:     let raw = b"canonical-exec-input-v1";
+  216      write_file(&one, raw).expect("write one");
+
+crates/z00z_storage/tests/test_checkpoint_replay_inputs.rs:
+  47  fn test_preserves_exact_proof_bytes() {
+  48:     let tx_proof = b"verified-proof-v1".to_vec();
+  49      let exec = exec_with_proof(
+
+crates/z00z_storage/tests/test_checkpoint_root_binding.rs:
+  37      let root_bytes = root.into_bytes();
+  38:     hash_zk::<TestProofBindDom>("proof_root_bind_v1", &[&root_bytes, &backend_root])
+  39  }
+
+crates/z00z_storage/tests/test_claim_source_proof.rs:
+  33
+  34:     assert_eq!(claim_root.root_ver(), ClaimRootVer::V1);
+  35:     assert_eq!(claim_proof.root_ver(), ClaimRootVer::V1);
+  36:     assert_eq!(claim_proof.proof_ver(), ClaimProofVer::V1);
+  37      assert_eq!(claim_proof.source_root(), claim_root.into_bytes());
+
+  47  fn test_claim_source_root_bytes() {
+  48:     let root = ClaimSourceRoot::new(ClaimRootVer::V1, [0xAB; 32].into());
+  49
+  50:     assert_eq!(root.root_ver(), ClaimRootVer::V1);
+  51      assert_eq!(root.into_bytes(), [0xAB; 32]);
+
+crates/z00z_storage/tests/test_redb_rehydrate.rs:
+  282      let path_a = path(2, 7, 20);
+  283:     let tx_proof = b"verified-proof-v1".to_vec();
+  284      {
+
+  412              vec![StoreOp::Put(Box::new(item(path_a, 701)))],
+  413:             vec![exec_tx(path_a, 701, b"compat-v1-era-proof")],
+  414          )?;
+
+crates/z00z_utils/src/codec/bincode.rs:
+   1: //! Bincode codec implementation using bincode v2.0 API
+   2  //!
+   3: //! This implementation provides compact binary serialization using bincode v2.0.
+   4
+
+  15  ///
+  16: /// Uses bincode v2.0 with standard configuration for efficient binary encoding.
+  17  ///
+
+crates/z00z_utils/tests/test_codec_integration.rs:
+  100              let mut m = BTreeMap::new();
+  101:             m.insert("k1".to_string(), "v1".to_string());
+  102              m
+
+crates/z00z_wallets/bin/gen_password_bloom.rs:
+  44      let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+  45:     let src = root.join("src/core/security/common-passwords-v1.txt");
+  46:     let out = root.join("src/core/security/password_denylist_v1.bloom");
+  47
+
+crates/z00z_wallets/bin/z00z_wallet_egui.rs:
+  93          .join("z00z_wallet_egui")
+  94:         .join(Uuid::new_v4().to_string())
+  95  }
+
+crates/z00z_wallets/examples/security_m1_attack.rs:
+  12
+  13: const ASSET_AAD: &[u8] = b"Z00Z/COINPACK_v1";
+  14
+
+crates/z00z_wallets/examples/example_0_wallet_creation/impl_derivation.rs:
+   46      println!("\n🔐 Deriving master key from seed...");
+   47:     println!("   Domain: 'z00z.wallets.master_key.v1'");
+   48      println!("   Hash: Blake2b<U64> (512-bit output)");
+
+   94      println!("   Path: m/44'/1337'/0'/0/0");
+   95:     println!("   Domain: 'z00z.wallets.bip44.payment.v1'");
+   96
+
+  117      println!("   Path: m/44'/1337'/0'/1/0");
+  118:     println!("   Domain: 'z00z.wallets.bip44.change.v1'");
+  119
+
+crates/z00z_wallets/src/adapters/rpc/methods/storage_impl.rs:
+  211              "export_{}",
+  212:             uuid::Uuid::new_v4()
+  213                  .to_string()
+
+crates/z00z_wallets/src/adapters/rpc/methods/key_impl/support_tail.rs:
+  15      let pub_plain = format!(
+  16:         "z00z-pub-material-v1:account={}:pubkey={}",
+  17          account,
+
+crates/z00z_wallets/src/adapters/rpc/methods/key_impl/test_key_impl.rs:
+  309      let plaintext = String::from_utf8(decrypted).unwrap();
+  310:     assert!(plaintext.starts_with("z00z-pub-material-v1:"));
+  311      assert!(plaintext.contains(&format!("account={account}")));
+
+crates/z00z_wallets/src/adapters/rpc/types/security.rs:
+  233
+  234:     /// Validate key format (UUID v4 recommended)
+  235      pub fn is_valid(&self) -> bool {
+
+crates/z00z_wallets/src/core/hashing.rs:
+  322      let hash = RedbWalletDataKeyHasher::new_with_label("hkdf_info")
+  323:         .chain_update(b"data_key.v2")
+  324          .finalize();
+
+  332      let hash = RedbWalletIndexKeyHasher::new_with_label("hkdf_info")
+  333:         .chain_update(b"index_key.v2")
+  334          .finalize();
+
+  342      let hash = RedbWalletIntegrityKeyHasher::new_with_label("hkdf_info")
+  343:         .chain_update(b"integrity_key.v2")
+  344          .finalize();
+
+crates/z00z_wallets/src/core/address/stealth_request.rs:
+  21  const REQ_VER_1: u8 = 1;
+  22: const REQUEST_SIGN_CTX: &[u8] = b"Z00Z/REQv1";
+  23  const REQ_MIN_SIZE: usize = 1 + 32 + 32 + 32 + 32 + 4 + 1 + 8 + 1 + 64;
+
+crates/z00z_wallets/src/core/address/address_manager/address_manager_impl_snapshot.rs:
+  13  const CACHE_SNAPSHOT_MAC_ACCOUNT: u32 = 2_000_000;
+  14: const CACHE_SNAPSHOT_HMAC_LABEL: &str = "v3";
+  15
+
+crates/z00z_wallets/src/core/address/z00z_address/test_z00z_address_suite.rs:
+   753          let spend = pubkey_bytes(1);
+   754:         // Simulate future address with bit 2 set (new feature in v2)
+   755          let mut bytes = [0u8; SINGLE_ADDRESS_BYTES];
+
+   978
+   979:         let version_one_name = ["ADDRESS", "VERSION", "V1"].join("_");
+   980          assert!(!src.contains(&version_one_name));
+   981
+   982:         let version_two_name = ["ADDRESS", "VERSION", "V2"].join("_");
+   983          assert!(!src.contains(&version_two_name));
+
+  1254          let address_hrp = hrp(ChainType::Mainnet);
+  1255:         let bech32_v0 =
+  1256              bech32::encode(address_hrp, bytes.to_base32(), Variant::Bech32).unwrap();
+
+  1258          // Decoding MUST fail because we expect Bech32m
+  1259:         let result = Z00ZSingleAddress::from_bech32_raw(&bech32_v0);
+  1260          assert!(result.is_err());
+
+crates/z00z_wallets/src/core/address/z00z_address/z00z_address_codec.rs:
+  12
+  13: /// Address type discriminator for v2 format: Dual address (spend + view keys).
+  14  pub const ADDRESS_TYPE_DUAL: u8 = 0x02;
+
+crates/z00z_wallets/src/core/address/z00z_address/z00z_address_validation.rs:
+  125
+  126:     /// Invalid address type byte in v2 payload.
+  127      #[error("Invalid address type byte: {0}")]
+
+  129
+  130:     /// Address type mismatch in v2 payload.
+  131      #[error("Address type mismatch: expected {expected:?}, payload indicates {got:?}")]
+
+  186                  Self::ConfusableCharacters => Self::ValidationFailed,
+  187:                 // Hide v2 type details (Phase 27)
+  188                  Self::InvalidAddressType(_) => Self::ValidationFailed,
+
+crates/z00z_wallets/src/core/backup/backup_exporter.rs:
+  17      ///
+  18:     /// Format v4 redacts this field in the public header. Older formats may
+  19      /// still expose the network for backward compatibility.
+
+crates/z00z_wallets/src/core/claim/claim_receipt.rs:
+  4  /// Domain separator for claim-receipt signatures.
+  5: pub const CLAIM_CTX: &[u8] = b"z00z.wallet.claim_receipt.v1";
+  6  /// Current claim-receipt schema version.
+
+crates/z00z_wallets/src/core/claim/nullifier.rs:
+  28          let mut h = blake3::Hasher::new();
+  29:         h.update(b"z00z.nullifier.state.v1");
+  30          h.update(&self.nullifier.0);
+
+  80      let mut h = blake3::Hasher::new();
+  81:     h.update(b"z00z.nullifier.derive.v1");
+  82
+
+crates/z00z_wallets/src/core/key/bip32_key_deriver.rs:
+   96          // Derive from parent by iterating through path
+   97:         // SAFETY: XPrv implements Zeroize (bip32 v0.4+), clones are zeroized on drop
+   98          let mut result = parent.clone();
+
+  135      ) -> Result<XPrv, Bip44Error> {
+  136:         // SAFETY: XPrv implements Zeroize (bip32 v0.4+), clones are zeroized on drop
+  137          let mut result = parent.clone();
+
+crates/z00z_wallets/src/core/key/key_manager_redb.rs:
+  1: //! RedB-SPEC.v4 wallet key manager (unified).
+  2  //!
+
+crates/z00z_wallets/src/core/key/seed_cipher_types.rs:
+  1: /// Encrypted seed container (format v1) with birthday metadata.
+  2  #[derive(Clone, PartialEq, Eq)]
+
+crates/z00z_wallets/src/core/key/stealth_keys.rs:
+  40  const SALT_LEN: usize = 32;
+  41: const ENC_AAD: &[u8] = b"z00z.wallet.stealth.receiver_secret.v1";
+  42  #[cfg(test)]
+
+crates/z00z_wallets/src/core/key/test_key_manager_redb_suite.rs:
+  18              .wrap_master_key(b"wallet-1", &SafePassword::from("pw"), &master_key, &params)
+  19:             .expect_err("v1 kdf must be rejected");
+  20
+
+  47              )
+  48:             .expect_err("v1 persisted params must be rejected");
+  49
+
+crates/z00z_wallets/src/core/key/test_seed_cipher_metadata_suite.rs:
+  315
+  316:         let aad_v1 = CipherSeedContainer::build_aad(wallet_id, purpose, birthday, chain).unwrap();
+  317:         let aad_v2 = build_aad_ver(2u8, wallet_id, purpose, birthday, chain);
+  318
+  319:         assert_ne!(aad_v1, aad_v2);
+  320
+  321:         let tag1 = &aad_v1[aad_v1.len() - 32..];
+  322:         let tag2 = &aad_v2[aad_v2.len() - 32..];
+  323          assert_ne!(tag1, tag2);
+
+crates/z00z_wallets/src/core/key/test_stealth_keys_suite.rs:
+  125      let secret = ReceiverSecret::from_test_bytes([8u8; 32]).expect("secret");
+  126:     let key_v0 = derive_rotated_view_secret_key(&secret, 0).expect("v0");
+  127:     let key_v1 = derive_rotated_view_secret_key(&secret, 1).expect("v1");
+  128
+  129:     assert_ne!(key_v0.as_bytes(), key_v1.as_bytes());
+  130
+  131:     let hash_v0 = hash_zk::<WalletViewKeyHashProdDomain>("VIEW_META", &[key_v0.as_bytes()]);
+  132:     let ver = make_view_key_version(1, Some(hash_v0));
+  133      assert_eq!(ver.version, 1);
+
+  150      let secret = ReceiverSecret::from_test_bytes([9u8; 32]).expect("secret");
+  151:     let k0 = derive_identity_secret_key(&secret, 0).expect("v0");
+  152:     let k1 = derive_identity_secret_key(&secret, 1).expect("v1");
+  153      assert_ne!(k0.as_bytes(), k1.as_bytes());
+
+crates/z00z_wallets/src/core/security/encryption.rs:
+  100
+  101: /// Encrypted wallet container format (V1).
+  102  ///
+
+crates/z00z_wallets/src/core/security/password.rs:
+  50          env!("CARGO_MANIFEST_DIR"),
+  51:         "/src/core/security/password_denylist_v1.bloom"
+  52      ));
+
+crates/z00z_wallets/src/core/stealth/facade_zkpack.rs:
+  13
+  14: /// Deterministic ZkPack v1 encrypt/decrypt facade.
+  15  pub struct ZkPack;
+
+crates/z00z_wallets/src/core/stealth/test_facade_zkpack_suite.rs:
+  392      let c_amount = [5u8; 32];
+  393:     let plain = b"z00z-pack-v1";
+  394
+
+  411      let c_amount = [25u8; 32];
+  412:     let plain = b"z00z-pack-v1";
+  413
+
+crates/z00z_wallets/src/core/storage/secret_store_impl.rs:
+  234          let mut path = std::env::temp_dir();
+  235:         path.push(format!("z00z_secret_store_{}.json", Uuid::new_v4()));
+  236          path
+
+crates/z00z_wallets/src/core/tx/claim_auth.rs:
+  21
+  22: pub(crate) const OWNER_ATTEST_CTX: &[u8] = b"z00z.claim.owner_attest.v1";
+  23  pub const CLAIM_AUTH_SIM_CHAIN_ID: u32 = 3;
+
+  38
+  39: /// Return the trusted claim authority public key for live claim_v2 verification.
+  40  pub fn claim_auth_pk() -> Z00ZRistrettoPoint {
+
+  68
+  69: /// Sign one canonical claim_v2 statement with the trusted claim authority key.
+  70  #[cfg(any(test, doctest, feature = "claim-auth-sign"))]
+
+crates/z00z_wallets/src/core/tx/claim_helpers.rs:
+  18      let mut h = blake3::Hasher::new();
+  19:     h.update(b"z00z.claim.digest.v1");
+  20      h.update(kind.as_bytes());
+
+  32      let mut h = blake3::Hasher::new();
+  33:     h.update(b"z00z.claim.scope.v1");
+  34
+
+  47      let mut h = blake3::Hasher::new();
+  48:     h.update(b"z00z.output.nonce.v1");
+  49      h.update(claim_id);
+
+crates/z00z_wallets/src/core/tx/claim_tx_helpers.rs:
+  14          pkg.chain_id,
+  15:         ClaimRootVer::V1.as_u8(),
+  16:         ClaimProofVer::V1.as_u8(),
+  17          CLAIM_PKG,
+
+  32
+  33: /// Build the canonical root-bound claim_v2 statement from one verified claim package.
+  34  pub fn build_claim_stmt(pkg: &ClaimTxPackage) -> Result<ClaimStmt, String> {
+
+crates/z00z_wallets/src/core/tx/claim_tx_verifier_impl_proof.rs:
+   49          let mut hash = blake3::Hasher::new();
+   50:         hash.update(b"z00z.claim.output_leaf.v1");
+   51          hash.update(&(leaf_bytes.len() as u32).to_le_bytes());
+
+   64          let mut hash = blake3::Hasher::new();
+   65:         hash.update(b"z00z.claim.owner_bind.v1");
+   66
+
+   92              return Err(ClaimTxError::SourceLeafCount(
+   93:                 "claim_v2 requires exactly one portable source leaf".to_string(),
+   94              ));
+
+  104              chain_id: pkg.chain_id,
+  105:             root_ver: ClaimRootVer::V1,
+  106:             proof_ver: ClaimProofVer::V1,
+  107              tx_ver: pkg.version,
+
+  162          }
+  163:         if proof.root_ver() != ClaimRootVer::V1 {
+  164              return Err(ClaimTxError::SourceRootVer(
+
+  167          }
+  168:         // The live storage-backed source-proof contract remains V1 even though
+  169          // the outer claim transport tag is CLAIM_SOURCE_PROOF_TAG.
+  170:         if proof.proof_ver() != ClaimProofVer::V1 {
+  171              return Err(ClaimTxError::SourceProofVer(
+
+crates/z00z_wallets/src/core/tx/claim_tx_verifier_impl.rs:
+  56              return Err(ClaimTxError::StructureMalformed(
+  57:                 "tx_type must be claim_tx_v1".to_string(),
+  58              ));
+
+crates/z00z_wallets/src/core/tx/claim_tx.rs:
+  128      let mut msg = Vec::with_capacity(64 + wallet.len() + leaf_bytes.len());
+  129:     msg.extend_from_slice(b"z00z.claim.owner_attest.msg.v1");
+  130      msg.extend_from_slice(&chain_id.to_le_bytes());
+
+crates/z00z_wallets/src/core/tx/claim_wire_types.rs:
+    5  pub(crate) const CLAIM_TX_PACKAGE_TYPE: &str = "claim_tx";
+    6: pub(crate) const CLAIM_TX_TYPE: &str = "claim_tx_v1";
+    7  // Outer transport tag only. The inner source-proof version stays governed by
+    8  // ClaimProofVer until a separate protocol migration changes that boundary.
+    9: pub(crate) const CLAIM_SOURCE_PROOF_TAG: &str = "claim_source";
+   10
+
+  101  pub struct ClaimProofWire {
+  102:     /// Proof type tag (`genesis_claim_v1` for Scenario-1).
+  103      pub proof_type: String,
+
+crates/z00z_wallets/src/core/tx/fee_estimator.rs:
+  273  /// Canonical fee-weight model version tag.
+  274: pub const FEE_WEIGHT_TAG: &str = "fee-weight-v1";
+  275  /// Base gas cost term.
+
+crates/z00z_wallets/src/core/tx/pay_ref.rs:
+   46  /// This constant is part of the on-wire contract.
+   47: pub const PAY_REF_DOMAIN: &str = "z00z.wallets.tx.pay_ref.v1";
+   48
+
+  327          assert_eq!(PAY_REF_SIZE, 32);
+  328:         assert_eq!(PAY_REF_DOMAIN, "z00z.wallets.tx.pay_ref.v1");
+  329      }
+
+crates/z00z_wallets/src/core/tx/prover.rs:
+  14  /// Domain-separation label for public spend authorization signatures.
+  15: pub const SPEND_AUTH_CTX: &[u8] = b"Z00Z/SPEND_AUTH_V1";
+  16
+
+crates/z00z_wallets/src/core/tx/spend_verification.rs:
+  258      let mut statement = Vec::new();
+  259:     statement.extend_from_slice(&frame_bytes(b"z00z.spend.public.v1"));
+  260      statement.extend_from_slice(&frame_bytes(SPEND_AUTH_CTX));
+
+crates/z00z_wallets/src/core/tx/test_claim_tx.rs:
+  119      let mut tx = ClaimTxWire {
+  120:         tx_type: "claim_tx_v1".to_string(),
+  121          inputs: vec![ClaimInputWire {
+
+  150          proof: ClaimProofWire {
+  151:             proof_type: "genesis_claim_v1".to_string(),
+  152              proof_hex: String::new(),
+
+  187
+  188:     pkg.tx.proof.proof_type = "claim_source".to_string();
+  189      pkg.tx.proof.proof_hex = hex::encode(proof.to_bytes().unwrap());
+
+  332      let proof = ClaimSourceProof::new(
+  333:         ClaimRootVer::V1,
+  334          [0x55u8; 32],
+  335:         ClaimProofVer::V1,
+  336          vec![9u8, 8, 7, 6],
+
+  466      let bad = ClaimSourceProof::new(
+  467:         ClaimRootVer::V2,
+  468          proof.source_root(),
+
+  530          proof.source_root(),
+  531:         ClaimProofVer::V2,
+  532          proof.proof_blob().to_vec(),
+
+  591      let proof = ClaimSourceProof::new(
+  592:         ClaimRootVer::V1,
+  593          [0x66u8; 32],
+  594:         ClaimProofVer::V1,
+  595          vec![4u8, 3, 2, 1],
+
+  638      let proof =
+  639:         ClaimSourceProof::new(ClaimRootVer::V1, [0u8; 32], ClaimProofVer::V1, vec![1u8]).unwrap();
+  640      pkg.tx.proof.proof_hex = hex::encode(proof.to_bytes().unwrap());
+
+crates/z00z_wallets/src/core/tx/test_fee_estimator_suite.rs:
+  123  fn test_model_constants_frozen() {
+  124:     assert_eq!(FEE_WEIGHT_TAG, "fee-weight-v1");
+  125      assert_eq!(BASE_TX_COST, 64);
+
+crates/z00z_wallets/src/core/tx/test_tx_verifier_suite.rs:
+  328          let mut hasher = blake3::Hasher::new();
+  329:         hasher.update(b"z00z.tx.pkg.digest.v1");
+  330          hasher.update(kind.as_bytes());
+
+crates/z00z_wallets/src/core/tx/tx_digest.rs:
+  18      let mut hasher = Hasher::new();
+  19:     hasher.update(b"z00z.tx.pkg.digest.v2.");
+  20      hasher.update(&frame_str(kind));
+
+crates/z00z_wallets/src/core/tx/tx_id.rs:
+   54  /// This constant is part of the on-disk contract.
+   55: pub const TX_ID_DOMAIN: &str = "z00z.wallets.tx_id.v1";
+   56
+
+  285      fn test_constants() {
+  286:         assert_eq!(TX_ID_DOMAIN, "z00z.wallets.tx_id.v1");
+  287      }
+
+crates/z00z_wallets/src/core/wallet/session.rs:
+  57          Self {
+  58:             token: Uuid::new_v4(),
+  59              created_at: now_ms,
+
+crates/z00z_wallets/src/db/redb_wallet_crypto.rs:
+    1: //! RedB-SPEC.v4 wallet crypto (key schedule + envelopes).
+    2  //!
+
+   66  /// previously created `.wlt` files unreadable.
+   67: pub const AAD_MASTER_KEY_LABEL: &[u8] = b"master-key:v1";
+   68  /// AEAD AAD prefix for secret records
+   69: pub const AAD_SECRET_PREFIX: &[u8] = b"secret:v1:";
+   70  /// Current persisted secret-AAD format version.
+
+  143
+  144:     /// Default RedB-SPEC.v4-ish Argon2id parameters.
+  145      ///
+
+  261
+  262:     /// Enhanced RedB-SPEC.v4-ish Argon2id parameters (V2).
+  263      ///
+
+crates/z00z_wallets/src/db/redb_wallet_store.rs:
+  141  // Index key encoding format version marker.
+  142: // v2: HMAC-SHA256 (current)
+  143  const INDEX_FORMAT_VERSION_HMAC: u32 = 2;
+
+crates/z00z_wallets/src/db/schema_keys.rs:
+  33  ///
+  34: /// v1: older RedB HKDF info hash with empty input.
+  35: /// v2: RedB HKDF info hash with explicit non-empty context bytes.
+  36  pub const META_HKDF_INFO_VERSION: &str = "wallet.hkdf_info_version";
+
+  38  // Integrity record (Task 3.5)
+  39: /// Wallet integrity record key (v1).
+  40: pub const META_WALLET_INTEGRITY: &str = "wallet.integrity.v1";
+  41
+
+crates/z00z_wallets/src/db/test_redb_wallet_crypto_suite.rs:
+  38
+  39:     assert_eq!(AAD_MASTER_KEY_LABEL, b"master-key:v1");
+  40:     assert_eq!(AAD_SECRET_PREFIX, b"secret:v1:");
+  41  }
+
+crates/z00z_wallets/src/services/chain_service.rs:
+  144              params.wallet_id.0,
+  145:             uuid::Uuid::new_v4()
+  146                  .to_string()
+
+crates/z00z_wallets/src/services/wallet_service_actions_receiver.rs:
+  50          let mut bytes = z00z_crypto::hash::poseidon2_hash(
+  51:             b"z00z.wallet.receiver_secret.v1",
+  52              &[wallet_id.0.as_bytes(), seed],
+
+  66                      bytes = z00z_crypto::hash::poseidon2_hash(
+  67:                         b"z00z.wallet.receiver_secret.retry.v1",
+  68                          &[wallet_id.0.as_bytes(), seed, &retry_bytes, &bytes],
+
+crates/z00z_wallets/src/services/wallet_service_actions_runtime.rs:
+  148          let mut bytes = z00z_crypto::hash::poseidon2_hash(
+  149:             b"z00z.wallet.receiver_secret.v1",
+  150              &[wallet_id.0.as_bytes(), seed],
+
+  164                      bytes = z00z_crypto::hash::poseidon2_hash(
+  165:                         b"z00z.wallet.receiver_secret.retry.v1",
+  166                          &[wallet_id.0.as_bytes(), seed, &retry_bytes, &bytes],
+
+crates/z00z_wallets/src/wasm/schema_keys.rs:
+  17  // Integrity record (Task 3.5)
+  18: pub const META_WALLET_INTEGRITY: &str = "wallet.integrity.v1";
+  19
+
+crates/z00z_wallets/tests/test_app_service_create_wallet.rs:
+  100              "alice".to_string(),
+  101:             "M7$kqV9!tP4xZ2nL".to_string(),
+  102              Some(TEST_SEED_PHRASE_24.to_string()),
+
+  111      let identity = default_identity();
+  112:     let safe_password = SafePassword::from("M7$kqV9!tP4xZ2nL");
+  113      let _session = z00z_wallets::db::open_wallet_store(
+
+crates/z00z_wallets/tests/test_receiver_secret_validation.rs:
+  7
+  8: const ENC_AAD: &[u8] = b"z00z.wallet.stealth.receiver_secret.v1";
+  9  const SEC_VER_1: u8 = 1;
+
+crates/z00z_wallets/tests/test_redb_wlt_open.rs:
+   99  #[test]
+  100: fn test_open_rejects_v1_kdf() {
+  101      let dir = tempfile::tempdir().unwrap();
+
+  109
+  110:     // Rewrite the wallet metadata to advertise a V1 KDF contract.
+  111      // Open must now fail closed instead of trying any compatibility migration lane.
+
+  133
+  134:         let mut v1_kdf = kdf.clone();
+  135:         v1_kdf.version = 1;
+  136:         let mut v1_record = record.clone();
+  137:         v1_record.kdf_params.as_mut().unwrap().version = 1;
+  138
+  139:         let v1_kdf_blob = codec.serialize(&v1_kdf).unwrap();
+  140:         let v1_record_blob = codec.serialize(&v1_record).unwrap();
+  141
+
+  144              let mut meta = write_txn.open_table(META_TABLE).unwrap();
+  145:             meta.insert(META_WALLET_KDF, v1_kdf_blob.as_slice())
+  146                  .unwrap();
+
+  149              secrets
+  150:                 .insert(SECRETS_MASTER_KEY, v1_record_blob.as_slice())
+  151                  .unwrap();
+
+crates/z00z_wallets/tests/test_serial_leaf_ad.rs:
+  108
+  109:     assert_eq!(vectors.spec_version, "4.7.4.3-v1");
+  110      assert!(vectors.vectors.len() >= 3, "need at least 3 golden vectors");
+
+crates/z00z_wallets/tests/test_stealth_kdf_vectors.rs:
+  45      let file: StealthKdfVecFile = codec.deserialize(yaml_text.as_bytes()).expect("parse yaml");
+  46:     assert_eq!(file.spec_version, "stealth-kdf-v1");
+  47      file.vectors
+
+crates/z00z_wallets/tests/test_stealth_request.rs:
+  433      let mut keys = make_keys();
+  434:     let card_v0 = keys.export_receiver_card().expect("card v0");
+  435
+  436      let mut pins = PinnedReceiverCards::new();
+  437:     let first = pins.verify_or_pin(&card_v0, None).expect("first pin");
+  438      assert!(matches!(first, VerifyResult::NewPin));
+  439
+  440:     let card_v1 = keys.rotate_view().expect("rotate view");
+  441
+  442:     let changed = pins.verify_or_pin(&card_v1, None).expect("changed");
+  443      match changed {
+
+  448          } => {
+  449:             assert_eq!(old_pk, card_v0.view_pk);
+  450:             assert_eq!(new_pk, card_v1.view_pk);
+  451              assert!(requires_confirmation);
+
+  455
+  456:     let declined = pins.verify_or_pin(&card_v1, None).expect("declined path");
+  457      assert!(matches!(declined, VerifyResult::ViewKeyChanged { .. }));
+  458
+  459:     pins.confirm_rotation(&card_v1.owner_handle, &card_v1.view_pk);
+  460:     let accepted = pins.verify_or_pin(&card_v1, None).expect("accepted");
+  461      assert!(matches!(accepted, VerifyResult::Verified));
+  462:     let pin = pins.get(&card_v1.owner_handle).expect("pin entry");
+  463:     assert_eq!(pin.view_pk, card_v1.view_pk);
+  464  }
+
+crates/z00z_wallets/tests/test_stealth_scanner_flow.rs:
+  117
+  118:     let card_v0 = make_card(&old_keys);
+  119:     let card_v1 = rotated_keys.rotate_view().expect("rotate view");
+  120
+  121:     assert_eq!(card_v0.owner_handle, card_v1.owner_handle);
+  122:     assert_ne!(card_v0.view_pk, card_v1.view_pk);
+  123
+
+  125      let asset_id = [0x11; 32];
+  126:     let outputs_v0 = build_outputs(
+  127:         &card_v0,
+  128          &mut sender_wallet,
+
+  133      );
+  134:     let outputs_v1 = build_outputs(
+  135:         &card_v1,
+  136          &mut sender_wallet,
+
+  144      let new_scan = StealthOutputScanner::from_keys(&rotated_keys);
+  145:     let old_hits = count_mine_hits(&old_scan, &outputs_v0, 1_000, asset_id, 0);
+  146:     let new_hits = count_mine_hits(&new_scan, &outputs_v1, 2_000, asset_id, 5);
+  147:     let new_on_old = count_mine_hits(&new_scan, &outputs_v0, 1_000, asset_id, 0);
+  148:     let old_on_new = count_mine_hits(&old_scan, &outputs_v1, 2_000, asset_id, 5);
+  149
+  150:     assert_eq!(old_hits, 5, "v0 key must scan all v0 outputs");
+  151:     assert_eq!(new_hits, 5, "v1 key must scan all v1 outputs");
+  152      assert_eq!(
+
+  155      );
+  156:     assert_eq!(old_on_new, 0, "old key must not scan v1 outputs");
+  157  }
+
+crates/z00z_wallets/tests/test_tx_digest_framing.rs:
+  47      let mut hasher = Hasher::new();
+  48:     hasher.update(b"z00z.tx.pkg.digest.v1");
+  49      hasher.update(kind.as_bytes());
+
+crates/z00z_wallets/tests/test_tx_fee.rs:
+  232
+  233:     assert_eq!(FEE_WEIGHT_TAG, "fee-weight-v1");
+  234      assert_eq!(BASE_TX_COST, 64);
+
+  242      let mut log = String::from("E2E-08 fee table\n");
+  243:     log.push_str("constants=fee-weight-v1,64,96,900,1\n");
+  244
+
+crates/z00z_wallets/tests/support/test_s5_sender_examples_support.rs:
+   32      let mut tx = ClaimTxWire {
+   33:         tx_type: "claim_tx_v1".to_string(),
+   34          inputs: vec![ClaimInputWire {
+
+   65          proof: ClaimProofWire {
+   66:             proof_type: "genesis_claim_v1".to_string(),
+   67              proof_hex: String::new(),
+
+  131
+  132:     pkg.tx.proof.proof_type = "claim_source".to_string();
+  133      pkg.tx.proof.proof_hex = hex::encode(proof.to_bytes().expect("proof bytes"));

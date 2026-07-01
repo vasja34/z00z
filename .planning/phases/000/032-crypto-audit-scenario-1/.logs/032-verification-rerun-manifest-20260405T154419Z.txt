@@ -1,0 +1,9 @@
+=== 032-simulator-release-rerun ===
+CMD: cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump
+LOG: .planning/phases/032-crypto-audit-scenario-1/.logs/032-simulator-release-rerun.log
+RESULT: PASS
+
+=== 032-workspace-release ===
+CMD: cargo test --release --features test-fast --features wallet_debug_dump
+LOG: .planning/phases/032-crypto-audit-scenario-1/.logs/032-workspace-release.log
+RESULT: PASS

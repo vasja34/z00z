@@ -1,0 +1,145 @@
+use super::*;
+
+#[test]
+fn test_domain_separation_changes_output() {
+    let first = blake2b_256("d1", "l", &[b"x"]);
+    let second = blake2b_256("d2", "l", &[b"x"]);
+    assert_ne!(first, second);
+
+    let third = blake2b_256("d1", "l1", &[b"x"]);
+    let fourth = blake2b_256("d1", "l2", &[b"x"]);
+    assert_ne!(third, fourth);
+}
+
+#[test]
+fn test_sha256_blake2b_are_deterministic() {
+    let x1 = sha256_256("d", "l", &[b"x", b"y"]);
+    let x2 = sha256_256("d", "l", &[b"x", b"y"]);
+    assert_eq!(x1, x2);
+
+    let y1 = blake2b_512("d", "l", &[b"x", b"y"]);
+    let y2 = blake2b_512("d", "l", &[b"x", b"y"]);
+    assert_eq!(y1, y2);
+}
+
+#[test]
+fn test_hmac_sha_256_works() {
+    let key = b"secret";
+    let msg = b"hello";
+    let first = hmac_sha256(key, "auth", "v1", msg);
+    let second = hmac_sha256(key, "auth", "v1", msg);
+    assert_eq!(first, second);
+
+    let third = hmac_sha256(key, "auth", "v1", b"hello2");
+    assert_ne!(first, third);
+}
+
+#[test]
+fn test_domain_raw_hmac_deterministic() {
+    let key = b"secret";
+    let msg = b"hello";
+
+    let first = hmac_sha256_raw(key, msg);
+    let second = hmac_sha256_raw(key, msg);
+    assert_eq!(first, second);
+
+    let third = hmac_sha256(key, "wallet.index", "v1", msg);
+    assert_ne!(first, third);
+}
+
+#[test]
+fn test_length_prefixing_prevents_confusion() {
+    let hash1 = blake2b_256("domain", "label", &[b"hello", b"world"]);
+    let hash2 = blake2b_256("domain", "label", &[b"helloworld"]);
+    assert_ne!(hash1, hash2);
+}
+
+#[test]
+fn test_hmac_key_conditioning() {
+    let long_key = [0x42u8; 100];
+    let msg = b"test";
+    let first = hmac_sha256(&long_key, "test", "v1", msg);
+    let second = hmac_sha256(&long_key, "test", "v1", msg);
+    assert_eq!(first, second);
+}
+
+#[test]
+fn test_empty_parts() {
+    let hash = blake2b_256("domain", "label", &[]);
+    assert_eq!(hash.len(), 32);
+}
+
+#[test]
+fn test_large_data() {
+    let large_data = vec![0x42u8; 10000];
+    let hash = blake2b_512("domain", "label", &[&large_data]);
+    assert_eq!(hash.len(), 64);
+}
+
+#[test]
+fn test_benchmark_blake2b256_small() {
+    let start = std::time::Instant::now();
+    for _ in 0..10000 {
+        let _ = blake2b_256("test.domain", "label", &[b"small"]);
+    }
+    let elapsed = start.elapsed();
+    assert!(elapsed.as_millis() < 1000, "Performance issue");
+}
+
+#[test]
+fn test_benchmark_blake2b512_medium() {
+    let data = vec![0x42u8; 1024];
+    let start = std::time::Instant::now();
+    for _ in 0..1000 {
+        let _ = blake2b_512("test.domain", "label", &[&data]);
+    }
+    let elapsed = start.elapsed();
+    assert!(elapsed.as_millis() < 1000, "Performance issue");
+}
+
+#[test]
+fn test_benchmark_hmac_sha256() {
+    let key = b"secret-key-32-bytes-long";
+    let msg = b"message";
+    let start = std::time::Instant::now();
+    for _ in 0..1000 {
+        let _ = hmac_sha256(key, "test.domain", "v1", msg);
+    }
+    let elapsed = start.elapsed();
+    assert!(elapsed.as_millis() < 1000, "Performance issue");
+}
+
+#[test]
+fn test_domain_separation_consistency() {
+    let domain = "wallet.keys";
+    let label = "derive";
+    let parts: &[&[u8]] = &[b"master", &1u64.to_le_bytes()];
+
+    let hash1 = blake2b_256(domain, label, parts);
+    let hash2 = blake2b_256(domain, label, parts);
+    assert_eq!(hash1, hash2);
+
+    let hash3 = blake2b_512(domain, label, parts);
+    let hash4 = blake2b_512(domain, label, parts);
+    assert_eq!(hash3, hash4);
+
+    let hash5 = sha256_256(domain, label, parts);
+    let hash6 = sha256_256(domain, label, parts);
+    assert_eq!(hash5, hash6);
+}
+
+#[test]
+fn test_cross_function_uniqueness() {
+    let domain = "test";
+    let label = "label";
+    let parts: &[&[u8]] = &[b"data"];
+
+    let blake256 = blake2b_256(domain, label, parts);
+    let blake512 = blake2b_512(domain, label, parts);
+    let sha256 = sha256_256(domain, label, parts);
+
+    assert_eq!(blake256.len(), 32);
+    assert_eq!(blake512.len(), 64);
+    assert_eq!(sha256.len(), 32);
+    assert_ne!(blake256.to_vec(), sha256.to_vec());
+}

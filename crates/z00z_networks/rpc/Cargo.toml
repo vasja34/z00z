@@ -1,0 +1,83 @@
+[package]
+name = "z00z_networks_rpc"
+version = "0.1.0"
+edition = "2021"
+authors = ["Z00Z Development Team"]
+description = "Generic RPC transport layer for Z00Z network protocols"
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"] # Support both WASM and native
+doctest = false
+
+# ============================================================================
+# Base Dependencies (Native + WASM)
+# ============================================================================
+
+[dependencies]
+# Async runtime
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "2.0"
+
+# Shared codec and transport value surface.
+[dependencies.z00z_utils]
+path = "../../z00z_utils"
+
+# ============================================================================
+# Native-Only Dependencies
+# ============================================================================
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Full tokio for native
+tokio = { version = "1", features = ["full"] }
+
+# JSON-RPC with full features
+jsonrpsee = { version = "0.26", features = ["server", "client", "macros"] }
+
+# Logging
+tracing = "0.1"
+
+# ============================================================================
+# WASM-Specific Dependencies
+# ============================================================================
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# Minimal tokio for WASM (no I/O, no mio, no net)
+tokio = { version = "1", default-features = false, features = [
+  "sync",
+  "macros",
+  "rt",
+] }
+
+# JSON-RPC with WASM client only
+jsonrpsee = { version = "0.26", default-features = false, features = [
+  "wasm-client",
+] }
+
+# WASM bindings
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["MessageEvent", "WebSocket"] }
+js-sys = "0.3"
+
+# WASM-compatible RNG
+getrandom = { version = "0.3", features = ["wasm_js"] }
+
+# WASM testing
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+# ============================================================================
+# Features
+# ============================================================================
+
+[features]
+default = []
+# Reserved feature gate for transport-local logger integrations.
+logger = []

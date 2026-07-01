@@ -1,0 +1,33 @@
+{
+  "projectName": "Z00Z Crates Workspace",
+  "projectDescription": "Crates-scoped graph for Z00Z workspace",
+  "filesAnalyzed": 1079,
+  "categoryCounts": {
+    "code": 910,
+    "config": 56,
+    "docs": 105,
+    "infra": 0,
+    "data": 0,
+    "script": 8,
+    "markup": 0
+  },
+  "nodeTypes": {
+    "config": 56,
+    "document": 105,
+    "file": 918
+  },
+  "edgeTypes": {
+    "imports": 1228
+  },
+  "layers": [
+    "Core",
+    "External Services",
+    "Configuration Layer",
+    "Data Layer",
+    "Service Layer"
+  ],
+  "tourSteps": 6,
+  "warnings": [],
+  "issues": [],
+  "output": "/home/vadim/Projects/z00z/crates/.understand-anything/knowledge-graph.json"
+}

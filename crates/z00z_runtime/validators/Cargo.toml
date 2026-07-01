@@ -1,0 +1,21 @@
+
+[package]
+name = "z00z_validators"
+version = "0.2.0"
+edition = "2021"
+license = "MIT OR BSD-3-Clause"
+
+[lib]
+doctest = false
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
+
+[dependencies]
+z00z_aggregators = { path = "../aggregators" }
+z00z_core = { path = "../../z00z_core" }
+z00z_storage = { path = "../../z00z_storage" }
+z00z_utils = { path = "../../z00z_utils" }
+z00z_wallets = { path = "../../z00z_wallets" }
+hex = "0.4"
+thiserror = { workspace = true }

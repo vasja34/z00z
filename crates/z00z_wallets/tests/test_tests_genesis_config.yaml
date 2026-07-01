@@ -1,0 +1,105 @@
+# Z00Z Genesis Configuration - Wallets Tests
+# COPY of devnet config with reduced serials for faster testing
+#
+# Version: 1.3.0
+# Date: 2025-11-26
+# Network: devnet (test subset)
+
+version: 1
+
+assets:
+  - id: z00z
+    symbol: Z00Z
+    class: Coin
+    name: "Z00Z Native Asset"
+    description: "Native confidential asset"
+    policy:
+      allow_burn: false
+      decimals: 8
+      serials: 10  # REDUCED from 100 for testing
+      nominal: 20000 # 2,000.00 Z00Z per serial
+      is_gas: true
+      domain_name: "z00z.core.assets.native_coin.devnet"
+    metadata: {}
+    # total supply = 10 * 20,000 = 200,000 units (test)
+
+  - id: zUSD
+    symbol: zUSD
+    class: Token
+    name: "Z00Z USD Stable Asset"
+    description: "Confidential USD-pegged asset"
+    policy:
+      allow_burn: true
+      decimals: 6
+      serials: 10  # REDUCED from 100 for testing
+      nominal: 100000
+      domain_name: "zUSD_token_devnet_v1"
+    metadata: {}
+    # total supply = 10 * 100,000 = 1,000,000 zUSD (test)
+
+  - id: zNFT
+    symbol: zNFT
+    class: Nft
+    name: "Z00Z Event Ticket"
+    description: "NFT event ticket"
+    policy:
+      allow_burn: true
+      decimals: 0
+      serials: 10  # REDUCED from 1000 for testing
+      nominal: 1
+      domain_name: "zNFT_nft_devnet_v1"
+    metadata: {}
+    # total supply = 10 unique NFTs (test)
+
+  - id: zBurnSink
+    symbol: zBurnSink
+    class: Void
+    name: "Burn Sink"
+    description: "Special void asset for burning assets"
+    policy:
+      allow_burn: true
+      decimals: 0
+      serials: 10  # REDUCED from 1000 for testing
+      nominal: 0
+      domain_name: "zBurnSink_void_devnet_v1"
+    metadata: {}
+    # total supply = 10 void assets (test)
+
+network:
+  id: 3  # 3=devnet
+  type: devnet
+  chain: "z00z-devnet-1"
+  magic_bytes: [0x5A, 0x30, 0x30, 0x44]  # "Z00D" in hex (devnet)
+  
+  # Security Considerations:
+  # - Genesis seed is PUBLIC (anyone can regenerate genesis state)
+  # - Genesis blinding factors are DERIVED deterministically (not configurable)
+  # - Range proof seeds can be public (proofs are zero-knowledge)
+  #
+  # Blinding Factor Security Model:
+  # This ensures:
+  # - Reproducibility: Same seed → same genesis state (consensus critical)
+  # - Independence: Each asset has unique, collision-resistant blinding
+  # - Confidentiality: Values remain hidden due to discrete log hardness
+  # Note: Genesis reproducibility requires blinding derivation, not random generation
+  domains:
+    # Genesis Seed: Publicly verifiable constant (committed in protocol spec)
+    # From Blake2b(b"z00z_core/genesis/seed" || devnet)
+    genesis_seed: [0xd8, 0xe5, 0x0d, 0x1f, 0xec, 0x1b, 0x05, 0x5c, 
+                   0x64, 0xb2, 0x64, 0x3a, 0x41, 0x6c, 0x3f, 0x34, 
+                   0x61, 0x94, 0xfb, 0x61, 0x3b, 0xd8, 0x88, 0x6e, 
+                   0x86, 0xf3, 0xed, 0xaf, 0x0a, 0x9b, 0x00, 0xb7]
+
+outputs:
+  assets_export_path: "crates/z00z_wallets/outputs/assets/"
+  snapshot_export_path: "crates/z00z_wallets/outputs/assets/"
+  logging_path: "crates/z00z_wallets/outputs/log/"
+
+performance:
+  num_threads: auto
+
+metadata:
+  schema_version: 1
+  last_updated: "2025-12-11"
+  compatible_with: ["z00z_core >= 0.1.0"]
+  description: "Test subset of devnet config with 10 serials per asset type"

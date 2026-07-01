@@ -1,0 +1,31 @@
+[package]
+name = "z00z_crypto-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.z00z_crypto]
+path = ".."
+features = ["test-params-fast"]
+
+[[bin]]
+name = "fuzz_from_bytes"
+path = "fuzz_targets/fuzz_from_bytes.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_take_32"
+path = "fuzz_targets/fuzz_take_32.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]

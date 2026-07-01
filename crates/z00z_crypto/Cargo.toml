@@ -1,0 +1,100 @@
+[package]
+name = "z00z_crypto"
+description = "Z00Z Cryptography library"
+authors = ["The Tari Development Community"]
+repository = "https://github.com/z00z-project/z00z"
+categories = ["cryptography"]
+homepage = "https://z00z.io"
+readme = "src/README.md"
+license = "BSD-3-Clause"
+version = "0.22.1"
+edition = "2018"
+
+[lib]
+path = "src/lib.rs"
+doctest = false
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(z00z_formal_no_serde)'] }
+
+[dependencies]
+blake2 = "0.10"
+once_cell = "1.19"
+thiserror = "2.0"
+serde = { version = "1.0", features = ["derive"] }
+bech32 = "0.9"
+unicode-normalization = "0.1"
+tari_crypto = { path = "./tari/crypto", features = ["std", "serde"] }
+tari_bulletproofs_plus = { path = "./tari/bulletproofs_plus", features = [
+  "std",
+] }
+# Note: tari_utilities is re-exported through tari_crypto
+chacha20poly1305 = { version = "0.10", features = ["std"] }
+bip39 = { version = "2.2.2", features = ["all-languages"] }
+hkdf = "0.12"
+sha2 = "0.10"
+hmac = "0.12"
+bip32 = { version = "0.5", features = ["secp256k1"] }
+argon2 = "0.5"
+zeroize = { version = "1.7", features = ["derive"] }
+subtle = "2.5"
+p3-field = "0.4.2"
+p3-goldilocks = "0.4.2"
+p3-poseidon2 = "0.4.2"
+p3-symmetric = "0.4.2"
+rand = "0.8"
+z00z_utils = { path = "../z00z_utils" }
+
+[target.'cfg(not(target_arch="wasm32"))'.dependencies]
+getrandom = { version = "0.2" }
+
+[dev-dependencies]
+rand = "0.8"
+hex-literal = "0.4"
+z00z_utils = { path = "../z00z_utils", features = ["test-utils"] }
+
+[target.'cfg(not(target_arch="wasm32"))'.dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "hash_policy_bench"
+harness = false
+
+[[bench]]
+name = "range_proof_bench"
+harness = false
+
+[[bench]]
+name = "crypto_bench"
+harness = false
+
+[[test]]
+name = "test_hash_policy"
+path = "tests/test_hash_policy.rs"
+
+[[test]]
+name = "test_h2scalar"
+path = "tests/test_h2scalar.rs"
+
+[[test]]
+name = "test_pedersen"
+path = "tests/test_pedersen.rs"
+
+[[test]]
+name = "test_bulletproofs"
+path = "tests/test_bulletproofs.rs"
+
+[[test]]
+name = "test_perf"
+path = "tests/test_perf.rs"
+
+[features]
+default = ["std"]
+std = []
+test-utils = []
+test-params-fast = []    # Use faster crypto parameters for tests
+logging = []             # Enable warning logs via z00z_utils::logger
+experimental-zkpack = []
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# WASM-compatible RNG - enable js feature for getrandom 0.2 (used by tari_crypto)
+getrandom = { version = "0.2", features = ["js"] }

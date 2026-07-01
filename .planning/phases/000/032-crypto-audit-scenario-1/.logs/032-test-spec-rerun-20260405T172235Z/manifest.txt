@@ -1,0 +1,103 @@
+STAMP=20260405T172235Z
+LOG_DIR=.planning/phases/032-crypto-audit-scenario-1/.logs/032-test-spec-rerun-20260405T172235Z
+
+CMD[01]=cargo test -p z00z_wallets --release --features test-fast --test test_scenario1_semantics -- --nocapture
+RESULT[01]=PASS
+
+CMD[02]=cargo test -p z00z_crypto --release --test test_claim_v2_contract -- --nocapture
+RESULT[02]=PASS
+
+CMD[03]=cargo test -p z00z_storage --release --test test_claim_source_proof -- --nocapture
+RESULT[03]=PASS
+
+CMD[04]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_claim_pkg_crypto_support -- --nocapture
+RESULT[04]=PASS
+
+CMD[05]=cargo test -p z00z_wallets --release --features test-fast --test test_spend_witness_gate -- --nocapture
+RESULT[05]=PASS
+
+CMD[06]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_scenario1_spend_gate -- --nocapture
+RESULT[06]=PASS
+
+CMD[07]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_checkpoint_acceptance -- --nocapture
+RESULT[07]=FAIL
+[INFO]  stage3.start: stage=3 mode=uniform_all rng=mock:42 consume_bins=false
+[INFO]  stage3.mode_notice: NOT_CONSENSUS_PATH wallet_only_intermediate
+[INFO]  stage3.bins_loaded: count=80
+[INFO]  stage.done: id=2, name=wallet_create, result=ok
+[INFO]  stage3.start: stage=3 mode=uniform_all rng=mock:42 consume_bins=false
+[INFO]  stage3.mode_notice: NOT_CONSENSUS_PATH wallet_only_intermediate
+[INFO]  stage3.bins_loaded: count=80
+[INFO]  stage3.actor_claim: actor=alice assets=27 total=110008
+[INFO]  stage3.actor_claim: actor=alice assets=27 total=110008
+[INFO]  stage3.actor_claim: actor=bob assets=27 total=150006
+[INFO]  stage3.actor_claim: actor=bob assets=27 total=150006
+[INFO]  stage3.actor_claim: actor=charlie assets=26 total=140006
+[INFO]  stage3.actor_claim: actor=charlie assets=26 total=140006
+[INFO]  stage3.claim_pkg_written: file=/tmp/.tmp9dmyLV/src/scenario_1/outputs/claim/tx_claim_pkg.json count=60
+[INFO]  stage3.artifacts_written: total_distributed=80
+[INFO]  stage3.event_emitted: events/claim_genesis.event.json
+[INFO]  stage3.actor_import: actor_id=alice claimed_count=27 skipped_count=0 conflict_count=0
+[INFO]  stage3.actor_import: actor_id=bob claimed_count=27 skipped_count=0 conflict_count=0
+[INFO]  stage3.actor_import: actor_id=charlie claimed_count=26 skipped_count=0 conflict_count=0
+[INFO]  stage3.wallets_updated: wallet.asset.import_asset completed
+[INFO]  stage3.claim_pkg_written: file=/tmp/.tmpYT3Nh4/src/scenario_1/outputs/claim/tx_claim_pkg.json count=60
+[INFO]  stage3.artifacts_written: total_distributed=80
+[INFO]  stage3.event_emitted: events/claim_genesis.event.json
+[INFO]  stage3.debug_dump: actor=alice path=/tmp/.tmp9dmyLV/src/scenario_1/outputs/claim/export_wallet_debug_alice.json
+[INFO]  stage3.debug_dump: actor=bob path=/tmp/.tmp9dmyLV/src/scenario_1/outputs/claim/export_wallet_debug_bob.json
+[INFO]  stage3.debug_dump: actor=charlie path=/tmp/.tmp9dmyLV/src/scenario_1/outputs/claim/export_wallet_debug_charlie.json
+[INFO]  stage3.debug_dumps_written: outputs/claim/export_wallet_debug_*.json
+[INFO]  stage3.audit_written: file=claim/audit_log.json rows=80
+[INFO]  stage3.done: stage=3 distributed=80
+[INFO]  stage.done: id=3, name=claim_prepare, result=ok
+[INFO]  stage3.actor_import: actor_id=alice claimed_count=27 skipped_count=0 conflict_count=0
+[INFO]  stage3.actor_import: actor_id=bob claimed_count=27 skipped_count=0 conflict_count=0
+[INFO]  stage3.actor_import: actor_id=charlie claimed_count=26 skipped_count=0 conflict_count=0
+[INFO]  stage3.wallets_updated: wallet.asset.import_asset completed
+[INFO]  stage3.debug_dump: actor=alice path=/tmp/.tmpYT3Nh4/src/scenario_1/outputs/claim/export_wallet_debug_alice.json
+[INFO]  stage3.debug_dump: actor=bob path=/tmp/.tmpYT3Nh4/src/scenario_1/outputs/claim/export_wallet_debug_bob.json
+[INFO]  stage3.debug_dump: actor=charlie path=/tmp/.tmpYT3Nh4/src/scenario_1/outputs/claim/export_wallet_debug_charlie.json
+[INFO]  stage3.debug_dumps_written: outputs/claim/export_wallet_debug_*.json
+[INFO]  stage3.audit_written: file=claim/audit_log.json rows=80
+[INFO]  stage3.done: stage=3 distributed=80
+[INFO]  stage.done: id=3, name=claim_prepare, result=ok
+[INFO]  stage4.claim_pub_done: file=/tmp/.tmp9dmyLV/src/scenario_1/outputs/claim/claim_store_pub.json packages=60 inserted=60
+[INFO]  stage.done: id=4, name=claim_publish, result=ok
+[INFO]  stage4.inputs_diag: selected=4 distinct=4 with_stealth=4 with_secret=0
+[INFO]  stage4.claim_pub_done: file=/tmp/.tmpYT3Nh4/src/scenario_1/outputs/claim/claim_store_pub.json packages=60 inserted=60
+[INFO]  stage.done: id=4, name=claim_publish, result=ok
+[INFO]  stage.done: id=5, name=tx_plan, result=ok
+[INFO]  stage4.inputs_diag: selected=4 distinct=4 with_stealth=4 with_secret=0
+[INFO]  stage.done: id=5, name=tx_plan, result=ok
+[INFO]  stage4.inputs_diag: selected=4 distinct=4 with_stealth=4 with_secret=0
+[INFO]  stage.done: id=6, name=tx_prepare, result=ok
+[INFO]  stage.done: id=7, name=transfer_receive, result=ok
+[INFO]  stage.done: id=8, name=transfer_claim, result=ok
+[INFO]  stage.done: id=9, name=bundle_build, result=ok
+[INFO]  stage.done: id=10, name=bundle_publish, result=ok
+[INFO]  stage4.inputs_diag: selected=4 distinct=4 with_stealth=4 with_secret=0
+[INFO]  stage.done: id=6, name=tx_prepare, result=ok
+[INFO]  stage.done: id=7, name=transfer_receive, result=ok
+[INFO]  stage.done: id=8, name=transfer_claim, result=ok
+[INFO]  stage.done: id=9, name=bundle_build, result=ok
+[INFO]  stage.done: id=10, name=bundle_publish, result=ok
+test stage11_rejects_pkg_proof_tamper ... FAILED
+test stage11_apply_rejects_tampered_exec_input_row ... ok
+[INFO]  stage.done: id=11, name=checkpoint_apply_storage, result=ok
+[INFO]  stage.done: id=12, name=checkpoint_finalize, result=ok
+[INFO]  scenario_1.done: scenario_id=1, stage_count=12
+test checkpoint_roundtrip_matches_exec_proof_across_storage_surfaces ... ok
+[INFO]  stage.done: id=11, name=checkpoint_apply_storage, result=ok
+[INFO]  stage.done: id=12, name=checkpoint_finalize, result=ok
+[INFO]  scenario_1.done: scenario_id=1, stage_count=12
+test post_tx_link_reload_rejects_replayed_exec_input_row ... ok
+
+failures:
+
+failures:
+    stage11_rejects_pkg_proof_tamper
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.19s
+
+error: test failed, to rerun pass `-p z00z_simulator --test test_checkpoint_acceptance`

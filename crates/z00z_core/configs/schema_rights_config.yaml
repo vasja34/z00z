@@ -1,0 +1,114 @@
+$schema: http://json-schema.org/draft-07/schema#
+title: Z00Z Rights Config YAML Schema
+description: 'Standalone schema for canonical rights catalog YAML files.
+
+  '
+allOf:
+- $ref: '#/definitions/rights_catalog'
+definitions:
+  non_empty_string:
+    type: string
+    minLength: 1
+  underscore_name_value:
+    type: string
+    pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+  domain_name_value:
+    type: string
+    pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*(?:\.[a-z0-9]+(?:_[a-z0-9]+)*)+$
+  metadata_string_map:
+    type: object
+    propertyNames:
+      minLength: 1
+    additionalProperties:
+      $ref: '#/definitions/non_empty_string'
+  right_class:
+    type: string
+    enum:
+    - machine_capability
+    - data_access
+    - service_entitlement
+    - validator_mandate
+    - one_time_use
+  rights_entry:
+    type: object
+    required:
+    - id
+    - right_class
+    - issuer_scope
+    - provider_scope
+    - holder_fixture
+    - control_fixture
+    - count
+    - domain_name
+    - valid_from
+    - valid_until
+    - revocation_policy_id
+    - transition_policy_id
+    - challenge_policy_id
+    - disclosure_policy_id
+    - retention_policy_id
+    - payload_commitment_seed
+    - metadata
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/definitions/underscore_name_value'
+      right_class:
+        $ref: '#/definitions/right_class'
+      issuer_scope:
+        $ref: '#/definitions/underscore_name_value'
+      provider_scope:
+        $ref: '#/definitions/underscore_name_value'
+      holder_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      control_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      beneficiary_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      count:
+        type: integer
+        minimum: 1
+      domain_name:
+        $ref: '#/definitions/domain_name_value'
+      valid_from:
+        type: integer
+        minimum: 0
+      valid_until:
+        type: integer
+        minimum: 0
+      challenge_from:
+        type: integer
+        minimum: 0
+      challenge_until:
+        type: integer
+        minimum: 0
+      revocation_policy_id:
+        $ref: '#/definitions/underscore_name_value'
+      transition_policy_id:
+        $ref: '#/definitions/underscore_name_value'
+      challenge_policy_id:
+        $ref: '#/definitions/underscore_name_value'
+      disclosure_policy_id:
+        $ref: '#/definitions/underscore_name_value'
+      retention_policy_id:
+        $ref: '#/definitions/underscore_name_value'
+      payload_commitment_seed:
+        $ref: '#/definitions/underscore_name_value'
+      metadata:
+        allOf:
+        - $ref: '#/definitions/metadata_string_map'
+        - required:
+          - purpose
+  rights_list:
+    type: array
+    minItems: 1
+    items:
+      $ref: '#/definitions/rights_entry'
+  rights_catalog:
+    type: object
+    required:
+    - rights
+    additionalProperties: false
+    properties:
+      rights:
+        $ref: '#/definitions/rights_list'

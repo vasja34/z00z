@@ -1,0 +1,163 @@
+$schema: http://json-schema.org/draft-07/schema#
+title: Z00Z Vouchers Config YAML Schema
+description: 'Standalone schema for canonical vouchers catalog YAML files.
+
+  '
+allOf:
+- $ref: '#/definitions/vouchers_catalog'
+definitions:
+  underscore_name_value:
+    type: string
+    pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+  domain_name_value:
+    type: string
+    pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*(?:\.[a-z0-9]+(?:_[a-z0-9]+)*)+$
+  byte:
+    type: integer
+    minimum: 0
+    maximum: 255
+  byte32:
+    type: array
+    minItems: 32
+    maxItems: 32
+    items:
+      $ref: '#/definitions/byte'
+  voucher_lifecycle:
+    type: string
+    enum:
+    - pending_acceptance
+    - active
+    - partially_redeemed
+    - redeemed
+    - rejected
+    - refunded
+    - expired
+  voucher_validity:
+    type: object
+    required:
+    - valid_from
+    - valid_until
+    additionalProperties: false
+    properties:
+      valid_from:
+        type: integer
+        minimum: 0
+      valid_until:
+        type: integer
+        minimum: 0
+  voucher_acceptance:
+    type: object
+    required:
+    - receiver_must_accept
+    - allow_reject
+    - refund_target_fixture
+    additionalProperties: false
+    properties:
+      receiver_must_accept:
+        type: boolean
+      allow_reject:
+        type: boolean
+      refund_target_fixture:
+        $ref: '#/definitions/underscore_name_value'
+  voucher_backing:
+    oneOf:
+    - type: object
+      required:
+      - reserve_commitment
+      additionalProperties: false
+      properties:
+        reserve_commitment:
+          $ref: '#/definitions/byte32'
+    - type: object
+      required:
+      - consumed_asset
+      additionalProperties: false
+      properties:
+        consumed_asset:
+          type: object
+          required:
+          - definition_id
+          - serial_id
+          additionalProperties: false
+          properties:
+            definition_id:
+              $ref: '#/definitions/byte32'
+            serial_id:
+              type: integer
+              minimum: 0
+    - type: object
+      required:
+      - genesis_reserve
+      additionalProperties: false
+      properties:
+        genesis_reserve:
+          type: object
+          required:
+          - reserve_id
+          additionalProperties: false
+          properties:
+            reserve_id:
+              $ref: '#/definitions/underscore_name_value'
+  voucher_entry:
+    type: object
+    required:
+    - id
+    - domain_name
+    - issuer_fixture
+    - holder_fixture
+    - beneficiary_fixture
+    - backing
+    - face_value
+    - remaining_value
+    - policy_label
+    - lifecycle
+    - validity
+    - acceptance
+    - replay_nonce
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/definitions/underscore_name_value'
+      domain_name:
+        $ref: '#/definitions/domain_name_value'
+      issuer_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      holder_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      beneficiary_fixture:
+        $ref: '#/definitions/underscore_name_value'
+      backing:
+        $ref: '#/definitions/voucher_backing'
+      face_value:
+        type: integer
+        minimum: 1
+      remaining_value:
+        type: integer
+        minimum: 0
+      policy_label:
+        $ref: '#/definitions/underscore_name_value'
+      lifecycle:
+        $ref: '#/definitions/voucher_lifecycle'
+      validity:
+        $ref: '#/definitions/voucher_validity'
+      acceptance:
+        $ref: '#/definitions/voucher_acceptance'
+      replay_nonce:
+        $ref: '#/definitions/byte32'
+      disclosure_commitment:
+        $ref: '#/definitions/byte32'
+      audit_commitment:
+        $ref: '#/definitions/byte32'
+  vouchers_list:
+    type: array
+    minItems: 1
+    items:
+      $ref: '#/definitions/voucher_entry'
+  vouchers_catalog:
+    type: object
+    required:
+    - vouchers
+    additionalProperties: false
+    properties:
+      vouchers:
+        $ref: '#/definitions/vouchers_list'

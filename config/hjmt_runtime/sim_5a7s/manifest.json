@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "profile": "SIM-5A7S",
+  "expected_verdict": "accept",
+  "process_model": "os_process",
+  "shard_mapping": "aggregator_owned",
+  "route_table_digest": "000c78634c31e624c5e194378e6c7613e916e1975ca901e5d6416325c1d617e1",
+  "route_table_rel_path": "shard_route_tables/route-table-v1.canon.hex",
+  "runtime_fixture_home": "config/hjmt_runtime",
+  "runtime_fixture_note": "config/hjmt_runtime stays runtime-owned fixture home",
+  "wallet_boundary": "wallet sees public proofs/API only",
+  "scope_authority": "storage-created scopes stay storage-owned semantic truth",
+  "dist_sim_mode": "deterministic local-network simulator",
+  "dist_sim_truth": "real planner/storage/journal/proof primitives",
+  "consensus_truth": "quorum, term, membership, split-brain stay simulator-proven locally",
+  "route_rollout_truth": "checkpoint and process acks, mixed-generation drift, stale digest, and late joiners stay simulator-proven locally",
+  "scheduler_truth": "scheduler waves stay shard-owner bound locally and do not overclaim durable throughput before root publication",
+  "dispatch_truth": "remote owner delivery, duplicate or reordered frames, restart fencing, and cross-shard fail-closed stay simulator-proven locally",
+  "observability_truth": "stalls, freeze, disputes, drift, failover, and storage-lock hazards stay advisory notes and never become proof truth",
+  "adapter_only_register": "real transport and chain-network adapters stay adapter-only exclusions",
+  "planner_config_path": "config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml",
+  "storage_config_path": "config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+  "agg_ids": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "shard_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "placement_rows": [
+    {
+      "shard_id": 0,
+      "primary_aggregator_id": 0,
+      "standby_ids": [
+        1,
+        2
+      ],
+      "expected_journal_lineage_hex": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "shard_id": 1,
+      "primary_aggregator_id": 1,
+      "standby_ids": [
+        0,
+        3
+      ],
+      "expected_journal_lineage_hex": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "shard_id": 2,
+      "primary_aggregator_id": 2,
+      "standby_ids": [
+        0,
+        4
+      ],
+      "expected_journal_lineage_hex": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "shard_id": 3,
+      "primary_aggregator_id": 3,
+      "standby_ids": [
+        1,
+        4
+      ],
+      "expected_journal_lineage_hex": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "shard_id": 4,
+      "primary_aggregator_id": 4,
+      "standby_ids": [
+        2,
+        3
+      ],
+      "expected_journal_lineage_hex": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "shard_id": 5,
+      "primary_aggregator_id": 0,
+      "standby_ids": [
+        2,
+        4
+      ],
+      "expected_journal_lineage_hex": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "shard_id": 6,
+      "primary_aggregator_id": 4,
+      "standby_ids": [
+        0,
+        2
+      ],
+      "expected_journal_lineage_hex": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "aggregators": [
+    {
+      "aggregator_id": 0,
+      "process_id": "agg-0",
+      "cfg_path": "config/hjmt_runtime/sim_5a7s/aggregators/agg-0/aggregator-config.yaml",
+      "listen_addr": "127.0.0.1:7100",
+      "data_dir": "var/hjmt_runtime/sim_5a7s/agg-0/data",
+      "journal_path": "var/hjmt_runtime/sim_5a7s/agg-0/journal.redb",
+      "log_path": "var/hjmt_runtime/sim_5a7s/agg-0/aggregator.log",
+      "start_cmd": "cargo run -p z00z_rollup_node -- --mode aggregator --aggregator-config config/hjmt_runtime/sim_5a7s/aggregators/agg-0/aggregator-config.yaml --planner-config config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml --storage-config config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+      "restart_cmd": "cargo run -p z00z_rollup_node -- --mode aggregator --aggregator-config config/hjmt_runtime/sim_5a7s/aggregators/agg-0/aggregator-config.yaml --planner-config config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml --storage-config config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+      "shard_ids": [
+        0,
+        5
+      ]
+    },
+    {
+      "aggregator_id": 1,
+      "process_id": "agg-1",
+      "cfg_path": "config/hjmt_runtime/sim_5a7s/aggregators/agg-1/aggregator-config.yaml",
+      "listen_addr": "127.0.0.1:7101",
+      "data_dir": "var/hjmt_runtime/sim_5a7s/agg-1/data",
+      "journal_path": "var/hjmt_runtime/sim_5a7s/agg-1/journal.redb",
+      "log_path": "var/hjmt_runtime/sim_5a7s/agg-1/aggregator.log",
+      "start_cmd": "cargo run -p z00z_rollup_node -- --mode aggregator --aggregator-config config/hjmt_runtime/sim_5a7s/aggregators/agg-1/aggregator-config.yaml --planner-config config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml --storage-config config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+      "restart_cmd": "cargo run -p z00z_rollup_node -- --mode aggregator --aggregator-config config/hjmt_runtime/sim_5a7s/aggregators/agg-1/aggregator-config.yaml --planner-config config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml --storage-config config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+      "shard_ids": [
+        1
+      ]
+    },
+    {
+      "aggregator_id": 2,
+      "process_id": "agg-2",
+      "cfg_path": "config/hjmt_runtime/sim_5a7s/aggregators/agg-2/aggregator-config.yaml",
+      "listen_addr": "127.0.0.1:7102",
+      "data_dir": "var/hjmt_runtime/sim_5a7s/agg-2/data",
+      "journal_path": "var/hjmt_runtime/sim_5a7s/agg-2/journal.redb",
+      "log_path": "var/hjmt_runtime/sim_5a7s/agg-2/aggregator.log",
+      "start_cmd": "cargo run -p z00z_rollup_node -- --mode aggregator --aggregator-config config/hjmt_runtime/sim_5a7s/aggregators/agg-2/aggregator-config.yaml --planner-config config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml --storage-config config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+      "restart_cmd": "cargo run -p z00z_rollup_node -- --mode aggregator --aggregator-config config/hjmt_runtime/sim_5a7s/aggregators/agg-2/aggregator-config.yaml --planner-config config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml --storage-config config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+      "shard_ids": [
+        2
+      ]
+    },
+    {
+      "aggregator_id": 3,
+      "process_id": "agg-3",
+      "cfg_path": "config/hjmt_runtime/sim_5a7s/aggregators/agg-3/aggregator-config.yaml",
+      "listen_addr": "127.0.0.1:7103",
+      "data_dir": "var/hjmt_runtime/sim_5a7s/agg-3/data",
+      "journal_path": "var/hjmt_runtime/sim_5a7s/agg-3/journal.redb",
+      "log_path": "var/hjmt_runtime/sim_5a7s/agg-3/aggregator.log",
+      "start_cmd": "cargo run -p z00z_rollup_node -- --mode aggregator --aggregator-config config/hjmt_runtime/sim_5a7s/aggregators/agg-3/aggregator-config.yaml --planner-config config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml --storage-config config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+      "restart_cmd": "cargo run -p z00z_rollup_node -- --mode aggregator --aggregator-config config/hjmt_runtime/sim_5a7s/aggregators/agg-3/aggregator-config.yaml --planner-config config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml --storage-config config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+      "shard_ids": [
+        3
+      ]
+    },
+    {
+      "aggregator_id": 4,
+      "process_id": "agg-4",
+      "cfg_path": "config/hjmt_runtime/sim_5a7s/aggregators/agg-4/aggregator-config.yaml",
+      "listen_addr": "127.0.0.1:7104",
+      "data_dir": "var/hjmt_runtime/sim_5a7s/agg-4/data",
+      "journal_path": "var/hjmt_runtime/sim_5a7s/agg-4/journal.redb",
+      "log_path": "var/hjmt_runtime/sim_5a7s/agg-4/aggregator.log",
+      "start_cmd": "cargo run -p z00z_rollup_node -- --mode aggregator --aggregator-config config/hjmt_runtime/sim_5a7s/aggregators/agg-4/aggregator-config.yaml --planner-config config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml --storage-config config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+      "restart_cmd": "cargo run -p z00z_rollup_node -- --mode aggregator --aggregator-config config/hjmt_runtime/sim_5a7s/aggregators/agg-4/aggregator-config.yaml --planner-config config/hjmt_runtime/sim_5a7s/planner/planner-config.yaml --storage-config config/hjmt_runtime/sim_5a7s/storage/storage-config.yaml",
+      "shard_ids": [
+        4,
+        6
+      ]
+    }
+  ],
+  "publication": {
+    "acceptance_profile": "SIM-5A7S-PUB",
+    "inherits_profile": "SIM-5A7S",
+    "topology_status": "canonical_acceptance_fixture",
+    "public_leaf_count": 7,
+    "leaf_trace_file": "leaf_flow.json",
+    "proof_trace_file": "proof_flow.json",
+    "digest_trace_file": "pub_flow.json"
+  },
+  "regen_command": "cargo test -p z00z_rollup_node --release --features test-params-fast --test test_hjmt_topology print_sim_5a7s_manifest_json -- --ignored --nocapture",
+  "test_command": "cargo test -p z00z_rollup_node --release --features test-params-fast --test test_hjmt_topology test_grid57_matches_contract -- --nocapture",
+  "evidence_pointer": "crates/z00z_rollup_node/tests/test_hjmt_topology.rs::test_grid57_matches_contract"
+}

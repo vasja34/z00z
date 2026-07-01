@@ -1,0 +1,18 @@
+
+[package]
+name = "z00z_watchers"
+version = "0.2.0"
+edition = "2021"
+license = "MIT OR BSD-3-Clause"
+
+[lib]
+doctest = false
+
+[dependencies]
+z00z_aggregators = { path = "../aggregators" }
+z00z_storage = { path = "../../z00z_storage" }
+z00z_validators = { path = "../validators" }
+
+[dev-dependencies]
+z00z_core = { path = "../../z00z_core" }
+z00z_storage = { path = "../../z00z_storage" }

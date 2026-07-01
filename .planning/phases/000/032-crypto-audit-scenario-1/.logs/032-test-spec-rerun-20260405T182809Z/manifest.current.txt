@@ -1,0 +1,118 @@
+STAMP=20260405T182809Z
+LOG_DIR=.planning/phases/032-crypto-audit-scenario-1/.logs/032-test-spec-rerun-20260405T182809Z
+CMD[01]=./.github/skills/smart-tests-bootstrap/scripts/bootstrap_tests.sh
+RESULT[01]=PASS
+CMD[02]=cargo test -p z00z_wallets --release --features test-fast --test test_scenario1_semantics -- --nocapture
+RESULT[02]=PASS
+CMD[03]=cargo test -p z00z_crypto --release --test test_claim_v2_contract -- --nocapture
+RESULT[03]=PASS
+CMD[04]=cargo test -p z00z_storage --release --test test_claim_source_proof -- --nocapture
+RESULT[04]=PASS
+CMD[05]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_claim_pkg_crypto_support -- --nocapture
+RESULT[05]=PASS
+CMD[06]=cargo test -p z00z_wallets --release --features test-fast --test test_spend_witness_gate -- --nocapture
+RESULT[06]=PASS
+CMD[07]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_scenario1_spend_gate -- --nocapture
+RESULT[07]=PASS
+CMD[08]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_checkpoint_acceptance -- --nocapture
+RESULT[08]=PASS
+CMD[09]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_stage2_secret_artifacts -- --nocapture
+RESULT[09]=PASS
+CMD[10]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_transport_rng_boundaries -- --nocapture
+RESULT[10]=PASS
+CMD[11]=cargo test -p z00z_wallets --release --features test-fast --test test_tx_spent_gate -- --nocapture
+RESULT[11]=PASS
+CMD[12]=cargo test -p z00z_wallets --release --features test-fast --test test_tx_wrong_root -- --nocapture
+RESULT[12]=PASS
+CMD[13]=cargo test -p z00z_wallets --release --features test-fast --test test_tx_tamper -- --nocapture
+RESULT[13]=PASS
+CMD[14]=cargo test -p z00z_wallets --release --features test-fast --test test_tx_stealth_flow -- --nocapture
+RESULT[14]=PASS
+CMD[15]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_claim_tx_pipeline -- --nocapture
+RESULT[15]=PASS
+CMD[16]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_scenario1_unified_gate -- --nocapture
+RESULT[16]=PASS
+CMD[17]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_stage6_checkpoint_final_gate -- --nocapture
+RESULT[17]=PASS
+CMD[18]=cargo test --release --features test-fast --features wallet_debug_dump
+RESULT[18]=FAIL
+test assets::integration_assets_test12::tests::test_reads_during_snapshot_updates ... ok
+
+test result: ok. 268 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 5.04s
+
+     Running tests/genesis/test_genesis.rs (target/release/deps/genesis_tests-fe7045c4b2a67f4d)
+
+running 76 tests
+test genesis::batch_verification::test_batch_verify_empty_set ... ok
+test genesis::config::test_genesis_config_multi_asset ... ok
+test genesis::config::test_genesis_config_invalid_decimals ... ok
+test genesis::config::test_genesis_config_output_path ... ok
+test genesis::config::test_protected_network_known_test_seed_rejected ... ok
+test genesis::config::test_genesis_config_parsing_success ... ok
+test genesis::config::test_rejects_seed_genesis_v2 ... ok
+test genesis::config::test_rejects_seed_genesis_v3 ... ok
+test genesis::config::test_rejects_seed_genesis_validation ... ok
+test genesis::config::test_seed_genesis_low_entropy ... ok
+test genesis::config::test_seed_genesis_validation_accepts ... ok
+test genesis::config::test_unknown_chain_type_rejected ... ok
+test genesis::cross_network_isolation::test_all_three_networks_unique ... ok
+test genesis::cross_network_isolation::test_asset_cross_network_id ... ok
+test genesis::cross_network_isolation::test_cross_network_blinding_isolation ... ok
+test genesis::cross_network_isolation::test_same_network_determinism ... ok
+test genesis::cross_network_isolation::test_seed_cross_network_rng ... ok
+test genesis::crypto_security::test_pedersen_hiding_property ... ok
+test genesis::integration::test_genesis_config_yaml_file ... ok
+test genesis::crypto_security::test_commitment_homomorphic_addition ... ok
+test genesis::multi_asset_genesis::test_asset_class_uniqueness ... ok
+test genesis::multi_asset_genesis::test_asset_definition_coin_validation ... ok
+test genesis::crypto_security::test_blinding_factor_entropy ... ok
+test genesis::multi_asset_genesis::test_asset_definition_nft_validation ... ok
+test genesis::multi_asset_genesis::test_asset_definition_token_validation ... ok
+test genesis::multi_asset_genesis::test_asset_definition_void_validation ... ok
+test genesis::integration::test_export_creates_both_formats ... ok
+test genesis::batch_verification::test_batch_verify_single_asset ... ok
+test genesis::integration::test_asset_multi_generation_export ... ok
+test genesis::reproducibility::test_genesis_facade_split ... ok
+test genesis::integration::test_json_binary_export_size ... ok
+test genesis::integration::test_extract_and_load_roundtrip ... ok
+test genesis::reproducibility::test_validator_facade_split ... ok
+test genesis::security_validation::proptest_asset_id_uniqueness ... ok
+test genesis::security_validation::proptest_blinding_determinism ... ok
+test genesis::security_validation::proptest_domain_separation ... ok
+test genesis::security_validation::proptest_serial_uniqueness ... ok
+test genesis::commitment_sum::test_commitment_homomorphic_addition ... ok
+test genesis::security_validation::test_blinding_uniformity_chi_square ... ok
+test genesis::security_validation::test_domain_separation_prevents_replay ... ok
+test genesis::range_proofs::test_proof_range_non_zero ... ok
+test genesis::range_proofs::test_range_proof_structure_valid ... ok
+test genesis::reproducibility::test_genesis_multi_asset_reproducibility ... ok
+test genesis::determinism::test_determinism_commitment_consistency ... ok
+test genesis::commitment_sum::test_commitment_uniqueness ... ok
+test genesis::claim_flow::test_claim_flow_smoke ... ok
+test genesis::validation::test_asset_genesis_accumulator_class ... ok
+test genesis::integration::test_full_genesis_generation_flow ... ok
+test genesis::batch_verification::test_batch_verify_extreme_amounts ... ok
+test genesis::commitment_sum::test_commitment_sum_total_supply ... ok
+test genesis::batch_verification::test_rejects_proof_batch_verify ... ok
+test genesis::commitment_sum::test_commitment_non_zero_assets ... ok
+test genesis::range_proofs::test_proof_range_exists_assets ... ok
+test genesis::validation::test_asset_genesis_commitment ... ok
+test genesis::security_validation::test_blinding_collision_birthday_bound ... ok
+test genesis::reproducibility::test_genesis_reproducibility ... ok
+test genesis::range_proofs::test_range_proof_individual_verification ... ok
+test genesis::validation::test_asset_genesis_has_fields ... ok
+test genesis::batch_verification::test_batch_verify_missing_proof ... ok
+test genesis::validation::test_genesis_asset_proof_verifies ... ok
+test genesis::security_validation::test_genesis_nonce_uniqueness ... ok
+test genesis::validation::test_asset_genesis_different_serials ... ok
+test genesis::reproducibility::test_genesis_different_seeds_assets ... ok
+test genesis::determinism::test_determinism_single_asset ... ok
+test genesis::security_validation::test_genesis_reproducibility ... ok
+test genesis::claim_flow::test_claim_cryptographic_balance_validation ... ok
+test genesis::validation::test_genesis_asset_accumulator_flatten ... ok
+test genesis::batch_verification::test_genesis_batch_verify_10 ... ok
+test genesis::genesis_state_verification::test_genesis_three_networks_produce ... ok
+test genesis::validation::test_asset_genesis_accumulator_get ... ok
+test genesis::batch_verification::test_batch_verify_amount ... ok
+test genesis::batch_verification::test_genesis_batch_verify_100 ... ok
+test genesis::batch_verification::bench_sequential_vs_batch_100 ... ok

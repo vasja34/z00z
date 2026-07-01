@@ -1,0 +1,34 @@
+1. adaptirovat signaturi pod relnuju kodovuju baza kotoraja bila refactred
+
+2.Кратко по содержанию:
+
+032-TODO.md это широкий security-аудит всей цепочки Alice -> leaf build -> JMT publish -> Bob scan -> spend -> validator. Его главный вывод: stealth send/scan и Bulletproofs+ в репозитории реально есть и тестами подтверждаются, но сильные заявления про то, что Alice не знает секрет, что validator уже trustlessly проверяет spend, что checkpoint-proof уже авторитетен, и что STARK/FRI уже живой, сейчас завышены. Отчёт по сути фиксирует: базовая stealth-механика работает, а proof boundary и trust boundary ещё не доведены.
+
+032-TODO.md это ewe i узкий и жёсткий crypto-architecture review именно для scenario_1. Его вердикт: flow заблокирован. Основные блокеры там конкретнее: placeholder и forgeable claim proof/signature, неавторитетная привязка к genesis root через ZERO_ROOT, stub-логика в checkpoint proof и spent-set, а также plaintext-выгрузка секретов. Дополнительно он отмечает hygiene-проблемы: слабый deterministic RNG, фиксированные креды, env-mutation и отсутствие нормальной zeroization.
+
+По объединению в одну phase: да, объединить можно. Эти документы сильно пересекаются по сути и описывают один и тот же набор системных проблем с разных уровней: первый больше про truthfulness claims и end-to-end security posture, второй про архитектурные блокеры и что именно чинить. Но я бы не оформлял это как одну маленькую implementation phase “сделать всё сразу”. Практичнее сделать одну umbrella phase с отдельными треками внутри: proof/authority/genesis soundness, checkpoint and validator trust boundary, secret lifecycle and debug-artifact hygiene.
+
+Deliverables: согласованный threat model для scenario_1; зафиксированные термины для ownership, claim authenticity, genesis binding, checkpoint authority; canonical definition для s_out, leaf_ad_id, receiver_secret role; список допустимых и недопустимых временных placeholder-механизмов.
+
+Цель: убрать подделываемость claim path.
+Deliverables: реальная модель authority вместо placeholder signature; реальная привязка claim statement к авторитетному genesis root; формат membership witness или эквивалентной authenticated inclusion; обновлённый verifier contract с fail-closed поведением; negative tests на forged statement, forged authority и wrong root.
+
+Цель: сделать spend и checkpoint доверяемыми не по структуре, а по реальной криптографической проверке.
+Deliverables: спецификация public inputs для spend verification; замена structural witness gate на настоящий public verification boundary или явное documented ограничение, если этого ещё нет; authoritative proof verification в checkpoint/storage boundary; удаление режимов вида non-empty proof bytes is enough; tests на replay, forged spend, invalid cp_proof и spent-set bypass.
+
+Цель: закрыть неоднозначности stealth semantics и привязки получателя.
+Deliverables: каноническая спецификация leaf_ad_id; согласованная семантика s_out между кодом и документами; обязательная стратегия receiver card binding, TOFU/pinning или signed directory binding; решение по request-bound tag derivation как нормальному privacy path; tests на foreign receiver, wrong card, rotation mismatch и targeted scan spam caveats.
+
+Что считать завершением всей phase
+
+Фазу можно считать закрытой только если выполнены все условия:
+
+Claim path больше не forgeable через placeholder proof/signature.
+Genesis/root binding стал авторитетным.
+Checkpoint/spend boundary больше не принимает structural или synthetic proof как полноценную проверку.
+sender ignorance, STARK/FRI live support или trustless validator verification там, где этого ещё нет.
+
+vse problemi zajavlennie v 032-TODO.md-dolzhni bit uspeshno resheni; vse zajvlennie reshenija dolzhni bit implementirovani
+
+
+

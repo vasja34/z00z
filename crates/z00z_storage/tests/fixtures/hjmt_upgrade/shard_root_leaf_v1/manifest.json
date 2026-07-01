@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "golden": [
+    {
+      "id": "SRL-G-001",
+      "kind": "bridge",
+      "canonical_bytes_hex": "0000000319191919191919191919191919191919191919191919191919191919191919190000000000000015000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000021000000000000002c00000000",
+      "expected_digest_hex": "003a99e3f01d4a804e155ce6f1f40ee9809d4a6ca074164f533c3427a5a6b618",
+      "prior_leaf_hex": null,
+      "prior_digest_hex": null,
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRL-G-002",
+      "kind": "same_generation_changed",
+      "canonical_bytes_hex": "000000031c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c0000000000000016000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000022000000000000002d00000000",
+      "expected_digest_hex": "ee4ab4978afb3d0013893b642959bb2ab4a7b7cafa93275644ad74cf24cdc26a",
+      "prior_leaf_hex": "0000000319191919191919191919191919191919191919191919191919191919191919190000000000000015000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000021000000000000002c00000000",
+      "prior_digest_hex": "003a99e3f01d4a804e155ce6f1f40ee9809d4a6ca074164f533c3427a5a6b618",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRL-G-003",
+      "kind": "transition_state",
+      "canonical_bytes_hex": "000000031d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d0000000000000017000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000023000000000000002e00000001",
+      "expected_digest_hex": "a766fdf1e85cfcb7683742477cd5019432b3b9687898e4478cbe168354140dc7",
+      "prior_leaf_hex": null,
+      "prior_digest_hex": null,
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRL-G-004",
+      "kind": "reencode",
+      "canonical_bytes_hex": "000000031c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c0000000000000016000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000022000000000000002d00000000",
+      "expected_digest_hex": "ee4ab4978afb3d0013893b642959bb2ab4a7b7cafa93275644ad74cf24cdc26a",
+      "prior_leaf_hex": null,
+      "prior_digest_hex": null,
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract"
+    }
+  ],
+  "tamper": [
+    {
+      "id": "SRL-T-001",
+      "kind": "reserved_transition_bits",
+      "source_id": "SRL-G-001",
+      "canonical_bytes_hex": "0000000319191919191919191919191919191919191919191919191919191919191919190000000000000015000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000021000000000000002c00000008",
+      "prior_leaf_hex": null,
+      "claimed_digest_hex": null,
+      "mutation_point": "transition_flags",
+      "expected_stage": "parser_reject",
+      "expected_error": "PublicationFlagMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRL-T-002",
+      "kind": "stale_route_table_digest",
+      "source_id": "SRL-G-001",
+      "canonical_bytes_hex": "0000000319191919191919191919191919191919191919191919191919191919191919190000000000000015000000000000000743424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000021000000000000002c00000000",
+      "prior_leaf_hex": null,
+      "claimed_digest_hex": null,
+      "mutation_point": "route_table_digest",
+      "expected_stage": "route_binding_reject",
+      "expected_error": "PublicationRouteMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRL-T-003",
+      "kind": "stale_shard_epoch",
+      "source_id": "SRL-G-002",
+      "canonical_bytes_hex": "000000031e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e0000000000000015000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000022000000000000002d00000000",
+      "prior_leaf_hex": "000000031c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c0000000000000016000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000022000000000000002d00000000",
+      "claimed_digest_hex": null,
+      "mutation_point": "shard_epoch",
+      "expected_stage": "monotonicity_reject",
+      "expected_error": "PublicationMonotonicityMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRL-T-004",
+      "kind": "decreasing_journal_checkpoint",
+      "source_id": "SRL-G-002",
+      "canonical_bytes_hex": "000000031f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f0000000000000016000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000021000000000000002e00000000",
+      "prior_leaf_hex": "000000031c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c0000000000000016000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000022000000000000002d00000000",
+      "claimed_digest_hex": null,
+      "mutation_point": "journal_checkpoint",
+      "expected_stage": "monotonicity_reject",
+      "expected_error": "PublicationMonotonicityMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRL-T-005",
+      "kind": "decreasing_local_sequence",
+      "source_id": "SRL-G-002",
+      "canonical_bytes_hex": "0000000320202020202020202020202020202020202020202020202020202020202020200000000000000016000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000022000000000000002c00000000",
+      "prior_leaf_hex": "000000031c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c0000000000000016000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000022000000000000002d00000000",
+      "claimed_digest_hex": null,
+      "mutation_point": "local_sequence",
+      "expected_stage": "monotonicity_reject",
+      "expected_error": "PublicationMonotonicityMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRL-T-006",
+      "kind": "digest_mismatch",
+      "source_id": "SRL-G-001",
+      "canonical_bytes_hex": "0000000319191919191919191919191919191919191919191919191919191919191919190000000000000015000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000021000000000000002c00000000",
+      "prior_leaf_hex": null,
+      "claimed_digest_hex": "013a99e3f01d4a804e155ce6f1f40ee9809d4a6ca074164f533c3427a5a6b618",
+      "mutation_point": "claimed_digest_hex",
+      "expected_stage": "digest_reject",
+      "expected_error": "digest_mismatch",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract"
+    }
+  ]
+}

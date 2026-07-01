@@ -1,0 +1,702 @@
+# Core Refactor Specification
+
+## Scope
+
+- Target: crates/z00z_wallets/src/core
+- Type: structural refactor plan only (no code changes in this document)
+- Requirement coverage: every existing file under core receives an explicit placement decision
+
+## Objectives
+
+1. Reduce cross-domain coupling between address, stealth, key, chain, tx, wallet, and storage surfaces.
+2. Make runtime ownership boundaries explicit in folder layout (manager/card/request/scan, etc.).
+3. Split large mixed-responsibility folders into cohesive submodules while preserving public facade compatibility via mod.rs re-exports during migration.
+
+## Test Placement Policy
+
+- Unit tests stay colocated with the runtime module they validate.
+- Unit-test filenames must start with `test_`.
+- Do not create nested `tests/` folders inside `core/*` for unit suites.
+- Integration and end-to-end suites must live under `crates/z00z_wallets/tests`.
+
+## Decision Method
+
+- Input signal 1: top-level declarations extracted from each file (struct/trait/fn signatures).
+- Input signal 2: actual intra-core dependency affinity (`use crate::core::...`).
+- Input signal 3: current module boundary constraints from mod.rs files.
+- For each file, placement decision is content-driven (domain behavior + dependency direction), not filename-only.
+
+## High-Level Target Tree
+
+```text
+crates/z00z_wallets/src/core/
+  address/
+    card/
+      nfc_utils.rs
+      stealth_card.rs
+      stealth_card_codec.rs
+      stealth_trust.rs
+      test_stealth_card.rs
+      test_stealth_trust_suite.rs
+    docs/
+      Z00Z-ADDRESS-GUIDE.md
+    format/
+      mod.rs
+      test_z00z_address_suite.rs
+      z00z_address_codec.rs
+      z00z_address_features.rs
+      z00z_address_normalize.rs
+      z00z_address_parts.rs
+      z00z_address_validation.rs
+      z00z_dual_address.rs
+      z00z_dual_address_serde.rs
+      z00z_dual_address_transport.rs
+      z00z_single_address.rs
+      z00z_single_address_serde.rs
+      z00z_single_address_transport.rs
+    manager/
+      address_manager_cache.rs
+      address_manager_config.rs
+      address_manager_impl.rs
+      address_manager_impl_async.rs
+      address_manager_impl_builder.rs
+      address_manager_impl_runtime_derive.rs
+      address_manager_impl_runtime_maintenance.rs
+      address_manager_impl_snapshot.rs
+      address_manager_impl_snapshot_io.rs
+      address_manager_impl_trait_impl.rs
+      address_manager_trait.rs
+      canonical_snapshot.rs
+      eviction_listener.rs
+      mod.rs
+      rate_limiter_bucket.rs
+      test_address_manager_suite.rs
+      test_canonical_snapshot_suite.rs
+    mod.rs
+    ownership/
+      claim_own.rs
+    request/
+      stealth_request.rs
+      stealth_request_crypto.rs
+      stealth_request_parse.rs
+      stealth_request_transport.rs
+      stealth_request_types.rs
+      test_stealth_request.rs
+    scan/
+      ephemeral_cache.rs
+      leaf_scan.rs
+      optimized_scanner.rs
+      rate_limiter.rs
+      stealth_scan_support.rs
+      stealth_scanner.rs
+      stealth_scanner/
+        test_stealth_scanner.rs
+        types.rs
+        types_range.rs
+        types_receive.rs
+        types_tag_cache.rs
+      test_stealth_scan_support_suite.rs
+  app/
+    kernel.rs
+    mod.rs
+  backup/
+    crypto/
+      backup_wire.rs
+      test_wallet_backup_suite.rs
+      wallet_backup.rs
+      wallet_backup_kdf.rs
+    export/
+      backup_exporter.rs
+      backup_exporter_impl.rs
+      backup_exporter_verify.rs
+      test_backup_exporter_suite.rs
+    import/
+      backup_importer.rs
+      backup_importer_impl.rs
+      test_backup_importer_suite.rs
+    mod.rs
+  chain/
+    broadcast/
+      broadcast.rs
+      broadcast_impl.rs
+    client/
+      chain_client.rs
+      chain_client_impl.rs
+    mod.rs
+    publication/
+      receiver_card_record.rs
+    scan/
+      scan_engine.rs
+      scan_engine_impl.rs
+  claim/
+    claim_receipt.rs
+    conservation.rs
+    distribution.rs
+    import_model.rs
+    mod.rs
+    nullifier.rs
+    nullifier_store.rs
+    nullifier_store_global.rs
+    registry/
+      claim_registry.rs
+    service.rs
+    state_machine.rs
+    test_nullifier_store.rs
+  foundation/
+    domains.rs
+    domains_snapshot.txt
+    hashing.rs
+    test_domains_suite.rs
+    test_hashing_suite.rs
+  key/
+    bip/
+      bip32.rs
+      bip32_constants.rs
+      bip32_key_deriver.rs
+      bip32_manager.rs
+      bip32_path.rs
+      bip32_path_builder.rs
+      bip32_path_builder_helpers.rs
+      bip32_path_errors.rs
+      bip32_path_serde.rs
+      bip32_path_validator.rs
+      bip32_path_value.rs
+      bip32_ristretto_bridge.rs
+      bip44_derivation.md
+      test_bip32_manager.inc.rs
+      test_bip32_manager_entropy.inc.rs
+    docs/
+      KEYS-Bip44-UserGuide.md
+      KEYS-GUIDE.md
+    manager/
+      KEYS-DERIVATION.md
+      key_cache.rs
+      key_manager.rs
+      key_manager_impl.rs
+      key_manager_impl_cache.rs
+      key_manager_impl_cache_validation.rs
+      key_manager_impl_gap.rs
+      key_manager_impl_state.rs
+      key_manager_impl_system.rs
+      key_manager_impl_trait.rs
+      key_manager_redb.rs
+      key_manager_redb_wallet.rs
+      key_state.rs
+      test_key_manager_impl_suite.rs
+      test_key_manager_password_suite.rs
+      test_key_manager_redb_suite.rs
+    mod.rs
+    receiver/
+      stealth_keys.rs
+      stealth_keys_identity.rs
+      stealth_keys_receiver.rs
+      stealth_keys_secret.rs
+      test_stealth_keys_suite.rs
+    seed/
+      seed.rs
+      seed_backup_format.rs
+      seed_backup_format_errors.rs
+      seed_backup_format_phrase.rs
+      test_seed_backup_format_basic.rs
+      test_seed_backup_format_language.rs
+      seed_cipher.rs
+      seed_cipher_container.rs
+      seed_cipher_container_crypto.rs
+      seed_cipher_ids.rs
+      seed_cipher_params.rs
+      seed_cipher_persistence.rs
+      seed_cipher_types.rs
+      seed_entropy.rs
+      seed_mnemonic.rs
+      test_seed_backup_format_suite.rs
+      test_seed_cipher_basic_suite.rs
+      test_seed_cipher_metadata_suite.rs
+      test_seed_cipher_reencrypt_suite.rs
+    KEYS_EXPALNATION.md
+  mod.rs
+  network/
+    kernel.rs
+  security/
+    vault/
+      file_key_store.rs
+      secret_store.rs
+      secret_store_impl.rs
+    common-passwords-v1.txt
+    encryption.rs
+    mod.rs
+    password.rs
+    password_checks.rs
+    password_denylist_v1.bloom
+  stealth/
+    crypto/
+      ecdh.rs
+      ecdh_validation.rs
+      encoding.rs
+      ephemeral.rs
+    facade/
+      facade_ecdh.rs
+      facade_kdf.rs
+      facade_zkpack.rs
+    mod.rs
+    output/
+      output.rs
+      output_build.rs
+      output_validator.rs
+      owner_tag.rs
+      tag.rs
+      test_facade_zkpack_suite.rs
+      test_output.rs
+      test_output_extra.rs
+  persistence/
+    assets/
+      asset_storage.rs
+      asset_storage_impl.rs
+      test_asset_storage_impl_suite.rs
+    mod.rs
+    receipts/
+      receipt_storage.rs
+      receipt_storage_impl.rs
+    scans/
+      scan_storage.rs
+      scan_storage_impl.rs
+    tx/
+      tx_storage.rs
+      tx_storage_impl.rs
+    wallets/
+      wallet_storage.rs
+      wallet_storage_impl.rs
+  tx/
+    assembly/
+      tx_assembler.rs
+    balance.rs
+    claim/
+      claim_auth.rs
+      claim_errors.rs
+      claim_helpers.rs
+      claim_tx.rs
+      claim_tx_helpers.rs
+      claim_tx_verifier_impl.rs
+      claim_tx_verifier_impl_proof.rs
+      claim_wire_types.rs
+      test_claim_tx.rs
+    fees/
+      fee_estimator.rs
+      test_fee_estimator_suite.rs
+    ids/
+      pay_ref.rs
+      tx_id.rs
+    mod.rs
+    multi_io.rs
+    output/
+      builder.rs
+      output_flow.rs
+    proof/
+      prover.rs
+      signer.rs
+      spend_proof_backend.rs
+    selection/
+      asset_selector.rs
+      asset_selector_multi.rs
+      test_asset_selector_multi_suite.rs
+      test_asset_selector_suite.rs
+    spend/
+      spend_rules.rs
+      spend_verification.rs
+      spending.rs
+      witness_gate.rs
+    state/
+      lifecycle.rs
+      state_checkpoint.rs
+      state_errors.rs
+      state_resolved_input.rs
+      state_traits.rs
+      state_update.rs
+      state_witness.rs
+      test_state_update_suite.rs
+    verify/
+      test_tx_verifier_suite.rs
+      tx_digest.rs
+      tx_errors.rs
+      tx_verifier.rs
+      tx_verifier_helpers.rs
+      tx_wire_types.rs
+  wallet/
+    auto_lock.rs
+    chain_id.rs
+    docs/
+      WALLET-GUIDE.md
+    entity/
+      wallet_entity.rs
+      wallet_entity_asset_api.rs
+      wallet_entity_backup_api.rs
+      wallet_entity_constructor.rs
+      wallet_entity_core.rs
+      wallet_entity_key_api.rs
+      wallet_entity_tx_api.rs
+      wallet_entity_wallet_api.rs
+    errors/
+      errors.rs
+      errors_impls.rs
+      errors_types.rs
+      test_errors_suite.rs
+    mod.rs
+    policy.rs
+    rollback.rs
+    session.rs
+    snapshot/
+      snapshot.rs
+      snapshot_impl.rs
+      snapshot_types.rs
+      test_snapshot_suite.rs
+    stub/
+      stub_responses.rs
+      stub_responses_asset.rs
+      stub_responses_backup.rs
+      stub_responses_tx.rs
+      stub_responses_wallet.rs
+    wallet.rs
+    wallet_identity.rs
+    wallet_kernel.rs
+    wallet_record.rs
+    wallet_state.rs
+```
+
+## Functional Re-Audit (2026-05-02)
+
+Storage branch was re-audited by runtime responsibility instead of path-name matching.
+
+- `core/storage/mod.rs` declares a persistent storage surface, but includes non-persistence responsibilities.
+- `core/storage/claim_registry.rs` is an in-process concurrency and ownership gate (`Lazy<RwLock<...>>`) used by claim lifecycle replay/commit, not durable storage.
+- `core/storage/secret_store.rs` and `core/storage/file_key_store.rs` implement encrypted secret/key vault semantics and session lifecycle control, which is security-domain behavior with persistence adapters.
+
+Updated functional placement decisions:
+
+- `crates/z00z_wallets/src/core/storage/claim_registry.rs`
+  - from: `core/storage/claims/claim_registry.rs`
+  - to: `core/claim/registry/claim_registry.rs`
+  - rationale: claim reservation/finalization gate consumed directly by claim state machine and replay semantics.
+- `crates/z00z_wallets/src/core/storage/secret_store.rs`
+  - from: `core/storage/secrets/secret_store.rs`
+  - to: `core/security/vault/secret_store.rs`
+  - rationale: session unlock/expiry policy and secret material control are security contracts first.
+- `crates/z00z_wallets/src/core/storage/secret_store_impl.rs`
+  - from: `core/storage/secrets/secret_store_impl.rs`
+  - to: `core/security/vault/secret_store_impl.rs`
+  - rationale: concrete vault implementation of the same security contract.
+- `crates/z00z_wallets/src/core/storage/file_key_store.rs`
+  - from: `core/storage/keys/file_key_store.rs`
+  - to: `core/security/vault/file_key_store.rs`
+  - rationale: encrypted receiver-secret key-vault behavior, not generic persistence bucketing.
+
+Revised storage doctrine:
+
+- Keep under `core/persistence/{assets,receipts,scans,tx,wallets}` only data stores that represent durable repository abstractions for business entities/state snapshots.
+- Move claim coordination and secret/key vault concerns to their owning runtime domains (`claim`, `security`) while preserving transitional re-export compatibility in migration phase.
+
+## Pros and Cons Taxonomy Used Per File
+
+- keep
+  - Pros: zero API path churn, lower migration risk.
+  - Cons: preserves current cognitive load and mixed folder density.
+- move-<domain>
+  - Pros: increases cohesion of one runtime responsibility and simplifies ownership boundaries.
+  - Cons: requires mod.rs rewiring and staged import-path migration.
+
+## Exhaustive File Placement Ledger
+
+| File | Content Signals | Core Dependencies | Decision | Target Path | Pros | Cons |
+|---|---|---|---|---|---|---|
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_cache.rs | 3:pub struct DerivedWalletKeys {;12:pub struct CachedEntry {;23:pub struct CacheMetrics {; | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_cache.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_config.rs | 31:pub struct AddressManagerConfig {;39:impl AddressManagerConfig {; | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_config.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_impl_async.rs | 2:pub struct AsyncAddressManagerImpl<K: KeyManager + Send + Sync, T: TimeProvider + Send + Sync> {;12:struct AsyncBatchT... | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_impl_async.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_impl_builder.rs | 3:pub struct AddressManagerImpl<K: KeyManager, T: TimeProvider = z00z_utils::time::SystemTimeProvider>;28:pub struct Add... | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_impl_builder.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_impl.rs | include!("address_manager_impl_builder.rs");;include!("address_manager_impl_runtime_maintenance.rs");;include!("address_... | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_impl_runtime_derive.rs | impl<K: KeyManager, T: TimeProvider> AddressManagerImpl<K, T> {;    fn batch_limit_count(&mut self, paths: &[Bip44Path])... | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_impl_runtime_derive.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_impl_runtime_maintenance.rs | impl<K: KeyManager, T: TimeProvider> AddressManagerImpl<K, T> {;    #[inline];    fn notify_evict(&self, path: Bip44Path... | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_impl_runtime_maintenance.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_impl_snapshot_io.rs | impl<K: KeyManager, T: TimeProvider> AddressManagerImpl<K, T> {;    /// Export non-expired cache entries into an authent... | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_impl_snapshot_io.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_impl_snapshot.rs | 4:pub struct CacheSnapshot {;16:impl CacheSnapshot {; | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_impl_snapshot.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_impl_trait_impl.rs | impl<K: KeyManager, T: TimeProvider> AddressManager for AddressManagerImpl<K, T> {;    fn derive_spend_key(&mut self, pa... | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_impl_trait_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/address_manager_trait.rs | 2:pub trait AddressManager {;166:pub trait AsyncAddressManager: Send + Sync {;206:impl From<Bip44Error> for AddressManag... | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/address_manager_trait.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/eviction_listener.rs | 2:pub trait CacheEvictionListener: std::fmt::Debug + Send + Sync {;14:pub struct NoopEvictionListener;;16:impl CacheEvic... | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/eviction_listener.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/rate_limiter_bucket.rs | 2:struct TokenBucket {;11:struct TokenBucketState {;17:impl TokenBucket {; | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/rate_limiter_bucket.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager.rs | 81:type CacheSnapshotDomain = CacheSnapshotHmacTestDomain;;84:type CacheSnapshotDomain = CacheSnapshotHmacProdDomain;;88... | domains:2,key:1, | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/mod.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/address_manager/test_address_manager_suite.rs |     use super::*;;    use crate::core::key::{;        bip32::Z00Z_BIP44_ASSET, KeyManager, KeyManagerImpl, ReceiverKeys,... | address:2,key:13,stealth:1, | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/test_address_manager_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/canonical_snapshot.rs | 77:pub type SnapshotEntry = (Bip44Path, Vec<u8>, Vec<u8>);;81:pub enum CanonicalSnapshotError {;141:pub struct Canonical... | key:1, | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/canonical_snapshot.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/claim_own.rs | 10:pub fn check_stealth_own(asset: &Asset, keys: &ReceiverKeys) -> Result<(), WalletError> {; | none | MOVE (move-address-ownership) | crates/z00z_wallets/src/core/address/ownership/claim_own.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/ephemeral_cache.rs | 7:pub struct EphemeralCache {;13:struct CacheBucket {;18:impl EphemeralCache {; | WalletError:1, | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/ephemeral_cache.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/leaf_scan.rs | 93:pub fn receiver_scan_leaf(;101:pub fn receiver_scan_report(;109:mod tests {; | none | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/leaf_scan.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/mod.rs | 28:mod stealth_scan_support;; | ChainType:1,key:1, | KEEP | crates/z00z_wallets/src/core/address/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/address/nfc_utils.rs | 6:pub fn nfc_ndef_record(request: &PaymentRequest) -> Vec<u8> {;30:mod tests {; | address:1, | MOVE (move-address-card) | crates/z00z_wallets/src/core/address/card/nfc_utils.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/optimized_scanner.rs | 17:pub struct OptimizedScanner {;22:impl OptimizedScanner {;53:mod tests {; | address:2,key:2,stealth:1, | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/optimized_scanner.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/rate_limiter.rs | 8:pub enum ScanRateError {;19:pub struct ScanRateLimiter {;25:impl ScanRateLimiter {; | none | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/rate_limiter.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_card_codec.rs | 2:pub fn encode_card_compact(card: &ReceiverCard) -> String {;7:pub fn decode_card_compact(encoded: &str) -> Result<Rece... | none | MOVE (move-address-card) | crates/z00z_wallets/src/core/address/card/stealth_card_codec.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_card.rs | 25:pub enum ReceiverCardError {;72:pub struct CardMetadata {;83:impl CardMetadata {; | key:1, | MOVE (move-address-card) | crates/z00z_wallets/src/core/address/card/stealth_card.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_request_crypto.rs | fn decode_pk(bytes: &[u8; 32]) -> Result<Z00ZRistrettoPoint, PaymentRequestError> {;    Z00ZRistrettoPoint::try_from_byt... | none | MOVE (move-address-request) | crates/z00z_wallets/src/core/address/request/stealth_request_crypto.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_request_parse.rs | 19:impl ParsedRequest {;46:struct ParsedHead {;67:struct ParsedBody {; | none | MOVE (move-address-request) | crates/z00z_wallets/src/core/address/request/stealth_request_parse.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_request.rs | 18:mod parse;;41:pub enum PaymentRequestError {;93:impl ValidatePaymentRequest for PaymentRequest {; | key:1, | MOVE (move-address-request) | crates/z00z_wallets/src/core/address/request/stealth_request.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_request_transport.rs | 2:pub fn generate_request(;40:pub fn generate_req_id() -> Result<[u8; 32], PaymentRequestError> {;54:pub fn encode_reque... | none | MOVE (move-address-request) | crates/z00z_wallets/src/core/address/request/stealth_request_transport.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_request_types.rs | 5:pub struct RequestMetadata {;18:impl RequestMetadata {;49:pub struct PaymentRequest {; | none | MOVE (move-address-request) | crates/z00z_wallets/src/core/address/request/stealth_request_types.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_scanner.rs | 17:mod types;;29:pub struct StealthOutputScanner {;35:impl Clone for StealthOutputScanner {; | none | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/stealth_scanner.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_scanner/test_stealth_scanner.rs | use z00z_core::Asset;;;use super::{;    ReceiveNext, ReceiveReject, ReceiveStatus, ScanChunk, ScanRangeErr, ScanResult,;... | none | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/stealth_scanner/test_stealth_scanner.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_scanner/types_range.rs | 3:pub enum ScanDecision {;17:pub struct ScanChunk {;28:pub struct ScanRangeStat {; | none | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/stealth_scanner/types_range.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_scanner/types_receive.rs | 3:pub enum ScanStrategy {;15:pub struct DetectedAssetPack {;28:impl DetectedAssetPack {; | none | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/stealth_scanner/types_receive.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_scanner/types.rs | use std::collections::{BTreeSet, HashMap};;use std::sync::atomic::{AtomicU64, Ordering};;;use z00z_core::assets::Asset;;... | address:1, | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/stealth_scanner/types.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_scanner/types_tag_cache.rs | 3:pub struct Tag16Context {;14:pub struct Tag16Cache {;22:impl Clone for Tag16Cache {; | none | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/stealth_scanner/types_tag_cache.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_scan_support.rs | 317:mod tests;; | none | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/stealth_scan_support.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/stealth_trust.rs | 22:pub enum TrustLevel {;35:pub struct PinEntry {;50:pub enum VerifyResult {; | address:1, | MOVE (move-address-card) | crates/z00z_wallets/src/core/address/card/stealth_trust.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/test_canonical_snapshot_suite.rs | use super::*;;use std::str::FromStr;;;#[test];fn test_path_encode_decode() {; | none | MOVE (move-address-manager) | crates/z00z_wallets/src/core/address/manager/test_canonical_snapshot_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/test_stealth_card.rs | use bech32::FromBase32;;use z00z_utils::time::{SystemTimeProvider, TimeProvider};;;use super::*;;use crate::core::key::{... | key:1, | MOVE (move-address-card) | crates/z00z_wallets/src/core/address/card/test_stealth_card.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/test_stealth_request.rs | use super::{;    generate_req_id, PaymentRequest, PaymentRequestError, RequestMetadata, RequestParams,;    ValidatePayme... | address:1,key:1, | MOVE (move-address-request) | crates/z00z_wallets/src/core/address/request/test_stealth_request.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/test_stealth_scan_support_suite.rs | use z00z_core::assets::AssetPackPlain;;use z00z_crypto::{;    create_commitment,;    zkpack::{ZKPACK_CT_LEN, ZKPACK_TAG_... | none | MOVE (move-address-scan) | crates/z00z_wallets/src/core/address/scan/test_stealth_scan_support_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/test_stealth_trust_suite.rs | use std::sync::{Arc, Mutex};;;use crate::core::key::{;    derive_identity_public_key, derive_identity_secret_key, derive... | address:2,key:1, | MOVE (move-address-card) | crates/z00z_wallets/src/core/address/card/test_stealth_trust_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/Z00Z-ADDRESS-GUIDE.md | # Z00Z Address Guide (Single vs Dual);;**:** 20260203  ; | none | MOVE (move-doc) | crates/z00z_wallets/src/core/address/docs/Z00Z-ADDRESS-GUIDE.md | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address.rs | 45:mod tests {; | ChainType:1,domains:1, | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/mod.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/test_z00z_address_suite.rs |     use super::*;;    use blake2::{Blake2b512, Digest};;    use z00z_crypto::expert::{;        keys::{RistrettoPublicKey... | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/test_z00z_address_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_address_codec.rs | // Constants from wallet_address_codec.rs;/// URI scheme for Z00Z addresses;pub const Z00Z_URI_SCHEME: &str = "z00z";;//... | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_address_codec.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_address_features.rs | 3:pub struct Z00ZAddressFeatures(pub u8);;5:impl Z00ZAddressFeatures {;49:impl Default for Z00ZAddressFeatures {; | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_address_features.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_address_normalize.rs | fn strip_wrappers(mut value: &str) -> &str {;    loop {;        let bytes = value.as_bytes();;        if bytes.len() < 2... | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_address_normalize.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_address_parts.rs | // ========== Phase 27: Payload Format (Future Enhancement) ==========;;/// Encode single address to payload format.;///... | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_address_parts.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_address_validation.rs | 3:pub enum Z00ZAddressError {;152:impl Z00ZAddressError {;225:pub enum UnknownFeaturePolicy {; | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_address_validation.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_dual_address.rs | 3:pub struct Z00ZDualAddress {;12:impl Z00ZDualAddress {; | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_dual_address.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_dual_address_serde.rs | 2:struct Z00zDualAddressSerde {;9:impl From<Z00ZDualAddress> for Z00zDualAddressSerde {;20:impl TryFrom<Z00zDualAddressS... | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_dual_address_serde.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_dual_address_transport.rs | 1:impl Z00ZDualAddress {; | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_dual_address_transport.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_single_address.rs | 3:pub struct Z00ZSingleAddress {;11:impl Z00ZSingleAddress {; | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_single_address.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_single_address_serde.rs | 2:struct Z00zSingleAddressSerde {;8:impl From<Z00ZSingleAddress> for Z00zSingleAddressSerde {;18:impl TryFrom<Z00zSingle... | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_single_address_serde.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/address/z00z_address/z00z_single_address_transport.rs | 1:impl Z00ZSingleAddress {; | none | MOVE (move-address-format) | crates/z00z_wallets/src/core/address/format/z00z_single_address_transport.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/app/app.rs | 17:pub struct CreateWalletRequest {;28:impl CreateWalletRequest {;92:pub struct AppKernel;; | none | MOVE (move-app-kernel) | crates/z00z_wallets/src/core/app/kernel.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/app/mod.rs | #![allow(clippy::module_inception)];;//! Core application logic (Phase 1 - RPC stubs only);;pub mod app;; | none | KEEP | crates/z00z_wallets/src/core/app/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/backup/backup_exporter_impl.rs | 35:pub struct BackupExporterImpl<T: TimeProvider, R: SecureRngProvider> {;274:mod tests;; | backup:1,key:1,wallet:1, | MOVE (move-backup-export) | crates/z00z_wallets/src/core/backup/export/backup_exporter_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/backup/backup_exporter.rs | 9:pub struct BackupMetadata {;25:pub enum BackupExporterError {;52:pub type BackupExporterResult<T> = std::result::Resul... | none | MOVE (move-backup-export) | crates/z00z_wallets/src/core/backup/export/backup_exporter.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/backup/backup_exporter_verify.rs | impl<T: TimeProvider, R: SecureRngProvider> BackupExporterImpl<T, R> {;    fn compute_checksum(aad_bytes: &[u8], ciphert... | none | MOVE (move-backup-export) | crates/z00z_wallets/src/core/backup/export/backup_exporter_verify.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/backup/backup_importer_impl.rs | 33:pub struct BackupImporterImpl;;35:impl BackupImporterImpl {;205:impl Default for BackupImporterImpl {; | backup:1,key:1,wallet:1, | MOVE (move-backup-import) | crates/z00z_wallets/src/core/backup/import/backup_importer_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/backup/backup_importer.rs | 11:pub struct ImportedWalletData {;36:pub enum BackupImporterError {;72:pub type BackupImporterResult<T> = std::result::... | wallet:1, | MOVE (move-backup-import) | crates/z00z_wallets/src/core/backup/import/backup_importer.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/backup/backup_wire.rs | use crate::core::wallet::snapshot::WalletExportPack;;use serde::{Deserialize, Serialize};;;use super::{BackupKdf, Backup... | wallet:1, | MOVE (move-backup-crypto) | crates/z00z_wallets/src/core/backup/crypto/backup_wire.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/backup/mod.rs | 13:mod backup_wire;; | none | KEEP | crates/z00z_wallets/src/core/backup/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/backup/test_backup_exporter_suite.rs | use super::*;;use crate::adapters::rpc::types::common::PersistWalletId;;use crate::adapters::rpc::types::wallet::Persist... | wallet:2,WalletState:1, | MOVE (move-backup-export) | crates/z00z_wallets/src/core/backup/export/test_backup_exporter_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/backup/test_backup_importer_suite.rs | use super::super::backup_wire::{BackupCompression, BACKUP_SALT_BYTES};;use super::*;;use crate::adapters::rpc::types::co... | backup:1,wallet:2,WalletState:1, | MOVE (move-backup-import) | crates/z00z_wallets/src/core/backup/import/test_backup_importer_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/backup/test_wallet_backup_suite.rs | use super::*;;;#[test];fn test_derive_key_works() {;    let password = SafePassword::from("test-password");; | none | MOVE (move-backup-crypto) | crates/z00z_wallets/src/core/backup/crypto/test_wallet_backup_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/backup/wallet_backup_kdf.rs | 6:pub enum SaltPad {;11:impl SaltPad {;28:pub struct BackupKdf {; | none | MOVE (move-backup-crypto) | crates/z00z_wallets/src/core/backup/crypto/wallet_backup_kdf.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/backup/wallet_backup.rs | 60:pub struct WalletBackupCrypto;;64:impl WalletBackupCrypto {;107:pub fn wallet_backup_aad_tag(aad_json: &[u8]) -> [u8;... | domains:2, | MOVE (move-backup-crypto) | crates/z00z_wallets/src/core/backup/crypto/wallet_backup.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/chain/broadcast_impl.rs | 18:pub struct BroadcastImpl<T: TimeProvider> {;88:mod tests {; | none | MOVE (move-chain-broadcast) | crates/z00z_wallets/src/core/chain/broadcast/broadcast_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/chain/broadcast.rs | 7:pub enum BroadcastError {;26:pub type BroadcastResultType<T> = std::result::Result<T, BroadcastError>;;30:pub struct B... | none | MOVE (move-chain-broadcast) | crates/z00z_wallets/src/core/chain/broadcast/broadcast.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/chain/chain_client_impl.rs | 17:pub struct ChainClientImpl {;21:impl ChainClientImpl {;31:impl ChainClient for ChainClientImpl {; | none | MOVE (move-chain-client) | crates/z00z_wallets/src/core/chain/client/chain_client_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/chain/chain_client.rs | 6:pub type BlockBytes = Vec<u8>;;9:pub type BlockHeaderBytes = Vec<u8>;;13:pub enum ChainClientError {; | none | MOVE (move-chain-client) | crates/z00z_wallets/src/core/chain/client/chain_client.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/chain/mod.rs | //! Chain-facing abstractions.;//!;//! These traits define how the wallet talks to the blockchain/network layer.;//! Con... | none | KEEP | crates/z00z_wallets/src/core/chain/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/chain/receiver_card_record.rs | 18:pub enum RevocationState {;31:pub struct ReceiverCardRecord {;46:pub enum CardRecordError {; | key:1, | MOVE (move-chain-publication) | crates/z00z_wallets/src/core/chain/publication/receiver_card_record.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/chain/scan_engine_impl.rs | 19:pub struct ScanEngineImpl {;24:impl ScanEngineImpl {;34:impl Default for ScanEngineImpl {; | none | MOVE (move-chain-scan) | crates/z00z_wallets/src/core/chain/scan/scan_engine_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/chain/scan_engine.rs | 7:pub enum ScanEngineError {;26:pub type ScanEngineResult<T> = std::result::Result<T, ScanEngineError>;;29:pub type Scan... | none | MOVE (move-chain-scan) | crates/z00z_wallets/src/core/chain/scan/scan_engine.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/claim/claim_receipt.rs | 11:pub struct ClaimReceipt {;24:impl ClaimReceipt {;77:pub fn claim_scope_hash(chain: &str) -> [u8; 32] {; | key:3, | KEEP | crates/z00z_wallets/src/core/claim/claim_receipt.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/claim/conservation.rs | 8:pub enum ConservationError {;27:pub enum SnapshotCheckError {;45:pub struct PersistCheckRow {; | none | KEEP | crates/z00z_wallets/src/core/claim/conservation.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/claim/distribution.rs | 8:pub fn assign_class_split(assets: &[Asset], assigned: &mut [Vec<Asset>]) {;23:pub fn assign_coin_sets(assets: &[Asset]... | none | KEEP | crates/z00z_wallets/src/core/claim/distribution.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/claim/import_model.rs | 9:pub struct ImportEval {;27:pub fn map_import_ok(resp: &Value) -> ImportEval {;69:pub fn map_import_err(text: &str) -> ... | none | KEEP | crates/z00z_wallets/src/core/claim/import_model.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/claim/mod.rs | //! Claim receipt data model and signing helpers.;;/// Claim receipt types and crypto helpers.;pub mod claim_receipt;;//... | none | KEEP | crates/z00z_wallets/src/core/claim/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/claim/nullifier.rs | 9:pub struct NullifierBytes(pub [u8; 32]);;11:impl NullifierBytes {;20:pub struct NullifierKey {; | none | KEEP | crates/z00z_wallets/src/core/claim/nullifier.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/claim/nullifier_store_global.rs | 2:pub fn bind_paths(row_path: &Path, audit_path: Option<&Path>) -> Result<(), String> {;12:pub fn clear_bind() {;20:pub ... | none | KEEP | crates/z00z_wallets/src/core/claim/nullifier_store_global.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/claim/nullifier_store.rs | 17:pub struct NullifierClaim {;32:pub struct NullifierLease {;39:pub struct NullifierConflict {; | none | KEEP | crates/z00z_wallets/src/core/claim/nullifier_store.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/claim/service.rs | 10:pub enum ClaimLifeStep {;21:impl ClaimLifeStep {;50:pub enum ClaimImportOutcome {; | none | KEEP | crates/z00z_wallets/src/core/claim/service.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/claim/state_machine.rs | 15:pub struct ClaimStateRow {;24:pub struct ClaimStateFile {;40:impl ClaimStateFile {; | claim:1,storage:1, | KEEP | crates/z00z_wallets/src/core/claim/state_machine.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/claim/test_nullifier_store.rs | use super::{;    bind_paths, claim_match, clear_bind, clear_rows, create_nullifier_lease, get_entry,;    global_nullifie... | claim:2, | KEEP | crates/z00z_wallets/src/core/claim/test_nullifier_store.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/domains.rs | 148:pub struct CacheSnapshotHmacTestDomain;;151:pub struct CacheSnapshotHmacProdDomain;;156:impl DomainSeparation for Ca... | none | MOVE (move-foundation) | crates/z00z_wallets/src/core/foundation/domains.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/domains_snapshot.txt | # Frozen domain snapshot for crates/z00z_wallets/src/core/domains.rs;# Regenerate via the ignored test print_domain_snap... | none | MOVE (move-foundation) | crates/z00z_wallets/src/core/foundation/domains_snapshot.txt | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/hashing.rs | 34:pub type WalletMasterKeyHasher = DomainHasher<WalletMasterKeyDomain>;;36:pub type PaymentKeyHasher = DomainHasher<Wal... | domains:1, | MOVE (move-foundation) | crates/z00z_wallets/src/core/foundation/hashing.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_constants.rs | 55:pub struct Bip39Seed64([u8; 64]);;57:impl fmt::Debug for Bip39Seed64 {;65:impl Bip39Seed64 {; | key:1, | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_constants.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_key_deriver.rs | 2:pub struct MasterKeyGenerator;;4:impl MasterKeyGenerator {;65:pub struct Bip32KeyDeriver;; | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_key_deriver.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_manager.rs | 2:pub struct Bip44KeyManager {;7:impl fmt::Debug for Bip44KeyManager {;16:impl Bip44KeyManager {; | key:1, | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_manager.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_path_builder_helpers.rs | 1:struct Bip44PathComponents {; | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_path_builder_helpers.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_path_builder.rs | 6:pub struct Bip44PathBuilder {;14:impl Bip44PathBuilder {; | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_path_builder.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_path_errors.rs | 9:pub enum Bip44ViolationReason {;30:impl Display for Bip44ViolationReason {;48:pub enum Bip44Error {; | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_path_errors.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_path.rs | include!("bip32_path_errors.rs");;include!("bip32_path_serde.rs");;include!("bip32_path_value.rs");;include!("bip32_path... | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_path.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_path_serde.rs | 1:impl serde::Serialize for Bip44Path {; | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_path_serde.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_path_validator.rs | 2:pub struct Bip44Validator;;4:impl Bip44Validator {; | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_path_validator.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_path_value.rs | 32:pub struct Bip44Path {;40:impl ConstantTimeEq for Bip44Path {;60:impl std::hash::Hash for Bip44Path {; | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_path_value.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32_ristretto_bridge.rs | 2:pub struct RistrettoBridge;;15:impl RistrettoBridge {; | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32_ristretto_bridge.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip32.rs | //!  BIP-32/BIP-44 hierarchical deterministic key derivation.;//!;//!  This module implements **real** BIP-32 CKD (Child... | domains:1, | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip32.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/bip44_derivation.md | #  BIP-44 Derivation Examples (Z00Z);; This document is a practical companion to the normative specification in crates/z... | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/bip44_derivation.md | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_cache.rs | 3:pub struct CachedKey {; | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_cache.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_manager_impl_cache.rs | impl<R: SecureRngProvider> KeyManagerImpl<R> {;    fn deriving_paths_lock(;        &self,;    ) -> Result<std::sync::Mut... | key:1, | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_manager_impl_cache.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_manager_impl_cache_validation.rs | impl<R: SecureRngProvider> KeyManagerImpl<R> {;    fn run_spot_check_if_needed(&self, should_spot_check: bool) -> Result... | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_manager_impl_cache_validation.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_manager_impl_gap.rs | impl<R: SecureRngProvider> KeyManagerImpl<R> {;    fn gap_span(&self, next_index: u32, last_used_plus1: u32, branch: &'s... | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_manager_impl_gap.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_manager_impl.rs | 4:struct DerivationFlight {;11:struct DerivationFlightResult {;16:impl DerivationFlight {; | key:1,wallet_owned:1, | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_manager_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_manager_impl_state.rs | impl<R: SecureRngProvider> KeyManagerImpl<R> {;    fn validate_empty_manager_state(&self) -> Result<()> {;        if sel... | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_manager_impl_state.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_manager_impl_system.rs | 1:impl KeyManagerImpl<SystemRngProvider> {; | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_manager_impl_system.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_manager_impl_trait.rs | impl<R: SecureRngProvider> KeyManager for KeyManagerImpl<R> {;    fn clear(&mut self) {;        self.encrypted_seed = No... | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_manager_impl_trait.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_manager_redb.rs | 33:pub enum RedbKeyManagerError {;49:pub type Result<T> = std::result::Result<T, RedbKeyManagerError>;;64:pub struct Red... | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_manager_redb.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_manager_redb_wallet.rs | 7:pub struct WalletRedbKeyManager {;12:pub type WalletRedbKeyManagerError = RedbKeyManagerError;;14:impl Default for Wal... | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_manager_redb_wallet.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_manager.rs | 126:pub enum KeyManagerError {;192:pub type Result<T> = std::result::Result<T, KeyManagerError>;;195:pub trait KeyManage... | domains:2,hashing:1,key:1, | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_manager.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/KEYS-Bip44-UserGuide.md | #  Z00Z BIP-44 User Guide;; This document explains how Z00Z uses a strict BIP-44 derivation path for deterministic key d... | none | MOVE (move-doc) | crates/z00z_wallets/src/core/key/docs/KEYS-Bip44-UserGuide.md | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/KEYS-DERIVATION.md | # Current Derivation Trace;;Caller-facing entrypoints should use services::WalletService, core::address, and core::key.; | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/KEYS-DERIVATION.md | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/KEYS_EXPALNATION.md | #  Key Derivation Call Graphs (NEW version);; NOTE: This document was superseded by EXPALNATION.md (same directory).; | none | KEEP | crates/z00z_wallets/src/core/key/KEYS_EXPALNATION.md | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/key/KEYS-GUIDE.md | # Z00Z Keys  User Guide;;: 2026-02-03; | none | MOVE (move-doc) | crates/z00z_wallets/src/core/key/docs/KEYS-GUIDE.md | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/key_state.rs | 4:pub enum Z00ZKeyBranch {;9:impl Z00ZKeyBranch {;45:pub struct KeyManagerState {; | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/key_state.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/mod.rs | //! HD wallet key derivation;//!;//! BIP-44 key derivation without account level.;;// Core key modules; | address:1,hashing:1, | KEEP | crates/z00z_wallets/src/core/key/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/key/seed_backup_format_errors.rs | 3:pub enum SeedPhraseError {;85:pub fn validate_and_normalize_passphrase(passphrase: &str) -> Result<String, SeedPhraseE... | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_backup_format_errors.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_backup_format_phrase.rs | 5:pub struct SeedPhrase24 {;14:impl SeedPhrase24 {;165:impl FromStr for SeedPhrase24 {; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_backup_format_phrase.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_backup_format.rs | include!("seed_backup_format_errors.rs");;include!("seed_backup_format_phrase.rs");;include!("test_seed_backup_format_su... | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_backup_format.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_backup_format_tests_basic.rs | #[test];fn test_seed_words_join_passes() {;    let words = vec![;        Hidden::hide("one".to_string()),;        Hidden... | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/test_seed_backup_format_basic.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_backup_format_tests_language.rs | #[test];fn test_homoglyph_protection() {;    use bip39::Language;;;    let english_wordlist = Language::English.word_lis... | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/test_seed_backup_format_language.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_cipher_container_crypto.rs | 1:impl CipherSeedContainer {; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_cipher_container_crypto.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_cipher_container.rs | 51:impl CipherSeedContainer {; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_cipher_container.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_cipher_ids.rs | 6:pub enum KdfId {;11:impl ConstantTimeEq for KdfId {;17:impl KdfId {; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_cipher_ids.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_cipher_params.rs | 3:pub struct Argon2idParams {;12:impl ConstantTimeEq for Argon2idParams {;20:impl Argon2idParams {; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_cipher_params.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_cipher_persistence.rs | 1:impl CipherSeedContainer {; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_cipher_persistence.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_cipher.rs | 8:mod cipher_seed_tests {; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_cipher.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_cipher_types.rs | 3:pub struct CipherSeedContainer {;22:impl fmt::Debug for CipherSeedContainer {;38:struct CipherSeedMeta<'a> {; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_cipher_types.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_entropy.rs | 43:impl fmt::Display for EntropyWarning {;217:pub fn validate_entropy_result(seed: &[u8]) -> RuntimeValidationResult {;2... | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_entropy.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed_mnemonic.rs | 3:pub enum MnemonicError {;46:pub struct SeedWords {;50:impl SeedWords {; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed_mnemonic.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/seed.rs | 68:pub type MnemonicLanguage = bip39::Language;; | domains:1, | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/seed.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/stealth_keys_identity.rs | 2:pub fn derive_identity_secret_key(;21:pub fn derive_identity_public_key(;32:pub fn generate_identity_keypair() -> (Z00... | none | MOVE (move-key-receiver) | crates/z00z_wallets/src/core/key/receiver/stealth_keys_identity.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/stealth_keys_receiver.rs | 2:pub struct ReceiverKeys {;16:impl ReceiverKeys {;114:pub fn benchmark_recv_keys(iterations: usize) -> Result<Duration,... | none | MOVE (move-key-receiver) | crates/z00z_wallets/src/core/key/receiver/stealth_keys_receiver.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/stealth_keys.rs | 52:mod tests {; | address:1,domains:1,key:1, | MOVE (move-key-receiver) | crates/z00z_wallets/src/core/key/receiver/stealth_keys.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/stealth_keys_secret.rs | 3:pub enum StealthKeyError {;53:pub struct ReceiverSecret([u8; 32]);;55:impl ReceiverSecret {; | none | MOVE (move-key-receiver) | crates/z00z_wallets/src/core/key/receiver/stealth_keys_secret.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/test_bip32_manager_entropy.inc.rs |     #[test];    fn test_bip39_seed64_entropy_validation() {;        let zero_seed = Bip39Seed64::new([0u8; 64]);;       ... | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/test_bip32_manager_entropy.inc.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/test_bip32_manager.inc.rs |     #[test];    fn test_asset_constant_matches_policy() {;        assert_eq!(;            Z00Z_BIP44_ASSET, 1337,;      ... | none | MOVE (move-key-bip) | crates/z00z_wallets/src/core/key/bip/test_bip32_manager.inc.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/test_key_manager_impl_suite.rs |     #[test];    fn test_secret_key_ct_eq() {;        let mut bytes1 = [1u8; 64];;        let key1 = RistrettoSecretKey::... | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/test_key_manager_impl_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/test_key_manager_password_suite.rs |     #[test];    fn test_init_weak_seed_rejected() {;        let mut km = KeyManagerImpl::new();;        let weak = [0x55... | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/test_key_manager_password_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/test_key_manager_redb_suite.rs | 6:mod tests {; | none | MOVE (move-key-manager) | crates/z00z_wallets/src/core/key/manager/test_key_manager_redb_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/test_seed_backup_format_suite.rs | 2:mod tests {; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/test_seed_backup_format_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/test_seed_cipher_basic_suite.rs |     fn build_aad_ver(;        version: u8,;        wallet_id: &[u8],;        purpose: &[u8],;        birthday: u32,; | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/test_seed_cipher_basic_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/test_seed_cipher_metadata_suite.rs |     #[test];    fn test_all_preset_params_valid() {;        assert!(Argon2idParams::DEFAULT.validate().is_ok());;       ... | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/test_seed_cipher_metadata_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/test_seed_cipher_reencrypt_suite.rs |     #[test];    fn test_reencrypt_success() {;        let old_pw = SafePassword::from("old_password");;        let new_p... | none | MOVE (move-key-seed) | crates/z00z_wallets/src/core/key/seed/test_seed_cipher_reencrypt_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/key/test_stealth_keys_suite.rs | use std::collections::HashSet;;;use z00z_utils::io::create_dir_all;;use zeroize::Zeroize;;; | domains:1, | MOVE (move-key-receiver) | crates/z00z_wallets/src/core/key/receiver/test_stealth_keys_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/mod.rs | //! Core wallet abstractions and types (Phase 1 - RPC stubs only);//!;//! This module provides core types and state mana... | none | KEEP | crates/z00z_wallets/src/core/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/network/mod.rs | 8:pub struct NetworkKernel;; | none | MOVE (move-network-kernel) | crates/z00z_wallets/src/core/network/kernel.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/security/common-passwords-v1.txt | ****;*****;******; | none | KEEP | crates/z00z_wallets/src/core/security/common-passwords-v1.txt | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/security/encryption.rs | 66:pub enum WalletEncryptionError {;106:pub struct EncryptedWalletContainer {;123:impl EncryptedWalletContainer {; | domains:1,hashing:2, | KEEP | crates/z00z_wallets/src/core/security/encryption.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/security/mod.rs | //! Core security utilities.;;/// Password policy and validation logic.;pub mod password;;; | none | KEEP | crates/z00z_wallets/src/core/security/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/security/password_checks.rs | 1:impl PasswordValidator {; | none | KEEP | crates/z00z_wallets/src/core/security/password_checks.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/security/password_denylist_v1.bloom |   @P@@H  @  @@@@@@ @ @@@@   @@@@ @ P@@@@ @  @@@@@  @  @    @ @   H   @(@@ @ @   @@ @@@ @ @@@  @   @ @ @  @@    @@@ @@@  ... | none | KEEP | crates/z00z_wallets/src/core/security/password_denylist_v1.bloom | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/security/password.rs | 12:pub struct RuntimePasswordPolicy {;23:impl Default for RuntimePasswordPolicy {;36:pub struct PasswordValidator {; | hashing:1, | KEEP | crates/z00z_wallets/src/core/security/password.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/stealth/ecdh.rs | 17:pub struct EcdhSenderKeys {;27:pub struct EcdhReceiverKeys {;35:pub fn compute_dh_sender(; | domains:1,stealth:1, | MOVE (move-stealth-crypto) | crates/z00z_wallets/src/core/stealth/crypto/ecdh.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/ecdh_validation.rs | 6:pub fn owf_constraints_ecdh(;20:mod tests {; | ecdh:1, | MOVE (move-stealth-crypto) | crates/z00z_wallets/src/core/stealth/crypto/ecdh_validation.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/encoding.rs | 8:pub fn encode_public_key(pk: &Z00ZRistrettoPoint) -> [u8; 32] {;15:pub fn decode_public_key(bytes: &[u8; 32]) -> Resul... | none | MOVE (move-stealth-crypto) | crates/z00z_wallets/src/core/stealth/crypto/encoding.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/ephemeral.rs | 12:pub fn generate_r_hedged(;26:pub fn derive_sender_salt(receiver_secret: &ReceiverSecret) -> [u8; 32] {;31:pub fn gene... | domains:1,key:2,stealth:1, | MOVE (move-stealth-crypto) | crates/z00z_wallets/src/core/stealth/crypto/ephemeral.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/facade_ecdh.rs | 20:pub struct SenderDhResult {;30:pub fn sender_derive_dh_with_r(;52:pub fn receiver_derive_dh(; | WalletError:1, | MOVE (move-stealth-facade) | crates/z00z_wallets/src/core/stealth/facade/facade_ecdh.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/facade_kdf.rs | 14:pub fn derive_pack_key(k_dh: &[u8; 32], asset_id: &[u8; 32], serial_id: u32) -> [u8; 32] {;21:pub fn derive_pack_nonc... | none | MOVE (move-stealth-facade) | crates/z00z_wallets/src/core/stealth/facade/facade_kdf.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/facade_zkpack.rs | 15:pub struct ZkPack;;17:impl ZkPack {;106:mod tests;; | none | MOVE (move-stealth-facade) | crates/z00z_wallets/src/core/stealth/facade/facade_zkpack.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/mod.rs | 37:pub enum StealthError {; | ecdh:1,kdf:1,scan:1, | KEEP | crates/z00z_wallets/src/core/stealth/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/stealth/output_build.rs | 1:struct SenderPath {;8:enum AssetIdMode {;13:struct OutputBuildState {; | none | MOVE (move-stealth-output) | crates/z00z_wallets/src/core/stealth/output/output_build.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/output.rs | 37:pub struct TxStealthOutput {;52:pub struct SenderWallet {;58:impl SenderWallet {; | address:1,cache:1,key:1,tx:1,WalletError:1,zkpack:1, | MOVE (move-stealth-output) | crates/z00z_wallets/src/core/stealth/output/output.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/output_validator.rs | 14:pub enum TagMode {;26:pub struct SenderValidationCtx {;43:pub fn validate_output_self(; | none | MOVE (move-stealth-output) | crates/z00z_wallets/src/core/stealth/output/output_validator.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/owner_tag.rs | 7:pub struct OwnerTag {;11:impl OwnerTag {;31:pub trait OwnerTagOperations {; | none | MOVE (move-stealth-output) | crates/z00z_wallets/src/core/stealth/output/owner_tag.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/tag.rs | 34:pub fn compute_tag16(k_dh: &[u8; 32], leaf_ad: &[u8; 32]) -> u16 {;39:pub fn compute_tag16_with_req(k_dh: &[u8; 32], ... | domains:1, | MOVE (move-stealth-output) | crates/z00z_wallets/src/core/stealth/output/tag.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/test_facade_zkpack_suite.rs | 14:struct ZkPackVecFile {;19:struct ZkPackVec {; | none | MOVE (move-stealth-output) | crates/z00z_wallets/src/core/stealth/output/test_facade_zkpack_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/test_output_extra.rs | use super::*;;use crate::core::stealth::{SenderValidationCtx, TxStealthOutput};;use crate::core::tx::TxOutRole;;use std:... | address:10,kdf:1,stealth:5,tx:1,zkpack:1, | MOVE (move-stealth-output) | crates/z00z_wallets/src/core/stealth/output/test_output_extra.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/stealth/test_output.rs | 748:mod extra;; | address:1,ecdh:1,kdf:1,key:1,stealth:3, | MOVE (move-stealth-output) | crates/z00z_wallets/src/core/stealth/output/test_output.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/asset_storage_impl.rs | 20:type Result<T> = std::result::Result<T, AssetStorageError>;;27:struct AssetRecord {;44:pub struct AssetStorageImpl {; | none | MOVE (move-persistence-assets) | crates/z00z_wallets/src/core/persistence/assets/asset_storage_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/asset_storage.rs | 10:pub enum AssetStorageError {;37:pub type AssetStorageResult<T> = std::result::Result<T, AssetStorageError>;;72:pub tr... | none | MOVE (move-persistence-assets) | crates/z00z_wallets/src/core/persistence/assets/asset_storage.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/claim_registry.rs | 9:pub struct ClaimRow {;24:pub struct ClaimReservation {;33:pub struct ClaimConflict {; | claim:1,storage:1, | MOVE (move-claim-registry) | crates/z00z_wallets/src/core/claim/registry/claim_registry.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/file_key_store.rs | 15:pub enum FileKeyStoreError {;28:pub enum EncryptionScheme {;33:impl EncryptionScheme {; | key:2, | MOVE (move-security-vault) | crates/z00z_wallets/src/core/security/vault/file_key_store.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/mod.rs | //! Persistent storages.;//!;//! This module contains wallet persistence abstractions (traits + error types).;//! Implem... | none | MOVE (move-persistence-root) | crates/z00z_wallets/src/core/persistence/mod.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/receipt_storage_impl.rs | 14:pub struct ReceiptStorageImpl {;18:impl ReceiptStorageImpl {;50:impl ReceiptStorage for ReceiptStorageImpl {; | none | MOVE (move-persistence-receipts) | crates/z00z_wallets/src/core/persistence/receipts/receipt_storage_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/receipt_storage.rs | 9:pub struct Receipt {;26:pub enum ReceiptStorageError {;49:pub type ReceiptStorageResult<T> = std::result::Result<T, Re... | none | MOVE (move-persistence-receipts) | crates/z00z_wallets/src/core/persistence/receipts/receipt_storage.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/scan_storage_impl.rs | 17:pub struct ScanStorageImpl<T: TimeProvider> {;109:mod tests {; | none | MOVE (move-persistence-scans) | crates/z00z_wallets/src/core/persistence/scans/scan_storage_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/scan_storage.rs | 8:pub struct ScanState {;21:pub enum ScanStorageError {;40:pub type ScanStorageResult<T> = std::result::Result<T, ScanSt... | none | MOVE (move-persistence-scans) | crates/z00z_wallets/src/core/persistence/scans/scan_storage.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/secret_store_impl.rs | 31:struct SecretStoreFile {;46:pub struct SecretStoreImpl<T: TimeProvider, R: SecureRngProvider> {;222:mod tests {; | wallet:1, | MOVE (move-security-vault) | crates/z00z_wallets/src/core/security/vault/secret_store_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/secret_store.rs | 10:pub enum SecretStoreError {;49:pub type Result<T> = std::result::Result<T, SecretStoreError>;;80:pub trait SecretStor... | wallet:1, | MOVE (move-security-vault) | crates/z00z_wallets/src/core/security/vault/secret_store.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/test_asset_storage_impl_suite.rs | use super::*;;;fn create_test_asset(_tx_hash: &str, _output_index: u32) -> Asset {;    use std::sync::Arc;;    let mut a... | none | MOVE (move-persistence-assets) | crates/z00z_wallets/src/core/persistence/assets/test_asset_storage_impl_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/tx_storage_impl.rs | 16:pub struct TxStorageImpl<T: TimeProvider> {;159:mod tests {; | none | MOVE (move-persistence-tx) | crates/z00z_wallets/src/core/persistence/tx/tx_storage_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/tx_storage.rs | 8:pub enum TxStatus {;22:pub struct TxRecord {;37:pub enum TxStorageError {; | none | MOVE (move-persistence-tx) | crates/z00z_wallets/src/core/persistence/tx/tx_storage.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/wallet_storage_impl.rs | 16:pub struct WalletStorageImpl {;20:impl WalletStorageImpl {;62:impl WalletStorage for WalletStorageImpl {; | wallet:2, | MOVE (move-persistence-wallets) | crates/z00z_wallets/src/core/persistence/wallets/wallet_storage_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/storage/wallet_storage.rs | 9:pub enum WalletStorageError {;28:pub type WalletStorageResult<T> = std::result::Result<T, WalletStorageError>;;41:pub ... | wallet:1, | MOVE (move-persistence-wallets) | crates/z00z_wallets/src/core/persistence/wallets/wallet_storage.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/test_domains_suite.rs | use super::*;;use z00z_crypto::expert::traits::DomainSeparation;;;const DOMAINS_SNAPSHOT: &str = include_str!("domains_s... | none | MOVE (move-foundation) | crates/z00z_wallets/src/core/foundation/test_domains_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/test_hashing_suite.rs | use super::*;;;#[test];fn test_canonicalize_string() {;    let input = "  Hello World  ";; | none | MOVE (move-foundation) | crates/z00z_wallets/src/core/foundation/test_hashing_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/asset_selector_multi.rs | 8:pub struct InRef {;15:pub struct OutRef {;22:pub struct MultiStmt {; | none | MOVE (move-tx-selection) | crates/z00z_wallets/src/core/tx/selection/asset_selector_multi.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/asset_selector.rs | 10:pub enum SelectionStrategy {;21:pub enum AssetSelectorError {;49:pub type AssetSelectorResult<T> = std::result::Resul... | none | MOVE (move-tx-selection) | crates/z00z_wallets/src/core/tx/selection/asset_selector.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/balance.rs | 7:pub enum TxBalErr {;15:pub fn balance_blindings(r_in: &Z00ZScalar, r_outs: &[Z00ZScalar]) -> Z00ZScalar {;22:pub fn ve... | none | KEEP | crates/z00z_wallets/src/core/tx/balance.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/tx/builder.rs | 93:pub fn build_output_with_blind(;126:pub fn build_output_leaf(;148:mod tests {; | address:1,stealth:2, | MOVE (move-tx-output) | crates/z00z_wallets/src/core/tx/output/builder.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/claim_auth.rs | 40:pub fn claim_auth_pk() -> Z00ZRistrettoPoint {;46:pub fn require_claim_auth_simulator_anchor(;71:pub fn sign_claim_au... | none | MOVE (move-tx-claim) | crates/z00z_wallets/src/core/tx/claim/claim_auth.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/claim_errors.rs | 6:pub enum ClaimTxError {;88:pub struct ClaimTxVerifyReport {;101:pub struct ClaimVerifyResult {; | none | MOVE (move-tx-claim) | crates/z00z_wallets/src/core/tx/claim/claim_errors.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/claim_helpers.rs | 6:pub fn build_claim_tx_digest(;31:pub fn compute_claim_scope_hash(key: &ClaimScopeKey) -> [u8; 32] {;46:pub fn derive_o... | none | MOVE (move-tx-claim) | crates/z00z_wallets/src/core/tx/claim/claim_helpers.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/claim_tx_helpers.rs | 34:pub fn build_claim_stmt(pkg: &ClaimTxPackage) -> Result<ClaimStmt, String> {; | none | MOVE (move-tx-claim) | crates/z00z_wallets/src/core/tx/claim/claim_tx_helpers.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/claim_tx.rs | 43:pub trait ClaimTxVerifier {;111:pub fn build_owner_attest_msg(;143:pub fn sign_owner_attest(; | none | MOVE (move-tx-claim) | crates/z00z_wallets/src/core/tx/claim/claim_tx.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/claim_tx_verifier_impl_proof.rs | 1:impl ClaimTxVerifierImpl {;321:mod tests {; | none | MOVE (move-tx-claim) | crates/z00z_wallets/src/core/tx/claim/claim_tx_verifier_impl_proof.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/claim_tx_verifier_impl.rs | 1:impl ClaimTxVerifierImpl {; | none | MOVE (move-tx-claim) | crates/z00z_wallets/src/core/tx/claim/claim_tx_verifier_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/claim_wire_types.rs | 37:pub struct ClaimOutputWire {;60:pub struct ClaimScopeKey {;72:pub struct ClaimInputWire {; | none | MOVE (move-tx-claim) | crates/z00z_wallets/src/core/tx/claim/claim_wire_types.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/fee_estimator.rs | 10:pub enum FeeEstimatorError {;29:pub type FeeEstimatorResult<T> = std::result::Result<T, FeeEstimatorError>;;33:pub st... | none | MOVE (move-tx-fees) | crates/z00z_wallets/src/core/tx/fees/fee_estimator.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/lifecycle.rs | 9:struct PartyRef<'a> {;16:pub struct PendingEnt {;39:pub struct ConfirmEnt {; | stealth:2, | MOVE (move-tx-state) | crates/z00z_wallets/src/core/tx/state/lifecycle.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/mod.rs | 19:mod builder;;20:mod claim_auth;;21:mod claim_errors;; | stealth:5,tx:1, | KEEP | crates/z00z_wallets/src/core/tx/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/tx/multi_io.rs | 11:pub struct AssetSelCfg {;22:pub struct BobOutCfg {;29:pub enum MultiIoErr {; | none | KEEP | crates/z00z_wallets/src/core/tx/multi_io.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/tx/output_flow.rs | 30:pub struct OutputBundle {;58:pub fn output_range_ctx_hash(;77:pub fn bind_output_wire(mut wire: AssetWire, leaf: &Ass... | none | MOVE (move-tx-output) | crates/z00z_wallets/src/core/tx/output/output_flow.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/pay_ref.rs | 52:pub fn generate(block_hash: &[u8; 32], output_hash: &[u8; 32]) -> [u8; PAY_REF_SIZE] {;61:pub fn parse_hex(s: &str) -... | hashing:1, | MOVE (move-tx-ids) | crates/z00z_wallets/src/core/tx/ids/pay_ref.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/prover.rs | 19:pub enum ProverError {;38:pub type ProverResult<T> = std::result::Result<T, ProverError>;;41:pub fn sign_spend_author... | key:1, | MOVE (move-tx-proof) | crates/z00z_wallets/src/core/tx/proof/prover.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/signer.rs | 36:pub enum SignerError {;55:pub type SignerResult<T> = std::result::Result<T, SignerError>;;66:pub trait Signer {; | key:1, | MOVE (move-tx-proof) | crates/z00z_wallets/src/core/tx/proof/signer.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/spending.rs | 14:mod events {; | tx:5, | MOVE (move-tx-spend) | crates/z00z_wallets/src/core/tx/spend/spending.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/spend_proof_backend.rs | 26:pub struct SpendProofStmt {;41:impl SpendProofStmt {;110:pub struct SpendMembershipWitness {; | none | MOVE (move-tx-proof) | crates/z00z_wallets/src/core/tx/proof/spend_proof_backend.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/spend_rules.rs | 21:pub enum SpendRule {;33:pub struct SpendRuleTriplet {;119:pub fn spend_order() -> &'static [SpendRule; 8] {; | key:1, | MOVE (move-tx-spend) | crates/z00z_wallets/src/core/tx/spend/spend_rules.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/spend_verification.rs | 41:pub struct SpendInputRef {;47:pub struct SpendInputLeaf {;60:pub struct SpendPlan {; | key:7,stealth:6,tx:10, | MOVE (move-tx-spend) | crates/z00z_wallets/src/core/tx/spend/spend_verification.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/state_checkpoint.rs | 8:pub struct SpentEnt {;15:pub struct CreatedEnt {;24:pub struct Checkpoint {; | none | MOVE (move-tx-state) | crates/z00z_wallets/src/core/tx/state/state_checkpoint.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/state_errors.rs | 5:pub enum TxProofError {;16:pub enum SpentIndexError {;24:pub enum StateError {; | none | MOVE (move-tx-state) | crates/z00z_wallets/src/core/tx/state/state_errors.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/state_resolved_input.rs | 8:pub struct ResolvedInput {;14:impl ResolvedInput {; | none | MOVE (move-tx-state) | crates/z00z_wallets/src/core/tx/state/state_resolved_input.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/state_traits.rs | 12:pub struct TxPkgSum {;23:impl TxPkgSum {;41:pub trait AssetState {; | none | MOVE (move-tx-state) | crates/z00z_wallets/src/core/tx/state/state_traits.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/state_update.rs | 21:pub fn build_cp_draft(;185:pub fn prepare_tx_sum(;207:pub fn apply_batch_checkpoint(; | none | MOVE (move-tx-state) | crates/z00z_wallets/src/core/tx/state/state_update.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/state_witness.rs | 15:pub struct MemberWit {;21:impl MemberWit {; | none | MOVE (move-tx-state) | crates/z00z_wallets/src/core/tx/state/state_witness.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/test_asset_selector_multi_suite.rs | use std::collections::BTreeSet;;;use super::{;    build_selection_fixture, check_batch, check_statement, derive_output_i... | none | MOVE (move-tx-selection) | crates/z00z_wallets/src/core/tx/selection/test_asset_selector_multi_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/test_asset_selector_suite.rs | use super::*;;use std::sync::Arc;;use z00z_core::assets::{AssetClass, AssetDefinition};;use z00z_core::Commitment;;use z... | tx:3, | MOVE (move-tx-selection) | crates/z00z_wallets/src/core/tx/selection/test_asset_selector_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/test_claim_tx.rs | use super::*;;;use z00z_core::{;    assets::AssetPkgWire, genesis::asset_std::asset_from_dev_class, AssetClass, AssetWir... | claim:1, | MOVE (move-tx-claim) | crates/z00z_wallets/src/core/tx/claim/test_claim_tx.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/test_fee_estimator_suite.rs | 11:struct TestRateSrc {;15:impl TestRateSrc {;23:impl FeeRateSource for TestRateSrc {; | none | MOVE (move-tx-fees) | crates/z00z_wallets/src/core/tx/fees/test_fee_estimator_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/test_state_update_suite.rs | 16:struct TestState {;21:impl AssetState for TestState {;45:struct OkProof;; | tx:1, | MOVE (move-tx-state) | crates/z00z_wallets/src/core/tx/state/test_state_update_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/test_tx_verifier_suite.rs | 15:enum LockRule {; | none | MOVE (move-tx-verify) | crates/z00z_wallets/src/core/tx/verify/test_tx_verifier_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/tx_assembler.rs | 15:pub enum TxAssemblerError {;39:pub type TxAssemblerResult<T> = std::result::Result<T, TxAssemblerError>;;45:pub struc... | tx:1, | MOVE (move-tx-assembly) | crates/z00z_wallets/src/core/tx/assembly/tx_assembler.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/tx_digest.rs | 22:pub fn build_tx_package_digest(; | none | MOVE (move-tx-verify) | crates/z00z_wallets/src/core/tx/verify/tx_digest.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/tx_errors.rs | 5:pub enum TxVerifierError {;24:pub type TxVerifierResult<T> = std::result::Result<T, TxVerifierError>;; | none | MOVE (move-tx-verify) | crates/z00z_wallets/src/core/tx/verify/tx_errors.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/tx_id.rs | 59:pub struct Z00ZTxId(u64);;61:impl Z00ZTxId {;135:pub fn generate_mac_key() -> Result<[u8; 32], CryptoError> {; | hashing:1, | MOVE (move-tx-ids) | crates/z00z_wallets/src/core/tx/ids/tx_id.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/tx_verifier_helpers.rs | fn decode_assets_from_package(pkg: TxPackage) -> TxVerifierResult<Vec<Asset>> {;    let mut out = Vec::with_capacity(pkg... | none | MOVE (move-tx-verify) | crates/z00z_wallets/src/core/tx/verify/tx_verifier_helpers.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/tx_verifier.rs | 21:pub struct VerificationResult {;29:pub trait TxVerifier {;48:pub struct TxVerifierImpl;; | none | MOVE (move-tx-verify) | crates/z00z_wallets/src/core/tx/verify/tx_verifier.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/tx_wire_types.rs | 22:pub struct TxInputWire {;37:pub enum TxOutRole {;49:pub struct TxOutputWire {; | none | MOVE (move-tx-verify) | crates/z00z_wallets/src/core/tx/verify/tx_wire_types.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/tx/witness_gate.rs | 31:pub fn asset_wire_to_leaf(wire: &AssetWire) -> Result<AssetLeaf, String> {;73:pub fn wire_decrypt_leaf(wire: &AssetWi... | none | MOVE (move-tx-spend) | crates/z00z_wallets/src/core/tx/spend/witness_gate.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/auto_lock.rs | 12:type Duration = std::time::Duration;;34:pub struct AutoLockPolicy {;44:impl Default for AutoLockPolicy {; | none | KEEP | crates/z00z_wallets/src/core/wallet/auto_lock.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/wallet/chain_id.rs | 8:pub struct ChainId(pub u8);;10:impl ChainId {;31:impl TryFrom<u8> for ChainId {; | none | KEEP | crates/z00z_wallets/src/core/wallet/chain_id.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/wallet/errors_impls.rs | 1:impl WalletError {;23:pub type WalletResult<T> = Result<T, WalletError>;;25:impl From<z00z_crypto::CryptoError> for Wa... | none | MOVE (move-wallet-errors) | crates/z00z_wallets/src/core/wallet/errors/errors_impls.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/errors.rs | 13:mod tests {; | key:1,security:1, | MOVE (move-wallet-errors) | crates/z00z_wallets/src/core/wallet/errors/errors.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/errors_types.rs | 17:pub enum WalletPublicError {;33:impl std::fmt::Display for WalletDiagCode {;50:pub enum StateTransitionError {; | none | MOVE (move-wallet-errors) | crates/z00z_wallets/src/core/wallet/errors/errors_types.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/mod.rs | 67:mod api_contract_tests {; | address:1,key:1,security:4,wallet:1, | KEEP | crates/z00z_wallets/src/core/wallet/mod.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/wallet/policy.rs | 11:pub struct PolicyRules {;28:pub struct TimeRestrictions {;39:pub enum PolicyError {; | none | KEEP | crates/z00z_wallets/src/core/wallet/policy.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/wallet/rollback.rs | 44:pub enum RollbackError {;80:pub trait RollbackStrategy: Send + Sync {;96:mod tests {; | none | KEEP | crates/z00z_wallets/src/core/wallet/rollback.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/wallet/session.rs | 28:pub struct SessionHandle {;40:impl SessionHandle {;107:pub struct SecretSession {; | none | KEEP | crates/z00z_wallets/src/core/wallet/session.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/wallet/snapshot_impl.rs | 2:pub struct WalletSnapshotArgs {;25:impl WalletPersistenceState {; | hashing:1, | MOVE (move-wallet-snapshot) | crates/z00z_wallets/src/core/wallet/snapshot/snapshot_impl.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/snapshot.rs | 18:mod tests {; | wallet:1, | MOVE (move-wallet-snapshot) | crates/z00z_wallets/src/core/wallet/snapshot/snapshot.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/snapshot_types.rs | 6:pub struct PasswordVerifierState {;17:pub struct AddressDeriverState {;33:pub struct WalletExportIdentity {; | none | MOVE (move-wallet-snapshot) | crates/z00z_wallets/src/core/wallet/snapshot/snapshot_types.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/stub_responses_asset.rs | 1:impl StubDefault for AssetId {;7:impl StubDefault for AssetWire {;47:impl StubDefault for RuntimeAssetBalanceResponse ... | none | MOVE (move-wallet-stub) | crates/z00z_wallets/src/core/wallet/stub/stub_responses_asset.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/stub_responses_backup.rs | 1:impl StubDefault for RuntimeCreateBackupResponse {;14:impl StubDefault for RuntimeListBackupsResponse {;25:impl StubDe... | none | MOVE (move-wallet-stub) | crates/z00z_wallets/src/core/wallet/stub/stub_responses_backup.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/stub_responses.rs | 26:pub trait StubDefault {; | ChainType:1, | MOVE (move-wallet-stub) | crates/z00z_wallets/src/core/wallet/stub/stub_responses.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/stub_responses_tx.rs | 1:impl StubDefault for PersistTxId {;7:impl StubDefault for TxStatus {;13:impl StubDefault for PersistTxInfo {; | none | MOVE (move-wallet-stub) | crates/z00z_wallets/src/core/wallet/stub/stub_responses_tx.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/stub_responses_wallet.rs | 1:impl StubDefault for PersistWalletId {;7:impl StubDefault for PersistWalletInfo {;18:impl StubDefault for RuntimeCreat... | none | MOVE (move-wallet-stub) | crates/z00z_wallets/src/core/wallet/stub/stub_responses_wallet.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/test_errors_suite.rs | use super::*;;;#[test];fn test_database_error_is_transient() {;    let error = WalletError::DatabaseError("Connection ti... | none | MOVE (move-wallet-errors) | crates/z00z_wallets/src/core/wallet/errors/test_errors_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/test_snapshot_suite.rs | use super::*;;use z00z_core::{genesis::asset_std::asset_from_dev_class, AssetClass};;use z00z_utils::codec::{BincodeCode... | wallet:1, | MOVE (move-wallet-snapshot) | crates/z00z_wallets/src/core/wallet/snapshot/test_snapshot_suite.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/wallet_entity_asset_api.rs | impl<;        Sec,;        K,;        Addr,;        WStorage,; | none | MOVE (move-wallet-entity) | crates/z00z_wallets/src/core/wallet/entity/wallet_entity_asset_api.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/wallet_entity_backup_api.rs | impl<;        Sec,;        K,;        Addr,;        WStorage,; | none | MOVE (move-wallet-entity) | crates/z00z_wallets/src/core/wallet/entity/wallet_entity_backup_api.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/wallet_entity_constructor.rs | impl<;        Sec,;        K,;        Addr,;        WStorage,; | none | MOVE (move-wallet-entity) | crates/z00z_wallets/src/core/wallet/entity/wallet_entity_constructor.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/wallet_entity_core.rs | 40:pub struct Z00ZWallet<; | none | MOVE (move-wallet-entity) | crates/z00z_wallets/src/core/wallet/entity/wallet_entity_core.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/wallet_entity_key_api.rs | impl<;        Sec,;        K,;        Addr,;        WStorage,; | none | MOVE (move-wallet-entity) | crates/z00z_wallets/src/core/wallet/entity/wallet_entity_key_api.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/wallet_entity.rs | include!("wallet_entity_core.rs");;include!("wallet_entity_wallet_api.rs");;include!("wallet_entity_asset_api.rs");;incl... | none | MOVE (move-wallet-entity) | crates/z00z_wallets/src/core/wallet/entity/wallet_entity.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/wallet_entity_tx_api.rs | impl<;        Sec,;        K,;        Addr,;        WStorage,; | none | MOVE (move-wallet-entity) | crates/z00z_wallets/src/core/wallet/entity/wallet_entity_tx_api.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/wallet_entity_wallet_api.rs | impl<;        Sec,;        K,;        Addr,;        WStorage,; | none | MOVE (move-wallet-entity) | crates/z00z_wallets/src/core/wallet/entity/wallet_entity_wallet_api.rs | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/WALLET-GUIDE.md | # Z00Z Wallet  user guide;;: 2026-02-03  ; | none | MOVE (move-doc) | crates/z00z_wallets/src/core/wallet/docs/WALLET-GUIDE.md | Higher cohesion around one runtime responsibility. | Requires staged path rewrites and compatibility re-exports. |
+| crates/z00z_wallets/src/core/wallet/wallet_identity.rs | 9:pub struct WalletId(#[serde(with = "serde_wallet_id_hex")] pub [u8; 32]);;11:mod serde_wallet_id_hex {;38:impl WalletI... | none | KEEP | crates/z00z_wallets/src/core/wallet/wallet_identity.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/wallet/wallet_kernel.rs | 5:pub struct WalletKernel {;13:impl WalletKernel {; | none | KEEP | crates/z00z_wallets/src/core/wallet/wallet_kernel.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/wallet/wallet_record.rs | 3:pub struct WalletUserFields {;12:pub struct WalletSystemMetadata {;24:pub struct WalletRecord {; | none | KEEP | crates/z00z_wallets/src/core/wallet/wallet_record.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/wallet/wallet.rs | //! Z00ZWallet core entity.;//!;//! Phase 1: data container only.;//!;//! This struct aggregates wallet components (secr... | address:1,backup:1,domains:1,key:1,storage:1,tx:1, | KEEP | crates/z00z_wallets/src/core/wallet/wallet.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+| crates/z00z_wallets/src/core/wallet/wallet_state.rs | 39:pub enum WalletState {;71:impl WalletState {;143:mod tests {; | none | KEEP | crates/z00z_wallets/src/core/wallet/wallet_state.rs | Stable import path and minimal migration risk. | Folder remains broad; conceptual density is unchanged. |
+
+## Migration Phases (No Code Applied Yet)
+
+1. Create new directories and move files with git mv only (no symbol edits).
+2. Rebuild each affected mod.rs with temporary compatibility re-exports.
+3. Update internal imports by domain wave: foundation -> key/stealth/address -> tx -> wallet/persistence.
+4. Run compile gate and tests per wave; then remove temporary compatibility aliases.
+5. Final cleanup: remove dead include! splits where replaced by folder modules.
+
+## Key Risk Notes
+
+- chain/scan_engine* is currently stub-only (Phase 037 seam); keep semantics explicitly unchanged during move.
+- stealth/output.rs and tx/* share tight contracts; refactor must preserve verifier and witness gate behavior.
+- key/* includes include!-based composition; path moves should be done with include path normalization in same wave.
+- address/stealth_scanner and address/leaf_scan rely on canonical scan support invariants; avoid parallel logic forks during relocation.
+
+## Verification Checklist for Implementation PR
+
+- [ ] Every file from current core inventory appears in this ledger.
+- [ ] No behavior change commits mixed with structural moves.
+- [ ] Public facade paths remain available through transitional re-exports.
+- [ ] cargo check -p z00z_wallets passes after each migration wave.
+- [ ] Domain/hash snapshots and claim/nullifier tests remain unchanged semantically.

@@ -1,0 +1,36 @@
+# Z00Z Deep Wiki
+
+> Source-cited wiki for the Z00Z Rust workspace covering protocol objects, wallet state, settlement storage, runtime publication, simulator evidence, transport seams, and onboarding material for multiple audiences.
+
+The most important architectural fact is that ownership is split by crate rather than hidden behind one service shell. `z00z_core` owns protocol semantics, `z00z_storage` owns settlement truth, `z00z_wallets` owns user-facing typed inventory, runtime crates own planning and verdict flow, and the simulator stays a harness instead of a second business owner.
+
+## Onboarding
+
+- [Onboarding Hub](./onboarding/index.md): Choose the right reading path for contributors, staff engineers, executives, or product managers.
+- [Contributor Guide](./onboarding/contributor-guide.md): Setup, Rust workspace orientation, object model basics, and contribution workflow.
+- [Staff Engineer Guide](./onboarding/staff-engineer-guide.md): Ownership-first architecture reading guide with invariants, abstractions, and debt signals.
+- [Executive Guide](./onboarding/executive-guide.md): Capability map, scaling pressure, seam risk, and next-quarter recommendations.
+- [Product Manager Guide](./onboarding/product-manager-guide.md): User-facing feature map, limitations, and privacy/evidence expectations.
+
+## Architecture
+
+- [System Overview](./02-architecture/system-overview.md): Layered view of protocol, wallet, storage, runtime, rollup, and simulator composition.
+- [Crate Boundaries](./02-architecture/crate-boundaries.md): Ownership and exclusion rules that keep crates from drifting into second authorities.
+
+## Getting Started
+
+- [Workspace Overview](./01-getting-started/workspace-overview.md): Why the repository is a Cargo workspace and how the crate families are organized.
+- [Setup And Verify](./01-getting-started/setup-and-verify.md): Canonical commands for format, lint, test, and release-style verification.
+- [Workspace Map](./01-getting-started/workspace-map.md): Crate-by-crate inventory and routing guide for new changes.
+
+## Deep Dive
+
+- [Object Model And Genesis](./03-core-protocol/object-model-and-genesis.md): Bootstrap authority, typed config, voucher bootstrap semantics, and settlement manifest export.
+- [Wallet Architecture](./04-wallet-and-rpc/wallet-architecture.md): Typed object inventory, stable wallet facades, and JSON-RPC registration boundaries.
+- [Settlement Runtime And Rollup](./05-storage-runtime/settlement-runtime-and-rollup.md): Storage-owned settlement truth and how runtime, validators, watchers, and rollup verification compose it.
+- [Scenario Pipeline](./06-simulator-and-quality/scenario-pipeline.md): Canonical scenario harness, public artifact set, and release-evidence role.
+- [Networking And Telemetry](./07-networking-and-observability/networking-and-telemetry.md): Transport-only RPC, OnionNet placeholder seam, watchers, and telemetry surfaces.
+
+## Optional
+
+- [Project Landing Page](./index.md): Developer-facing entry page with quick-start commands and document map.

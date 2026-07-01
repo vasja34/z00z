@@ -1,0 +1,7 @@
+{
+  "run_id": "uniform_all|mock:7|consume=true",
+  "mode": "uniform_all",
+  "rng_kind": "mock:7",
+  "step": "ArtifactsWritten",
+  "started_at_unix": 1700000000
+}

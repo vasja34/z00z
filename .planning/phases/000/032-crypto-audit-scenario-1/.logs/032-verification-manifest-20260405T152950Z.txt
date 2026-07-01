@@ -1,0 +1,34 @@
+=== 032-bootstrap ===
+CMD: ./.github/skills/smart-tests-bootstrap/scripts/bootstrap_tests.sh
+LOG: .planning/phases/032-crypto-audit-scenario-1/.logs/032-bootstrap.log
+RESULT: PASS
+
+=== 032-wallet-spend-witness ===
+CMD: cargo test -p z00z_wallets --release --features test-fast --test test_spend_witness_gate -- --nocapture
+LOG: .planning/phases/032-crypto-audit-scenario-1/.logs/032-wallet-spend-witness.log
+RESULT: PASS
+
+=== 032-simulator-spend-gate ===
+CMD: cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_scenario1_spend_gate -- --nocapture
+LOG: .planning/phases/032-crypto-audit-scenario-1/.logs/032-simulator-spend-gate.log
+RESULT: PASS
+
+=== 032-simulator-checkpoint ===
+CMD: cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_checkpoint_acceptance -- --nocapture
+LOG: .planning/phases/032-crypto-audit-scenario-1/.logs/032-simulator-checkpoint.log
+RESULT: PASS
+
+=== 032-simulator-stage2-secret ===
+CMD: cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_stage2_secret_artifacts -- --nocapture
+LOG: .planning/phases/032-crypto-audit-scenario-1/.logs/032-simulator-stage2-secret.log
+RESULT: PASS
+
+=== 032-simulator-transport-rng ===
+CMD: cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_transport_rng_boundaries -- --nocapture
+LOG: .planning/phases/032-crypto-audit-scenario-1/.logs/032-simulator-transport-rng.log
+RESULT: PASS
+
+=== 032-simulator-release ===
+CMD: cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump
+LOG: .planning/phases/032-crypto-audit-scenario-1/.logs/032-simulator-release.log
+RESULT: FAIL

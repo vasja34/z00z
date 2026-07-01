@@ -1,0 +1,88 @@
+:root {
+  --vp-font-family-base: "Space Grotesk", "Segoe UI", sans-serif;
+  --vp-font-family-mono: "JetBrains Mono", monospace;
+  --vp-c-bg: #0c1117;
+  --vp-c-bg-soft: #111923;
+  --vp-c-bg-alt: #161f2a;
+  --vp-c-text-1: #edf2f7;
+  --vp-c-text-2: #b8c0cc;
+  --vp-c-text-3: #92a0af;
+  --vp-c-brand-1: #6d5dfc;
+  --vp-c-brand-2: #907dff;
+  --vp-c-brand-3: #5648d1;
+  --vp-c-border: #263241;
+  --vp-layout-max-width: 1500px;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(109, 93, 252, 0.12), transparent 24%),
+    radial-gradient(circle at top right, rgba(23, 162, 184, 0.12), transparent 26%),
+    linear-gradient(180deg, #0c1117 0%, #101722 48%, #0c1117 100%);
+}
+
+.VPContent {
+  background: transparent;
+}
+
+.VPNavBar,
+.VPNavScreen {
+  background: rgba(12, 17, 23, 0.78) !important;
+  backdrop-filter: blur(14px);
+}
+
+.VPDoc .content-container {
+  max-width: 980px;
+}
+
+.vp-doc table {
+  display: table;
+  width: 100%;
+  margin: 1.5rem 0;
+  border-collapse: collapse;
+}
+
+.vp-doc th,
+.vp-doc td {
+  border-color: var(--vp-c-border);
+}
+
+.vp-doc pre,
+.vp-doc div[class*='language-'] {
+  border: 1px solid rgba(109, 93, 252, 0.18);
+  background: #101722;
+}
+
+.vp-doc .mermaid {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(84, 110, 122, 0.24);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+  box-shadow: 0 14px 28px rgba(12, 17, 23, 0.12);
+  overflow-x: auto;
+}
+
+.mermaid-zoom-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.88);
+  cursor: zoom-out;
+}
+
+.mermaid-zoom-modal .mermaid {
+  width: min(92vw, 1200px);
+  max-height: 88vh;
+  overflow: auto;
+}
+
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3 {
+  letter-spacing: -0.02em;
+}

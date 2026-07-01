@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "network": "devnet",
+  "assets": [
+    {
+      "label": "asset_alpha",
+      "definition_mark": 11,
+      "serial_id": 1,
+      "terminal_mark": 21,
+      "value": 1001
+    },
+    {
+      "label": "asset_beta",
+      "definition_mark": 11,
+      "serial_id": 2,
+      "terminal_mark": 22,
+      "value": 1002
+    },
+    {
+      "label": "asset_gamma",
+      "definition_mark": 12,
+      "serial_id": 1,
+      "terminal_mark": 23,
+      "value": 1003
+    },
+    {
+      "label": "asset_delta",
+      "definition_mark": 13,
+      "serial_id": 3,
+      "terminal_mark": 24,
+      "value": 1004
+    }
+  ],
+  "rights": [
+    {
+      "label": "right_machine",
+      "definition_mark": 31,
+      "serial_id": 1,
+      "terminal_mark": 61,
+      "right_class": "machine_capability"
+    },
+    {
+      "label": "right_data",
+      "definition_mark": 32,
+      "serial_id": 2,
+      "terminal_mark": 62,
+      "right_class": "data_access"
+    },
+    {
+      "label": "right_service",
+      "definition_mark": 33,
+      "serial_id": 3,
+      "terminal_mark": 63,
+      "right_class": "service_entitlement"
+    },
+    {
+      "label": "right_validator",
+      "definition_mark": 34,
+      "serial_id": 4,
+      "terminal_mark": 64,
+      "right_class": "validator_mandate"
+    },
+    {
+      "label": "right_once",
+      "definition_mark": 35,
+      "serial_id": 5,
+      "terminal_mark": 65,
+      "right_class": "one_time_use"
+    }
+  ]
+}

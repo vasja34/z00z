@@ -1,0 +1,66 @@
+
+[package]
+name = "z00z_simulator"
+version = "0.2.0"
+edition = "2021"
+license = "MIT OR BSD-3-Clause"
+
+[lib]
+doctest = false
+
+[features]
+default = []
+test-params-fast = [
+  "z00z_core/test-params-fast",
+  "z00z_crypto/test-params-fast",
+  "z00z_rollup_node/test-params-fast",
+  "z00z_storage/test-params-fast",
+  "z00z_utils/test-params-fast",
+  "z00z_wallets/test-params-fast",
+]
+
+# Debug-only: enables plaintext wallet dump export utilities.
+# SECURITY: NEVER enable in production builds.
+wallet_debug_tools = ["z00z_wallets/wallet_debug_tools"]
+
+[[bin]]
+name = "scenario_1"
+path = "bin/scenario_1.rs"
+
+[[bin]]
+name = "z00z_cache_contract"
+path = "bin/z00z_cache_contract.rs"
+
+[[test]]
+name = "scenario_1"
+path = "tests/scenario_1/main.rs"
+
+[[example]]
+name = "simulator_interop"
+path = "examples/scenario_1/simulator_interop.rs"
+
+[dependencies]
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+hex = "0.4"
+blake3 = "1"
+sha2 = "0.10"
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+z00z_aggregators = { path = "../z00z_runtime/aggregators" }
+z00z_core = { path = "../z00z_core", features = ["deterministic-rng"] }
+z00z_crypto = { path = "../z00z_crypto" }
+z00z_networks_rpc = { path = "../z00z_networks/rpc" }
+z00z_rollup_node = { path = "../z00z_rollup_node" }
+z00z_storage = { path = "../z00z_storage" }
+z00z_utils = { path = "../z00z_utils", features = ["deterministic-rng"] }
+z00z_wallets = { path = "../z00z_wallets", features = ["claim-auth-sign"] }
+rust_xlsxwriter = "0.79"
+
+[dev-dependencies]
+z00z_core = { path = "../z00z_core", features = ["deterministic-rng"] }
+z00z_utils = { path = "../z00z_utils" }
+tempfile = "3"
+roxmltree = "0.20"
+zip = "2.2"

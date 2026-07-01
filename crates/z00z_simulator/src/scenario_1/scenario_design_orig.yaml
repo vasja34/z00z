@@ -1,0 +1,1222 @@
+# ============================================================
+# Scenario 1 - Design (executable assertions per step)
+# ============================================================
+# Each step lists the exact Rust call + expected post-conditions.
+# Stage runners assert these conditions and emit StageResult::Fail
+# if any assertion is violated.
+
+# ./scripts/remove_target.sh crates
+# ./scripts/remove_target.sh .
+
+# 1) Scenario 1 main flow
+# cargo clean
+# time cargo run --release -p z00z_simulator --bin scenario_1 --features wallet_debug_tools
+# cargo test -p z00z_simulator --test test_pipeline_genesis_tx --release --features test-params-fast --features wallet_debug_tools
+# cargo test -p z00z_simulator --test test_scenario1_unified_gate --release --features test-params-fast --features wallet_debug_tools
+
+# 2) All z00z_simulator tests
+# time cargo test -p z00z_simulator --release --all-features
+# time cargo test -p z00z_simulator --tests --release --features test-params-fast --features wallet_debug_tools
+
+# 3) All z00z_wallets tests (includes scenario_1 tests)
+# time cargo test --workspace --release --all-features
+
+#4) All tests in the entire workspace (includes all scenario_1 and wallets tests)
+# cd /home/vadim/Projects/z00z && \
+# cargo clean && \
+# time cargo test -p z00z_simulator --tests --features test-params-fast && \
+# time cargo test -p z00z_simulator stage3 --tests --features test-params-fast && \
+# time cargo run --release -p z00z_simulator --bin scenario_1 --features wallet_debug_tools
+
+stages:
+
+  # ----------------------------------------------------------
+  - stage: 1
+    name: "genesis_init"
+    description: "Generate genesis assets using the z00z_core genesis pipeline, with config/path resolution driven by ScenarioCfg and every phase validated by S1-1..S1-8 checks."
+    note: "Stage 1 generation source of truth is the z00z_core genesis pipeline, but the simulator resolves config and artifact paths through ctx.config.stage1_paths() and ctx.outputs_dir before running the checks."
+    rust_entry: "stage_1::run(ctx)"
+    steps:
+
+      - id: "S1-1"
+        action: "Load devnet genesis config from z00z_core"
+        call: |
+          let p = ctx.config.stage1_paths();
+          let cfg_path = resolve_genesis_cfg_path(
+            &ctx.config.stage1_genesis_config(),
+            &p.fallback_genesis_dir,
+          );
+          let cfg = load_genesis_config(&cfg_path)?;
+          let seed = GenesisSeed::from_config(&cfg)?;
+          let net  = ChainType::from_str(&cfg.chain.chain_type)?;
+        note: "Stage 1 MUST use the canonical genesis config resolved from ScenarioCfg + fallback_genesis_dir, not an ad-hoc simulator assets list."
+        post_conditions:
+          - "net == ChainType::Devnet"
+          - "cfg.assets.len() == 4"  # Z00Z, zUSD, zNFT, zBurnSink
+          - "cfg.chain.domains.genesis_seed is valid (GenesisSeed::from_config == Ok)"
+
+      - id: "S1-2"
+        action: "Prepare stage output directory"
+        call: |
+          let p = ctx.config.stage1_paths();
+          let out = ctx.outputs_dir.clone();
+          create_dir_all(&out)?;
+          create_dir_all(out.join(&p.genesis_dir))?;
+        post_conditions:
+          - "Directory outputs exists"
+          - "Directory outputs/genesis exists"
+
+      - id: "S1-3"
+        action: "Create every AssetDefinition and register it in ctx.registry"
+        call: |
+          for entry in cfg.assets.iter() {
+              let def = create_asset_definition(entry, seed.as_bytes(), net)?;
+              defs.push(def);
+          }
+          ctx.registry = AssetDefinitionRegistry::from_definitions(&defs)?;
+        note: "Implementation must mirror the canonical plan-aware genesis pipeline and keep explicit registry ownership local to ctx.registry."
+        post_conditions:
+          - "defs.len() == cfg.assets.len()"
+          - "each def.id is 32-byte non-zero"
+          - "each def.serials > 0"
+          - "ctx.registry contains every generated definition"
+
+      - id: "S1-4"
+        action: "Generate all genesis assets (assets_generator_cli logic, phase 2)"
+        call: |
+          let logger  = Arc::new(NoopLogger);
+          let metrics = Arc::new(NoopMetrics);
+          let acc = generate_all_genesis_assets(&defs, seed.as_bytes(), net, logger, metrics)?;
+          let all_assets = acc.flatten();
+          ctx.assets = all_assets.clone();
+        note: "Use deterministic genesis pipeline from assets_generator_cli.rs / z00z_core::genesis::genesis; custom simulator minting is forbidden."
+        post_conditions:
+          - "ctx.assets.len() == acc.total_count()"
+          - "ctx.assets.len() > 0"
+          - "for each asset: commitment.as_bytes().len() == 32"
+          - "for each asset: serial_id < definition.serials"
+
+      - id: "S1-5"
+        action: "Verify all generated assets/proofs (assets_generator_cli logic, phase 3)"
+        call: "verify_assets_all(&ctx.assets)?  // wraps verify_genesis_assets with single-batch first, then chunked fallback on batch-size failure"
+        post_conditions:
+          - "verify_assets_all == Ok(())"
+
+      - id: "S1-6"
+        action: "Compute genesis state hash"
+        call: "let state_hash = compute_genesis_state_hash(&acc)"
+        post_conditions:
+          - "state_hash.len() == 32"
+          - "state_hash deterministic for same cfg + seed"
+
+      - id: "S1-7"
+        action: "Export assets by symbol in BIN-only mode (space optimized)"
+        call: |
+          let p = ctx.config.stage1_paths();
+          let base = ctx.outputs_dir.join(&p.genesis_dir);
+          for def in &defs {
+            let bin_path = base.join(format!("genesis_{}.bin", def.symbol));
+            let def_assets: Vec<_> = all_assets
+              .iter()
+              .filter(|item| item.definition.id == def.id)
+              .cloned()
+              .collect();
+            save_bincode(&bin_path, &def_assets)?;
+          }
+        note: "Single all-assets .bin is intentionally disabled. Stage 1 exports one BIN per symbol and skips JSON artifacts to reduce storage size."
+        post_conditions:
+          - "File outputs/genesis/genesis_Z00Z.bin exists"
+          - "File outputs/genesis/genesis_zUSD.bin exists"
+          - "File outputs/genesis/genesis_zNFT.bin exists"
+          - "File outputs/genesis/genesis_zBurnSink.bin exists"
+
+      - id: "S1-8"
+        action: "Write Stage 1 artifacts and run in-process analyzer/extractor checks"
+        call: |
+          let p = ctx.config.stage1_paths();
+          let out_gen = ctx.outputs_dir.join(&p.genesis_dir);
+          write_file(out_gen.join(&p.state_hash_file), hex(state_hash).as_bytes())?;
+          save_json(ctx.outputs_dir.join(&p.snapshot_file), stage_snap)?;
+          run_cli_checks(&out_gen, &all_assets, &mut logs, stage_id)?;
+          flush_logs(&ctx.outputs_dir.join(&p.logs_dir).join(&p.logger_file), &logs)?;
+        note: "Analyzer and extractor artifacts are generated in-process. Stage tests must not spawn nested cargo subprocesses from Stage 1."
+        post_conditions:
+          - "File outputs/genesis/genesis_state_hash.txt exists"
+          - "File outputs/stage_1_snapshot.json exists"
+          - "File outputs/logs/logger.json exists"
+          - "File outputs/genesis/genesis_analysis_genesis.md exists"
+          - "File outputs/genesis/assets_extract_coins_0_99.bin exists"
+
+  # ----------------------------------------------------------
+  - stage: 2
+    name: "wallet_create"
+    description: |
+      Create simulator wallets and actor runtime state via JSON-RPC.
+      Current implementation is deterministic-friendly and stage-driven:
+      it creates wallets for Alice/Bob/Charlie, derives stealth receiver keys,
+      exports public artifacts, verifies persistence and restart determinism,
+      validates lifecycle lock behavior, and writes Stage-2 snapshot last.
+      Directory names, logger file names, and wallet chain values are resolved
+      from ScenarioCfg (`stage2_wallet_create`) and rooted at `ctx.outputs_dir`.
+    rust_entry: "stage_2::run(ctx)"
+    note: |
+      Runtime order in code (run_core):
+      S2-1 → S2-2(loop over alice,bob,charlie with S2-6/S2-8/S2-9 inside) → S2-5
+      → S2-12/S2-13/S2-10 (per actor loop)
+      → S2-14 → S2-17 → S2-18 → S2-16 → S2-15 → S2-19 → S2-11(last)
+
+    steps:
+
+      - id: "S2-1"
+        action: "Prepare output dirs, env vars, and RPC stack"
+        call: |
+          let p = ctx.config.stage2_paths();
+          let out = ctx.outputs_dir.clone();
+          let wallets_dir = out.join(&p.wallets_dir);
+          let keys_dir = out.join(&p.keys_dir);
+          let log_dir = out.join(&p.logs_dir);
+          create_dir_all(&wallets_dir)?;
+          create_dir_all(&keys_dir)?;
+          create_dir_all(&log_dir)?;
+          // MUST set env vars before any wallet creation — AppService reads them
+          let (wallet_net, wallet_chain) = cfg_net(ctx);
+          std::env::set_var("Z00Z_WALLET_NETWORK", &wallet_net);
+          std::env::set_var("Z00Z_WALLET_CHAIN", &wallet_chain);
+          // Stage runner uses logged transport wrapper for RPC privacy/risk assertions.
+          let rpc_log_path = log_dir.join(&p.rpc_logger_file);
+          let (wallet_svc, transport) = build_logged_transport(ctx, &wallets_dir, &rpc_log_path)?;
+        post_conditions:
+          - "Directory outputs/wallets exists"
+          - "Directory outputs/keys exists"
+          - "Directory outputs/logs exists"
+          - "Env vars Z00Z_WALLET_NETWORK and Z00Z_WALLET_CHAIN are set from config"
+          - "RPC stack ready via LocalRpcTransport + LoggedRpcTransport"
+
+      - id: "S2-2"
+        action: "Create wallets via RPC (alice, bob, charlie)"
+        call: |
+          for spec in [alice, bob, charlie] {
+            let resp = transport.call("app.wallet.create_wallet", json!({
+              "name": spec.name,
+              "password": spec.password,
+              "seed_phrase": deterministic_or_none,
+            })).await?;
+            // Persist wallet_id + seed phrase for later checks.
+          }
+        post_conditions:
+          - "3 wallet_id values are created"
+          - "3 .wlt files total in outputs/wallets/"
+
+      - id: "S2-5"
+        action: "List wallets via RPC and verify 3 records"
+        call: |
+          let list_resp = transport.call("app.wallet.list_wallets", json!({})).await?;
+          // IMPORTANT: returns a bare JSON array, NOT {"wallets":[...]}
+          assert_eq!(list_resp.as_array().unwrap().len(), 3);
+          // Post-condition: all expected names present (not just count).
+          for name in ["alice", "bob", "charlie"] {
+              assert!(list_resp.as_array().unwrap().iter().any(|w| w["name"] == name));
+          }
+        post_conditions:
+          - "list_resp.as_array().len() == 3"
+          - "names contain 'alice', 'bob', 'charlie'"
+          - "each wallet_id matches previously returned id"
+
+      - id: "S2-6"
+        action: "Derive stealth receiver keys for each actor"
+        call: |
+          for (index, seed) in [(42u64, "alice"), (43, "bob"), (44, "charlie")] {
+              let mut rng = MockRngProvider::with_u64_seed(seed).rng();
+              let mut secret_bytes = [0u8; 32];
+            rng.fill_bytes_ext(&mut secret_bytes);
+              // Guard: degenerate all-zero key → identity point → retry seed+1.
+              if secret_bytes == [0u8; 32] {
+                  let mut rng_retry = MockRngProvider::with_u64_seed(seed + 1).rng();
+              rng_retry.fill_bytes_ext(&mut secret_bytes);
+              }
+              let recv_secret = ReceiverSecret::from_bytes(secret_bytes)?;
+              let keys        = ReceiverKeys::from_receiver_secret(recv_secret)?;
+              let card        = keys.export_receiver_card()?;
+          }
+        post_conditions:
+          - "alice.keys.owner_handle != [0u8;32]"
+          - "bob.keys.owner_handle != alice.keys.owner_handle"
+          - "charlie.keys.owner_handle != alice.keys.owner_handle"
+          - "charlie.keys.owner_handle != bob.keys.owner_handle"
+
+      - id: "S2-8"
+        action: "Export public key JSON (NO secret keys)"
+        call: |
+          for actor in &ctx.actors {
+              let json = serde_json::json!({
+                  "name":         actor.name,
+                  "wallet_id":    hex::encode(&actor.record.wallet_id().0[..]),
+                  "owner_handle": hex::encode(&actor.keys.owner_handle[..]),
+                  "view_pk":      hex::encode(&actor.card.view_pk[..]),     // card has [u8;32]
+                  "identity_pk":  hex::encode(&actor.card.identity_pk[..]), // card has [u8;32]
+              });
+              save_json(format!("outputs/keys/{}_keys.json", actor.name), &json)?;
+          }
+        note: |
+          MUST NOT include: receiver_secret, view_sk, identity_sk, seed phrase, password.
+          Only public material: owner_handle, view_pk, identity_pk, wallet_id.
+        post_conditions:
+          - "File outputs/keys/alice_keys.json exists"
+          - "File outputs/keys/bob_keys.json exists"
+          - "File outputs/keys/charlie_keys.json exists"
+          - "No field named 'secret', 'seed', 'password', 'sk' in any .json"
+
+      - id: "S2-9"
+        action: "Verify .wlt files and write wallet mapping artifact"
+        call: |
+          let p = ctx.config.stage2_paths();
+          let wallets_dir = ctx.outputs_dir.join(&p.wallets_dir);
+          for actor in &ctx.actors {
+              let actor_wallet_id = actor.record.wallet_id();
+              let wallet_id_str   = hex::encode(&actor_wallet_id.0[..]);
+              // File path: wallet_{hex8}.wlt where hex8 = hex(compute_wallet_file_id(id)[..8])
+              let file_id   = compute_wallet_file_id(&wallet_id_str);
+              let hex8      = hex::encode(&file_id[..8]);
+              let wlt_path  = wallets_dir
+                  .join(format!("wallet_{hex8}.wlt"));
+              // open_wlt takes &PersistWalletId (NOT a raw hex string)
+              let wlt_id    = PersistWalletId(wallet_id_str.clone());
+              let identity  = WalletIdentity { network: "p2p".into(), chain: "devnet".into() };
+              let pw        = SafePassword::from(actor_password(&actor.name));
+              open_wlt(&wlt_path, &wlt_id, &pw, &identity)?;
+          }
+        post_conditions:
+          - "open_wlt returns Ok for alice"
+          - "open_wlt returns Ok for bob"
+          - "open_wlt returns Ok for charlie"
+          - "File outputs/wallets/wlt_map.md exists"
+
+      - id: "S2-10"
+        action: "Verify backup RPC flow for all 3 wallets"
+        call: |
+          For each actor in [alice, bob, charlie]:
+          1) wallet.session.unlock_wallet({wallet_id, password}) → SessionToken.
+          2) wallet.backup.create_backup({session, password, destination: null}).
+          3) wallet.backup.list_backups({session, cursor: null, limit: 50}).
+          4) Assert backup flow returns non-empty backup list.
+        post_conditions:
+          - "Each actor unlock_wallet returns SessionToken object"
+          - "Each actor create_backup response contains success=true"
+          - "Each actor list_backups returns non-empty items/backups array"
+
+      - id: "S2-11"
+        action: "Save stage 2 snapshot (written LAST after all steps complete)"
+        call: |
+          // Executed last in run_core.
+          let p = ctx.config.stage2_paths();
+          save_json(ctx.outputs_dir.join(&p.snapshot_file),
+              Stage2Snap {
+                  stage: stage_id,
+                  chain_id: wallet_chain,
+                  wallet_count: ctx.actors.len(),
+                  out_dir: ctx.outputs_dir.to_string_lossy().to_string(),
+                  actors_ready_for_stage3: true,
+              })?;
+        post_conditions:
+          - "File outputs/stage_2_snapshot.json exists"
+          - "snapshot.chain_id == configured wallet chain"
+          - "snapshot.wallet_count == 3"
+          - "snapshot.actors_ready_for_stage3 == true"
+          - "File outputs/logs/logger.json contains S2 events"
+
+      - id: "S2-12"
+        action: "Show-seed safety/integrity check for each wallet"
+        call: |
+          For each actor in [alice, bob, charlie]:
+          1) wallet.session.show_seed_phrase({session, password, confirmation: "I understand"}).
+          2) Validate encrypted envelope fields:
+             encrypted_payload.ciphertext, metadata.algorithm, metadata.nonce, metadata.key_derivation.
+          3) Decrypt envelope locally using WalletEncryption::derive_key + AEAD open.
+          4) Assert recovered phrase equals actor seed phrase from create_wallet response.
+        post_conditions:
+          - "For each actor, metadata.algorithm == xchacha20poly1305"
+          - "For each actor, metadata.key_derivation contains argon2id"
+          - "For each actor, decrypted seed phrase == create_wallet seed phrase"
+
+      - id: "S2-13"
+        action: "Derive and list receivers for each wallet"
+        call: |
+          For each actor (idx = 0..2):
+          1) wallet.key.derive_receiver({session, path: "m/44'/1337'/0'/0/{idx}"}).
+          2) wallet.key.list_receivers({session, limit: 50, cursor: null, filter: null}).
+          3) Extract receiver ids from items[*].receiver_id / receivers[*].receiver_id.
+          4) Assert non-empty receiver id set and store it in actor runtime table.
+        post_conditions:
+          - "Each actor derive_resp contains public_key field"
+          - "Each actor list_receivers returns at least one receiver id"
+
+      - id: "S2-14"
+        action: "Persist secrets debug table artifact"
+        call: |
+          Write outputs/wallets/wlt_secrets_debug.md as markdown table:
+          columns = [name, wallet_id, password, seed_phrase, receiver_secret_hex, owner_handle, view_pk, identity_pk, receiver_ids].
+          Receiver id list is rendered from wallet.key.list_receivers extraction.
+        post_conditions:
+          - "File outputs/wallets/wlt_secrets_debug.md exists"
+          - "Table contains 3 rows (alice, bob, charlie)"
+
+      - id: "S2-15"
+        action: "Stage 3 readiness marker"
+        call: |
+          push_log(..., "S2-15", "stage3_skeleton", "ok", "ctx.actors ready for stealth send/scan");
+        post_conditions:
+          - "ctx.actors.len() == 3"
+          - "Each actor has: keys (ReceiverKeys), card (ReceiverCard), receiver_secret"
+
+      - id: "S2-16"
+        action: "Lifecycle lock check (RPC)"
+        call: |
+          1) wallet.lifecycle.on_event({event: "backgrounded"}).
+          2) Reuse Alice SessionToken and call wallet.key.list_receivers.
+          3) Assert call is denied (auth/locked path).
+        post_conditions:
+          - "wallet.lifecycle.on_event returns success"
+          - "post-background list_receivers returns error (denied)"
+
+      - id: "S2-17"
+        action: "Export/import persistence roundtrip"
+        call: |
+          1) Export Bob wallet via app.wallet.export_wallet({wallet_id, password}).
+          2) Persist encrypted_payload JSON to outputs/wallets_export_import/export_wallet_encrypted_payload.json.
+          3) Build second logged transport bound to outputs/wallets_export_import.
+          4) Serialize payload to string and import via app.wallet.import_wallet({data, password, name}).
+          5) Assert imported wallet_id equals original Bob wallet_id.
+          6) Verify imported .wlt exists in outputs/wallets_export_import and open_wlt() returns Ok.
+          7) If `wallet_debug_tools` enabled: write export_wallet_debug.json and compare Bob seed phrase with markdown debug table.
+        post_conditions:
+          - "app.wallet.export_wallet succeeds"
+          - "app.wallet.import_wallet succeeds"
+          - "imported wallet_id == exported wallet_id"
+          - "Directory outputs/wallets_export_import exists"
+          - "File outputs/wallets_export_import/export_wallet_encrypted_payload.json exists"
+          - "Imported .wlt exists under outputs/wallets_export_import"
+          - "(wallet_debug_tools) seed phrase consistency check passes"
+
+      - id: "S2-18"
+        action: "Restart determinism for key derivation"
+        call: |
+          1) In service A: unlock Alice and derive public key for Bip44Path::payment(0).
+          2) lock_wallet(Alice).
+          3) In service B (new instance): open_wallet_source(Path to Alice .wlt), unlock Alice.
+          4) Derive public key for same Bip44Path::payment(0).
+          5) Assert public keys are byte-identical.
+        post_conditions:
+          - "derive pubkey before restart == derive pubkey after restart"
+
+      - id: "S2-19"
+        action: "RPC privacy/risk log acceptance"
+        call: |
+          Validate outputs/logs/rpc_logger.json:
+          1) No plaintext passwords and no plaintext seed phrases.
+          2) Required method→risk levels exist:
+             app.wallet.create_wallet=high,
+             wallet.session.unlock_wallet=high,
+             wallet.session.show_seed_phrase=critical,
+             wallet.key.derive_receiver=medium,
+             wallet.key.list_receivers=medium,
+             wallet.backup.create_backup=low.
+        post_conditions:
+          - "rpc_logger has no leaked password/seed values"
+          - "required risk policy mapping is present"
+
+  # ----------------------------------------------------------
+  - stage: 3
+    name: "claim_genesis_assets"
+    description: |
+      Phase-0 claim (simulator): load Stage-1 genesis .bin files, distribute assets among
+      Alice/Bob/Charlie based on config, and persist claim artifacts.
+
+      IMPORTANT: This phase is wallet-only intermediate path (NOT consensus).
+      It imports distributed assets into wallet runtime via RPC (`wallet.asset.import_asset`),
+      maintains resume state in `outputs/genesis/claim_state.json`,
+      verifies runtime conservation (`sum(amount)` and `sum(commitment)`),
+      embeds wallet import stats into `outputs/stage_3_snapshot.json`,
+      reconciles snapshot counters before write,
+      updates simulator balances only after successful import,
+      writes `outputs/claim/audit_log.json`,
+      exports an observational persisted storage view under `outputs/storage/claim_post`
+      with redb + JMT artifacts for post-claim inspection,
+      and does NOT anchor claim in JMT/GenesisCheckpoint yet.
+
+      Double-claim prevention: after a successful claim, the genesis_*.bin inputs are
+      consumed by overwriting them with an empty Vec<Asset> (bincode), controlled by
+      stage3_claim.consume_bins in scenario_config.yaml.
+    rust_entry: "stage_3::run_claim_genesis(ctx, stage)"
+    steps:
+
+      - id: "S3-1"
+        action: "Load genesis binary files"
+        call: |
+          let base = ctx.outputs_dir.join("genesis");
+          let z00z = load_bincode::<Vec<Asset>>(base.join("genesis_Z00Z.bin"))?;
+          let burn = load_bincode::<Vec<Asset>>(base.join("genesis_zBurnSink.bin"))?;
+          let nft  = load_bincode::<Vec<Asset>>(base.join("genesis_zNFT.bin"))?;
+          let usd  = load_bincode::<Vec<Asset>>(base.join("genesis_zUSD.bin"))?;
+          let all: Vec<Asset> = [z00z, burn, nft, usd].concat();
+          let s1 = load_json::<Stage1Snapshot>(ctx.outputs_dir.join("stage_1_snapshot.json"))?;
+          ensure!(all.len() == s1.assets_count, "S3-1 mismatch");
+        post_conditions:
+          - "all.len() == total genesis asset count"
+          - "all.len() == stage_1_snapshot.assets_count"
+          - "each asset has definition.id, serial_id, amount set"
+
+      - id: "S3-2"
+        action: "Distribute assets among actors (mode-driven)"
+        call: |
+          // stage3_claim.active:
+          // - class_split:  Alice gets coins/Z00Z, Bob gets NFTs, Charlie gets tokens/stable
+          // - coin_sets:    coins shuffled and distributed, non-coins class-split
+          // - uniform_all:  shuffle all and distribute round-robin
+        post_conditions:
+          - "distributed_assets_count == input_assets_count"
+            - "claim_rows_{alice,bob,charlie}.json are written"
+
+      - id: "S3-3"
+        action: "Persist claim artifacts, import to wallets, verify conservation, snapshot"
+        call: |
+          // Runtime order in stage_3.rs:
+            // 1) write outputs/claim/claim_rows_{alice,bob,charlie}.json
+          // 2) emit events/claim_genesis.event.json
+          // 3) import via wallet.asset.import_asset (+ list_assets sanity), collect wallet_import_stats
+          // 4) verify_claim_conservation(input_assets, imported_assets)
+          // 5) build stage_3_snapshot.json, apply optional fault, reconcile_snapshot(), write to outputs/
+          // 6) if feature wallet_debug_tools: write outputs/claim/export_wallet_debug_{name}.json
+          // 7) update ctx.actors[i].balance only after successful wallet import path
+        post_conditions:
+          - "File crates/z00z_simulator/outputs/scenario_1/events/claim_genesis.event.json exists"
+          - "File crates/z00z_simulator/outputs/scenario_1/stage_3_snapshot.json exists"
+          - "Directory crates/z00z_simulator/outputs/scenario_1/storage/claim_post exists"
+          - "File crates/z00z_simulator/outputs/scenario_1/storage/claim_post/settlement_state.redb exists"
+          - "Directory crates/z00z_simulator/outputs/scenario_1/storage/claim_post/jmt_artifact exists"
+          - "stage_3_snapshot.wallet_import_stats.len() == 3"
+          - "Conservation check passed before StageResult::Ok"
+          - "When feature wallet_debug_tools=true, export_wallet_debug_{alice,bob,charlie}.json exist"
+
+      - id: "S3-4"
+        action: "Consume bins (optional) and persist audit log"
+        call: |
+          if stage3_claim.consume_bins {
+              // overwrite each genesis_*.bin file with an empty Vec<Asset>
+              let base = ctx.outputs_dir.join("genesis");
+              save_bincode(base.join("genesis_Z00Z.bin"),      &Vec::<Asset>::new())?;
+              save_bincode(base.join("genesis_zUSD.bin"),      &Vec::<Asset>::new())?;
+              save_bincode(base.join("genesis_zNFT.bin"),      &Vec::<Asset>::new())?;
+              save_bincode(base.join("genesis_zBurnSink.bin"), &Vec::<Asset>::new())?;
+          }
+
+          // Always write machine-parseable claim decision log
+          // outputs/claim/audit_log.json
+        post_conditions:
+          - "When consume_bins=true, each genesis_*.bin deserializes to an empty Vec<Asset>"
+          - "File crates/z00z_simulator/outputs/scenario_1/claim/audit_log.json exists"
+
+  # ----------------------------------------------------------
+  - stage: 4
+    name: "tx_prepare"
+    description: |
+      Stage 4 prepares a transaction package from live wallet `.wlt` state via
+      JSON-RPC, with path resolution handled by `resolve_stage4_paths()` against
+      `ctx.outputs_dir` and `stage4_tx_prepare.paths`.
+
+      The runtime first validates the Stage-3 claim package prerequisite, then
+      selects sender inputs with distinct serials over RPC, captures wallet state
+      before/after, builds Bob plus fee-sink outputs, verifies sender self-decrypt,
+      enforces balance and SpendWitness gates, persists the tx package and checkpoint
+      prep artifact, runs Bob import/decrypt checks plus fee-wallet checks, writes
+      pending/confirmed rows and wallet diff reports, and saves the Stage-4 snapshot.
+
+      For the simulator aggregator minimum, Stage 4 is also responsible for
+      producing the deterministic pre-state snapshot used by Stage 6.
+      The canonical pre-state snapshot is persisted through
+      `z00z_storage::snapshot::PrepFsStore`, while `checkpoint_prep.json` is
+      only the thin external reference that carries `PrepSnapshotId` for
+      checkpoint execution and replay. It is not a mempool, not a WAL, and not
+      a publication ledger.
+
+      In addition to the canonical `outputs/transactions` checkpoint-prep path,
+      Stage 4 exports an observational persisted storage mirror under
+      `outputs/storage/pre_tx` with redb, prep snapshot, and JMT artifacts for
+      pre-apply inspection.
+
+      All wallet operations and all RPC operations are logged.
+
+        Spec refs: 010-z00z-tx-spec/stage_4_spec-1.md, 011-z00z-ecc-spec-5/spec-5.md
+    rust_entry: "stage_4::run_tx_prepare(ctx)"
+    config_source: "scenario_config.yaml::stage4_tx_prepare"
+    steps:
+
+      - id: "S4-1"
+        action: "Prepare stage output directories"
+        call: |
+          let cfg = scenario_cfg.stage4_tx_prepare;
+          let paths = resolve_stage4_paths(ctx, cfg);
+          create_dir_all(&paths.outputs_dir)?;
+          create_dir_all(&paths.logs_dir)?;
+          create_dir_all(&paths.transactions_dir)?;
+        post_conditions:
+          - "Directory outputs/transactions exists"
+          - "Directory outputs/logs exists"
+
+      - id: "S4-2"
+        action: "Load sender input from .wlt via RPC"
+        call: |
+          let cfg = scenario_cfg.stage4_tx_prepare;
+          let (_, transport) = build_logged_transport(ctx, &wallets_dir, &rpc_log_file)?;
+          let sender = find_actor(ctx, &cfg.sender_actor)?;
+          let sender_wallet_id = resolve_wallet_id(cfg.sender_actor)?;
+          transport.call(cfg.rpc.unlock_method, json!({
+            "wallet_id": sender_wallet_id,
+            "password": resolve_wallet_password(cfg.sender_actor)?
+          })).await?;
+          let selected_inputs = list_sender_inputs_distinct_serials(
+            &transport,
+            cfg,
+            &sender_wallet_id,
+            *sender.receiver_secret.reveal(),
+          ).await?;
+          transport.call(cfg.rpc.lock_method, json!({"wallet_id": sender_wallet_id})).await?;
+          save_json(selected_inputs_file, &selected_dump)?;
+          let asset_class = parse_asset_class(&cfg.transaction.class)?;
+        post_conditions:
+          - "sender .wlt assets are loaded over RPC"
+          - "multiple spendable coin rows with distinct serial_id are selected"
+          - "selected inputs are dumped to outputs/transactions/wallets_selected_inputs.json"
+          - "distinct serial target comes from stage4_tx_prepare.transaction.input_assets_selection"
+          - "distinct serial_id target does not exceed 10"
+          - "selected output class is parsed from stage4_tx_prepare.transaction.class"
+          - "stage fails closed if no spendable row exists"
+          - "stage fails closed when distinct-serial input target cannot be satisfied"
+
+      - id: "S4-3"
+        action: "Load and verify compact receiver cards from configured source"
+        call: |
+          let cfg = scenario_cfg.stage4_tx_prepare;
+          let paths = resolve_stage4_paths(ctx, cfg);
+          let alice_card = load_stage4_verified_card(&paths.alice_keys_file)?;
+          let bob_card = load_stage4_verified_card(&paths.bob_keys_file)?;
+        post_conditions:
+          - "alice_keys.json contains valid card_compact and verify() passes"
+          - "bob_keys.json contains valid card_compact and verify() passes"
+          - "stage fails closed when card_compact is missing for Scenario 1"
+          - "stage fails closed when decoded compact receiver card verify() fails"
+          - "receiver cards are constructed from verified compact form for output path"
+
+      - id: "S4-4"
+        action: "Build Bob outputs and optional change output"
+        call: |
+          let cfg = scenario_cfg.stage4_tx_prepare;
+          let input_amount: u64 = selected_inputs.iter().map(|it| it.amount).sum();
+          let send_target = send_target_cfg(input_amount, cfg)?;
+          let shape_outputs = build_outputs_cfg(..., send_target, hinted_change, 1, split_seed)?;
+          let fee = calc_fee(&tx_inputs, &to_tx_output_wires(&shape_outputs)?)?;
+          let spendable_after_fee = input_amount.checked_sub(fee)?;
+          let (send_value, change_value) = split_amount_cfg(spendable_after_fee, cfg)?;
+          let outputs = build_outputs_cfg(..., send_value, change_value, fee, split_seed)?;
+        post_conditions:
+          - "at least one output is produced"
+          - "bob output count is controlled by stage4_tx_prepare.transaction.outputs.bob_outputs_count"
+          - "a fee output for the configured fee sink is included in the final output set"
+          - "send value is computed from stage4_tx_prepare.transaction after fee planning"
+          - "fee is priced from the output shape before the final send/change split"
+          - "inputs are aggregated from distinct serial_id set"
+          - "output serial_id is inherited from selected sender input policy"
+          - "change output is included when change_value > 0"
+
+      - id: "S4-5"
+        action: "Run sender-side self-decrypt consistency checks"
+        call: |
+          for out_item in &outputs {
+            verify_self_decrypt(out_item)?;
+          }
+        post_conditions:
+          - "enc_pack decrypt succeeds for each produced output"
+          - "tag16 and leaf_ad bindings are consistent"
+          - "commitment opening and range proof checks pass"
+
+      - id: "S4-6"
+        action: "Build and persist tx package artifact"
+        call: |
+          let tx_digest = core_tx_digest(&tx_wire)?;
+          let tx_digest_hex = build_tx_package_digest(
+            "TxPackage",
+            "regular_tx",
+            1,
+            3,
+            "devnet",
+            "z00z-devnet-1",
+            &tx_wire,
+          )?;
+          let tx_inputs: Vec<TxInputWire> = to_tx_input_wires(&selected_inputs)?;
+          let tx_outputs: Vec<TxOutputWire> = map_outputs_preserving_class(outputs, asset_class)?;
+          let pkg = TxPackage {
+            kind: "TxPackage".into(),
+            package_type: "regular_tx".into(),
+            version: 1,
+            chain_id: 3,
+            chain_type: "devnet".into(),
+            chain_name: "z00z-devnet-1".into(),
+            tx: TxWire { tx_type: "regular_tx".into(), inputs: tx_inputs, outputs: tx_outputs, fee, nonce: 0, context: Default::default(), proof: Default::default(), auth: Default::default() },
+            tx_digest_hex,
+            status: "prepared".into(),
+          };
+          let prep = build_prep_file(&selected_inputs, &tx_inputs)?;
+          let (prep_snapshot, prep_snapshot_id) = build_canon_snapshot(&prep)?;
+          let mut snap_store = PrepFsStore::new(&paths.transactions_dir);
+          verify_tx_package(&JsonCodec.serialize(&pkg)?)?;
+          snap_store.save_snapshot(&prep_snapshot)?;
+          write_prep_ref(prep_file, prep_snapshot_id)?;
+          save_json(tx_file, &pkg)?;
+        note: |
+          `checkpoint_prep.json` is part of the simulator aggregator minimum,
+          but it is now only the stable transport reference to the canonical
+          persisted snapshot. The deterministic pre-state and membership
+          material live in the storage-owned `PrepSnapshot` bytes keyed by
+          `PrepSnapshotId`, so Stage 6 rebuilds the checkpoint transition from
+          the canonical snapshot store rather than from simulator-owned prep
+          transport rows.
+        post_conditions:
+          - "File outputs/transactions/tx_alice_to_bob_pkg.json exists"
+          - "File outputs/transactions/checkpoint_prep.json exists"
+          - "Directory outputs/storage/pre_tx exists"
+          - "File outputs/storage/pre_tx/settlement_state.redb exists"
+          - "Directory outputs/storage/pre_tx/prep_snapshot exists"
+          - "Directory outputs/storage/pre_tx/jmt_artifact exists"
+          - "tx package kind == TxPackage"
+          - "tx package contains chain_id, chain_type, chain_name, package_type, and nested tx"
+          - "tx output wire commitment and range_proof are derived from the actual built output leaf"
+          - "tx output wire mapping preserves selected sender input asset class"
+          - "tx output wire owner_signature is None (stale fixture sig cleared)"
+          - "tx package status == prepared"
+          - "tx package includes non-empty tx_digest_hex"
+
+      - id: "S4-7"
+        action: "Persist sender wallet state in .wlt via RPC"
+        call: |
+          let cfg = scenario_cfg.stage4_tx_prepare;
+          let persist = persist_sender_state(
+            &transport,
+            cfg,
+            sender,
+            recipient,
+            &selected_inputs,
+            &outputs,
+            &tx_outputs,
+          ).await?;
+        post_conditions:
+          - "sender input spend/update is reflected in .wlt"
+          - "sender spend/update stats are captured in the persist result"
+
+      - id: "S4-8"
+        action: "Bob upload + decrypt flow plus fee-wallet checks"
+        call: |
+          let cfg = scenario_cfg.stage4_tx_prepare;
+          run_bob_checks(&transport, cfg, recipient, &outputs, &tx_outputs).await?;
+          run_fee_checks(&transport, cfg, fee_actor, fee_wallet_id, fee_password, &outputs, &tx_outputs).await?;
+          let pending_rows = build_pending_rows(...)?;
+          let confirmed_rows = build_confirm_rows(&pending_rows);
+          validate_confirm_rows(&pending_rows, &confirmed_rows)?;
+          save_json(pending_file, &pending_rows)?;
+          save_json(confirmed_file, &confirmed_rows)?;
+        post_conditions:
+          - "Bob wallet can upload tx package outputs"
+          - "Bob ownership checks pass"
+          - "Bob can decrypt own output"
+          - "fee wallet checks pass for the configured fee sink"
+          - "File outputs/transactions/wallets_pending.json exists"
+          - "File outputs/transactions/wallets_confirmed.json exists"
+
+      - id: "S4-9"
+        action: "Cryptographic balance proof gate"
+        call: |
+          verify_commitment_balance_proof(&pkg.tx)?; // Sigma inputs = Sigma all outputs
+        post_conditions:
+          - "cryptographic balance proof check passes"
+
+      - id: "S4-10"
+        action: "SpendWitness gate"
+        call: |
+          verify_spend_witnesses(&pkg.tx.inputs)?;
+        post_conditions:
+          - "every input has valid SpendWitness"
+
+      - id: "S4-11"
+        action: "Persist Stage 4 snapshot"
+        call: |
+          let cfg = scenario_cfg.stage4_tx_prepare;
+          save_json(cfg.paths.snapshot_file, {
+            "stage": 4,
+            "tx_count": 1,
+            "output_count": pkg.tx.outputs.len(),
+            "tx_digest_hex": tx_digest_hex,
+            "status": "ok"
+          })?;
+        post_conditions:
+          - "File outputs/stage_4_snapshot.json exists"
+          - "snapshot.stage == 4"
+          - "snapshot.tx_digest_hex is non-empty"
+
+      - id: "S4-12"
+        action: "Persist wallet state before/after artifacts and reports"
+        call: |
+          let before_dump = capture_wallet_states(..., "before", ...).await?;
+          save_json(before_state_file, &before_dump)?;
+          let after_dump = capture_wallet_states(..., "after", ...).await?;
+          save_json(after_state_file, &after_dump)?;
+          let diff_dump = build_wallet_diff(stage.stage, &before_dump, &after_dump, &confirmed_rows);
+          save_json(diff_state_file, &diff_dump)?;
+          write_wallet_report_md(md_report_file, ...)?;
+          write_wallet_report_xlsx(xlsx_report_file, ...)?;
+        post_conditions:
+          - "File outputs/transactions/wallets_state_before.json exists"
+          - "File outputs/transactions/wallets_state_after.json exists"
+          - "File outputs/transactions/wallets_state_diff.json exists"
+          - "File outputs/transactions/wallets_state_report.md exists"
+          - "File outputs/transactions/wallets_state_report.xlsx exists"
+          - "File outputs/transactions/wallets_selected_inputs.json exists"
+
+      - id: "S4-13"
+        action: "Finalize Stage 4 logs and completion status"
+        call: |
+          let covered = ["S4-1", "S4-2", "S4-3", "S4-4", "S4-5", "S4-6", "S4-7", "S4-8", "S4-9", "S4-10", "S4-11", "S4-12"];
+          for step in stage.steps {
+            if !covered.contains(step.id) {
+              push_log(step.id, "step_covered", "stage_4 additional step covered");
+            }
+          }
+          flush_logs(log_file, lines)?;
+        post_conditions:
+          - "File outputs/logs/logger.json exists"
+          - "Stage 4 finishes with StageResult::Ok on successful checks"
+
+  # ----------------------------------------------------------
+  - stage: 5
+    name: "confidential_transfer_simple"
+    description: |
+      Stage 5 is the first receiver-side bridge for Scenario 1.
+      It consumes one real Bob recipient output from the Stage-4 tx package,
+      derives both runtime `Asset` and canonical `AssetLeaf` from that same
+      selected output, proves canonical leaf scan and runtime scanner parity,
+      runs the public RPC receive surface in report-only mode, verifies that
+      claimed wallet state is still unchanged after RPC receive, then crosses
+      the explicit claim boundary through wallet-native `recv_route()`.
+
+      This stage MUST NOT rebuild sender outputs and MUST NOT duplicate Stage 6
+      checkpoint logic. It uses Stage-4 artifacts plus existing Bob runtime state
+      from `ctx.actors` and `ctx.wallet_service`.
+    rust_entry: "stage_5::run_simple(ctx)"
+    config_source: "scenario_config.yaml::stage5_transfer"
+    note: |
+      `stage5_transfer.recipient_output_index` selects one Bob recipient output with default `0`.
+      The primary Bob key source for this stage is `ctx.actors`, not a second JSON key reload.
+    steps:
+
+      - id: "S5-1"
+        action: "Prepare stage output directories"
+        call: |
+          create_dir_all("outputs")?;
+          create_dir_all("outputs/logs")?;
+          create_dir_all("outputs/transactions")?;
+        post_conditions:
+          - "Directory outputs/transactions exists"
+
+      - id: "S5-2"
+        action: "Load Stage-4 tx package and select one Bob recipient output"
+        call: |
+          let cfg = scenario_cfg.stage5_transfer;
+          let s4 = scenario_cfg.stage4_tx_prepare;
+          let tx_pkg: TxPackage = load_json(resolve_input_path(ctx.outputs_dir, s4.paths.tx_pkg_file))?;
+          let recipient_outputs: Vec<_> = tx_pkg.tx.outputs
+              .iter()
+              .filter(|out| out.role == TxOutRole::Recipient)
+              .collect();
+            let idx = cfg.recipient_output_index;
+          let selected = recipient_outputs.get(idx).ok_or("S5-2 recipient output index out of range")?;
+        post_conditions:
+          - "stage fails closed if Stage-4 tx package is missing or malformed"
+          - "stage fails closed if no recipient output exists in Stage 4 tx package"
+          - "stage fails closed if recipient_output_index exceeds recipient output count"
+          - "selected output role == Recipient"
+
+      - id: "S5-3"
+        action: "Build runtime Asset and canonical AssetLeaf from the same selected output"
+        call: |
+          let bob = find_actor(ctx, "Bob")?;
+          let asset = selected.asset_wire.clone().to_asset()?;
+          asset.validate_stealth_consistency()?;
+          let wire = AssetWire::from_asset(&asset);
+          let leaf = asset_wire_to_leaf(&wire)?;
+        post_conditions:
+          - "selected output converts to runtime Asset"
+          - "selected runtime Asset passes validate_stealth_consistency()"
+          - "selected output converts to canonical AssetLeaf"
+          - "runtime Asset and canonical AssetLeaf come from the same selected Stage-4 output"
+
+      - id: "S5-4"
+        action: "Run canonical leaf scan and runtime scanner parity checks"
+        call: |
+          let pack = receiver_scan_leaf(&bob.keys, &leaf)?;
+          let canon = receiver_scan_report(&bob.keys, &leaf)?;
+          let run = StealthOutputScanner::from_keys(&bob.keys).scan_leaf(&asset);
+          let runtime = run.recv_report();
+          assert!(pack.is_some());
+          assert_eq!(canon.status, ReceiveStatus::Detected);
+          assert_eq!(canon.next, ReceiveNext::ReportOnly);
+          assert_eq!(runtime, canon);
+        post_conditions:
+          - "receiver_scan_leaf returns Some(AssetPackPlain) for the selected Bob output"
+          - "receiver_scan_report returns status=Detected and next=ReportOnly"
+          - "StealthOutputScanner::scan_leaf() report is semantically equal to canonical report"
+          - "stage fails closed if canonical and runtime receive taxonomy diverge"
+
+      - id: "S5-5"
+        action: "Run public RPC receive in report-only mode and verify claimed state is unchanged"
+        call: |
+          let session = transport.call("wallet.session.unlock_wallet", json!({
+            "wallet_id": bob.wallet_id,
+            "password": actor_password(&bob.name)?
+          })).await?;
+          let claimed_before = wallet_svc.list_claimed_assets(&PersistWalletId(bob.wallet_id.clone())).await?;
+          assert!(claimed_before.iter().any(|item| item.asset_id() == asset.asset_id()));
+          let recv = transport.call("wallet.asset.receive_asset", json!({
+            "session": session,
+            "asset_id": asset.asset_id(),
+          })).await?;
+          transport.call("wallet.session.lock_wallet", json!({"wallet_id": bob.wallet_id})).await?;
+          let claimed_after_rpc = wallet_svc.list_claimed_assets(&PersistWalletId(bob.wallet_id.clone())).await?;
+          assert_eq!(recv["status"], "RECEIVE_DETECTED");
+          assert_eq!(claimed_after_rpc.len(), claimed_before.len());
+        post_conditions:
+          - "wallet.asset.receive_asset returns outward status RECEIVE_DETECTED"
+          - "claimed wallet state set is unchanged after RPC receive"
+          - "stage does not re-import the selected Bob output in Stage 5"
+
+      - id: "S5-6"
+        action: "Cross explicit claim boundary through wallet-native recv_route"
+        call: |
+          let persisted = wallet_svc.recv_route(
+            &PersistWalletId(bob.wallet_id.clone()),
+            asset.clone(),
+            ReceiveNext::PersistClaim,
+          ).await?;
+          let claimed_after = wallet_svc.list_claimed_assets(&PersistWalletId(bob.wallet_id.clone())).await?;
+          assert!(!persisted);
+          assert_eq!(claimed_after.len(), claimed_before.len());
+          assert!(claimed_after.iter().any(|item| item.asset_id() == asset.asset_id()));
+        post_conditions:
+          - "explicit claim path is exercised only through recv_route(..., PersistClaim)"
+          - "recv_route stays idempotent for the already imported Stage-4 Bob output"
+          - "claimed asset id still matches the selected Stage-4 Bob output asset id"
+
+      - id: "S5-7"
+        action: "Write real Stage-5 selected-output artifact"
+        call: |
+          save_json("outputs/transactions/leaf_alice_to_bob.json", {
+            "stage": 5,
+            "source_tx_digest_hex": tx_pkg.tx_digest_hex,
+            "recipient_output_index": idx,
+            "asset_id_hex": hex(asset.asset_id()),
+            "serial_id": asset.serial_id,
+            "amount": asset.amount(),
+            "r_pub": hex(leaf.r_pub),
+            "owner_tag": hex(leaf.owner_tag),
+            "tag16": leaf.tag16,
+            "c_amount": hex(leaf.c_amount),
+            "ciphertext_len": leaf.enc_pack.ciphertext.len(),
+            "status": "ok"
+          })?;
+        post_conditions:
+          - "File outputs/transactions/leaf_alice_to_bob.json exists"
+          - "artifact records the selected Bob recipient output rather than a placeholder"
+          - "artifact contains only public leaf fields and safe ciphertext metadata"
+          - "artifact does not contain k_dh, s_out, blinding, receiver secrets, or passwords"
+
+      - id: "S5-8"
+        action: "Write Stage-5 snapshot and structured logs"
+        call: |
+          save_json("outputs/stage_5_snapshot.json", {
+            "stage": 5,
+            "transfer_count": 1,
+            "input_tx_digest_hex": tx_pkg.tx_digest_hex,
+            "recipient_output_index": idx,
+            "canonical_status": canon.status.rpc_code(),
+            "runtime_status": runtime.status.rpc_code(),
+            "rpc_status": recv["status"],
+            "claimed_count_after_route": claimed_after.len(),
+            "status": "ok"
+          })?;
+          push_log("S5-4", "canonical_scan", "selected recipient output detected via canonical leaf scan");
+          push_log("S5-4", "runtime_scan", "runtime scanner parity matches canonical report");
+          push_log("S5-5", "rpc_report_only", "public receive surface remained report-only");
+          push_log("S5-6", "explicit_claim", "recv_route PersistClaim stayed idempotent for the imported Stage-4 output");
+        post_conditions:
+          - "File outputs/stage_5_snapshot.json exists"
+          - "snapshot records canonical_status, runtime_status, rpc_status, and claimed_count_after_route"
+          - "logger contains distinct events canonical_scan, runtime_scan, rpc_report_only, and explicit_claim"
+          - "Stage 5 finishes with real receiver-bridge artifacts instead of placeholders"
+
+  # ----------------------------------------------------------
+  - stage: 6
+    name: "confidential_transfer_bundle"
+    description: |
+      Stage 6 is the transport and reload bridge for the checkpoint path.
+      It keeps the stage wallet-free, consumes real Stage 4 and Stage 5 artifacts,
+      writes deterministic fragment artifacts derived from selected Stage 4
+      input/output pairs, persists canonical exec-input bytes, emits a thin
+      bridge summary, writes report.md payload, and appends structured stage logs.
+
+      This stage does not mutate real wallet state and does not create
+      `outputs/wallets/charlie_after_s6.json`; it validates pipeline/order
+      semantics and artifact continuity for Stage 6 before Stage 7 performs
+      canonical storage-backed apply.
+    note: |
+      Scenario 1 checkpoint path is split into three executable layers:
+
+      1. Stage 6 bridge artifacts and canonical exec-input bytes
+      2. Stage 7 storage-backed apply summary derived from canonical draft state
+      3. Stage 8 final checkpoint artifact separation for publication surfaces
+
+      `checkpoint_prep.json` remains a transport reference to the canonical
+      storage-owned prep snapshot. Stage 6 must not masquerade as the final
+      executed checkpoint surface once Stage 7 and Stage 8 exist.
+    rust_entry: "stage_6::run_bundle(ctx)"
+    steps:
+
+      - id: "S6-1"
+        action: "Prepare stage output directories"
+        call: |
+          create_dir_all("outputs")?;
+          create_dir_all("outputs/logs")?;
+          create_dir_all("outputs/transactions")?;
+        post_conditions:
+          - "Directory outputs/transactions exists"
+
+      - id: "S6-2"
+        action: "Write deterministic fragment artifacts"
+        call: |
+          let frag1 = build_frag(stage, 1, 100, &prev_root_hex);
+          let frag2 = build_frag(stage, 2, 150, &prev_root_hex);
+          save_json("outputs/transactions/leaf_alice_to_charlie_frag1.json", &frag1)?;
+          save_json("outputs/transactions/leaf_alice_to_charlie_frag2.json", &frag2)?;
+        post_conditions:
+          - "File outputs/transactions/leaf_alice_to_charlie_frag1.json exists"
+          - "File outputs/transactions/leaf_alice_to_charlie_frag2.json exists"
+          - "fragment payload contains id, prev_root_hex, inputs, outputs"
+
+      - id: "S6-3"
+        action: "Keep wallet artifact absent"
+        call: |
+          // Intentionally no outputs/wallets/charlie_after_s6.json.
+          // Stage 6 keeps tx fragment/checkpoint artifacts + report + logs only.
+        post_conditions:
+          - "File outputs/wallets/charlie_after_s6.json is not created"
+
+      - id: "S6-4"
+        action: "Persist exec-input bridge artifact"
+        call: |
+          let exec = build_exec_input(snap_id, prep.prev_root, &tx_pkg)?;
+          let exec_id = checkpoint_store.save_exec_input(&exec)?;
+          save_json("outputs/transactions/checkpoint_bridge_s6.json", {
+            "stage": 6,
+            "prev_root_hex": prev_root_hex,
+            "exec_input_id_hex": hex(exec_id),
+            "fragment_ids": [frag1.id, frag2.id],
+            "status": "ok"
+          })?;
+        note: |
+          Stage 6 persists the bridge artifacts required for canonical apply, but
+          it does not own the final executed checkpoint summary once Stage 7 is
+          wired. Its output is transport-only and must remain distinct from both
+          the storage-owned draft and the final checkpoint publication surfaces.
+        post_conditions:
+          - "File outputs/transactions/checkpoint_bridge_s6.json exists"
+          - "bridge summary contains prev_root_hex, exec_input_id_hex, fragment_ids"
+          - "canonical exec-input bytes are persisted under outputs/transactions/checkpoint/exec_input"
+
+      - id: "S6-5"
+        action: "Record ordered pipeline marker"
+        call: |
+          push_log("S6-5", "ordered_pipeline", "verify -> membership -> delta -> update_root");
+        post_conditions:
+          - "File outputs/logs/logger.json contains step id S6-5 with event=ordered_pipeline"
+
+      - id: "S6-6"
+        action: "Build deterministic two-fragment artifact view"
+        call: |
+          let frag1 = build_target_frag(1, &prev_root_hex, &prep.entries, &tx_pkg.tx.inputs[0], &tx_pkg.tx.outputs[0])?;
+          let frag2 = build_target_frag(2, &prev_root_hex, &prep.entries, &tx_pkg.tx.inputs[1], &tx_pkg.tx.outputs[1])?;
+          // Both artifacts are deterministic and referenced by checkpoint.fragment_ids.
+        post_conditions:
+          - "Two fragment artifacts are produced from selected Stage 4 input/output pairs"
+          - "fragment ids are deterministic: frag_1, frag_2"
+
+      - id: "S6-7"
+        action: "Record aggregate amount marker"
+        call: |
+          push_log("S6-7", "aggregate_amount", "fragment output amount=<selected_sum>");
+        post_conditions:
+          - "Aggregate marker reflects the persisted fragment output amount"
+
+      - id: "S6-8"
+        action: "Record invariants marker and export report"
+        call: |
+          push_log("S6-8", "check_invariants", "replay-safe bridge and deterministic exec_input id");
+          write_file("outputs/report.md", "# Scenario 1 Report\n\n```json\n{...}\n```\n")?;
+        note: |
+          The exported report must describe the split ownership explicitly:
+          Stage 6 is the bridge, Stage 7 is canonical apply, and Stage 8 is final
+          checkpoint publication. Scenario 1 intentionally excludes production-grade
+          sequencer structures and focuses on deterministic state transition proof.
+        post_conditions:
+          - "File outputs/report.md exists"
+          - "Bundle invariants marker is written to logger"
+          - "report states that Scenario 1 models bridge plus canonical apply plus final artifact separation"
+
+  # ----------------------------------------------------------
+  - stage: 7
+    name: "checkpoint_apply_storage"
+    description: |
+      Stage 7 owns the canonical storage-backed `resolve -> verify -> apply`
+      path for the regular transfer flow. It reloads the Stage 6 bridge inputs,
+      rebuilds the storage-owned checkpoint draft from the canonical prep snapshot,
+      and writes `checkpoint_s7.json` as the executed checkpoint summary that is
+      derived from storage-owned draft state instead of simulator-local digesting.
+
+      Stage 7 also exports the draft-state observational storage mirror under
+      `outputs/storage/post_tx`, pairing the post-apply redb/JMT view with the
+      canonical prep snapshot and checkpoint draft/exec-input surfaces.
+    rust_entry: "stage_7::run_apply(ctx)"
+    steps:
+
+      - id: "S7-1"
+        action: "Prepare stage output directories"
+        call: |
+          create_dir_all("outputs")?;
+          create_dir_all("outputs/logs")?;
+          create_dir_all("outputs/transactions")?;
+        post_conditions:
+          - "Directory outputs/transactions exists"
+
+      - id: "S7-2"
+        action: "Load bridge artifacts, prep snapshot, and exec-input bytes"
+        call: |
+          let bridge = load_json("outputs/transactions/checkpoint_bridge_s6.json")?;
+          let prep = load_snapshot_from_ref("outputs/transactions/checkpoint_prep.json")?;
+          let exec = load_single_exec_input("outputs/transactions/checkpoint/exec_input")?;
+        post_conditions:
+          - "bridge summary is readable"
+          - "canonical prep snapshot reload succeeds"
+          - "exactly one exec-input artifact exists and decodes"
+
+      - id: "S7-3"
+        action: "Run storage-backed checkpoint apply"
+        call: |
+          let link = draft_link(prep_snapshot_id, exec_input_id)?;
+          let draft = build_cp_draft(height, prep_snapshot_id, &prep, &replay, &link, &exec, &proof_chk, &spent_idx)?;
+          let draft_id = checkpoint_store.save_draft(&draft)?;
+        post_conditions:
+          - "storage-backed checkpoint draft is built from canonical prep replay"
+          - "draft is persisted under outputs/transactions/checkpoint/draft"
+          - "Directory outputs/storage/post_tx exists"
+          - "File outputs/storage/post_tx/settlement_state.redb exists"
+          - "Directory outputs/storage/post_tx/prep_snapshot exists"
+          - "Directory outputs/storage/post_tx/checkpoint/draft exists"
+          - "Directory outputs/storage/post_tx/checkpoint/exec_input exists"
+
+      - id: "S7-4"
+        action: "Write executed checkpoint summary"
+        call: |
+          save_json("outputs/transactions/checkpoint_s7.json", {
+            "stage": 7,
+            "prev_root_hex": prev_root_hex,
+            "new_root_hex": new_root_hex,
+            "draft_id_hex": hex(draft_id),
+            "exec_input_id_hex": hex(exec_input_id),
+            "snapshot_id_hex": hex(prep_snapshot_id),
+            "spent_delta": spent_delta,
+            "created_delta": created_delta,
+            "fragment_ids": fragment_ids,
+            "status": "ok"
+          })?;
+        post_conditions:
+          - "File outputs/transactions/checkpoint_s7.json exists"
+          - "summary contains prev_root_hex, new_root_hex, draft_id_hex, exec_input_id_hex, snapshot_id_hex"
+          - "summary is derived from canonical storage draft state"
+          - "Directory outputs/storage/post_tx/jmt_artifact exists"
+
+  # ----------------------------------------------------------
+  - stage: 8
+    name: "checkpoint_finalize"
+    description: |
+      Stage 8 owns checkpoint finalization and artifact separation. It consumes
+      the Stage 7 executed checkpoint summary, and when finalization is enabled,
+      it seals the final checkpoint artifact, link, and audit surfaces through
+      the storage-owned checkpoint store. In draft-only mode it records the gate
+      result without publishing any final checkpoint surfaces.
+
+      When finalization succeeds, Stage 8 also completes the observational
+      `outputs/storage/post_tx/checkpoint` publication mirror by exporting the
+      sealed artifact, link, and audit surfaces alongside the Stage 7 draft view.
+    rust_entry: "stage_8::run_finalize(ctx)"
+    steps:
+
+      - id: "S8-1"
+        action: "Prepare stage output directories"
+        call: |
+          create_dir_all("outputs")?;
+          create_dir_all("outputs/logs")?;
+          create_dir_all("outputs/transactions")?;
+        post_conditions:
+          - "Directory outputs/transactions exists"
+
+      - id: "S8-2"
+        action: "Load Stage 7 executed checkpoint summary"
+        call: |
+          let cp = load_json("outputs/transactions/checkpoint_s7.json")?;
+        post_conditions:
+          - "File outputs/transactions/checkpoint_s7.json exists"
+          - "summary contains draft_id_hex, exec_input_id_hex, snapshot_id_hex"
+
+      - id: "S8-3"
+        action: "Finalize checkpoint publication surfaces or record draft-only gate"
+        call: |
+          if proof_mode == opaque_test {
+            let link = checkpoint_store.seal_artifact(&draft, proof, prep_snapshot_id, exec_input_id)?;
+            checkpoint_store.save_audit(&audit)?;
+          } else {
+            // Final artifact surfaces remain absent in draft-only mode.
+          }
+        post_conditions:
+          - "artifact/link/audit surfaces exist only when finalization succeeds"
+          - "draft-only mode keeps final publication surfaces absent"
+          - "when finalized, outputs/storage/post_tx/checkpoint/artifact exists"
+          - "when finalized, outputs/storage/post_tx/checkpoint/link exists"
+          - "when finalized, outputs/storage/post_tx/checkpoint/audit exists"
+
+      - id: "S8-4"
+        action: "Write Stage 8 finalization summary"
+        call: |
+          save_json("outputs/transactions/checkpoint_s8.json", {
+            "stage": 8,
+            "draft_id_hex": draft_id_hex,
+            "exec_input_id_hex": exec_input_id_hex,
+            "snapshot_id_hex": snapshot_id_hex,
+            "evidence_class": stage12_evidence_class,
+            "checkpoint_id_hex": maybe_checkpoint_id_hex,
+            "artifact_path": maybe_artifact_path,
+            "link_path": maybe_link_path,
+            "audit_path": maybe_audit_path,
+            "fragment_ids": fragment_ids,
+            "status": final_status
+          })?;
+        post_conditions:
+          - "File outputs/transactions/checkpoint_s8.json exists"
+          - "summary distinguishes draft-only vs finalized publication state"
+          - "draft-only summary uses a private-only evidence_class that cannot be consumed as final public evidence"
+          - "finalized summary uses the final-public evidence_class before publication binding is emitted"
+          - "draft-only summary keeps checkpoint_id_hex and artifact/link/audit path fields absent"
+          - "finalized summary records checkpoint_id_hex plus explicit artifact_path, link_path, and audit_path fields"

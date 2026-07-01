@@ -1,0 +1,33 @@
+phase: 25
+closure:
+  required:
+    - code_updated
+    - tests_updated
+    - docs_updated
+    - issue_state_updated
+    - recurrence_check_added
+  issues:
+    - id: TXL-251
+      code_updated: true
+      tests_updated: true
+      docs_updated: true
+      issue_state_updated: true
+      recurrence_check_added: true
+    - id: TXL-252
+      code_updated: true
+      tests_updated: true
+      docs_updated: true
+      issue_state_updated: true
+      recurrence_check_added: true
+    - id: TXL-253
+      code_updated: false
+      tests_updated: false
+      docs_updated: false
+      issue_state_updated: true
+      recurrence_check_added: false
+    - id: TXL-254
+      code_updated: true
+      tests_updated: true
+      docs_updated: true
+      issue_state_updated: true
+      recurrence_check_added: true

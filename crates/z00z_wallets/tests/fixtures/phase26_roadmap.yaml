@@ -1,0 +1,31 @@
+phase: 26
+milestones:
+  - id: M1
+    name: domains_freeze
+    targets: [T-1]
+  - id: M2
+    name: tag16_align
+    targets: [T-2]
+    deps: [M1]
+  - id: M3
+    name: skeleton_hygiene
+    targets: [T-4]
+  - id: M4
+    name: domain_test_fix
+    targets: [T-5]
+    deps: [M3]
+  - id: M5
+    name: pack_kdf_align
+    targets: [T-6]
+    deps: [M2]
+  - id: M6
+    name: chainid_wire
+    targets: [T-7]
+  - id: M7
+    name: card_sign_domain
+    targets: [T-8]
+    deps: [M1]
+  - id: M8
+    name: req_sign_domain
+    targets: [T-9]
+    deps: [M1]

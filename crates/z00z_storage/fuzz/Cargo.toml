@@ -1,0 +1,24 @@
+[package]
+name = "z00z_storage-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+z00z_core = { path = "../../z00z_core", features = ["test-params-fast"] }
+z00z_crypto = { path = "../../z00z_crypto", features = ["test-params-fast"] }
+z00z_storage = { path = "..", features = ["test-params-fast"] }
+z00z_utils = { path = "../../z00z_utils", features = ["test-params-fast"] }
+
+[[bin]]
+name = "settlement_proofs"
+path = "fuzz_targets/settlement_proofs.rs"
+test = false
+doc = false
+bench = false

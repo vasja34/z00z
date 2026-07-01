@@ -1,0 +1,67 @@
+vouchers:
+- id: voucher_transferable_devnet
+  domain_name: z00z.core.vouchers.transferable.devnet.v1
+  issuer_fixture: wallet_alice
+  holder_fixture: wallet_bob
+  beneficiary_fixture: wallet_charlie
+  backing:
+    genesis_reserve:
+      reserve_id: reserve_devnet_transferable
+  face_value: 100
+  remaining_value: 100
+  policy_label: voucher_transferable_policy_v1
+  lifecycle: active
+  validity:
+    valid_from: 0
+    valid_until: 1000
+  acceptance:
+    receiver_must_accept: true
+    allow_reject: true
+    refund_target_fixture: wallet_alice
+  replay_nonce: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+  disclosure_commitment: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]
+  audit_commitment: [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3]
+- id: voucher_non_transferable_devnet
+  domain_name: z00z.core.vouchers.non_transferable.devnet.v1
+  issuer_fixture: wallet_alice
+  holder_fixture: wallet_charlie
+  beneficiary_fixture: wallet_charlie
+  backing:
+    genesis_reserve:
+      reserve_id: reserve_devnet_non_transferable
+  face_value: 75
+  remaining_value: 75
+  policy_label: voucher_non_transferable_policy_v1
+  lifecycle: pending_acceptance
+  validity:
+    valid_from: 0
+    valid_until: 500
+  acceptance:
+    receiver_must_accept: true
+    allow_reject: true
+    refund_target_fixture: wallet_alice
+  replay_nonce: [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4]
+  disclosure_commitment: [5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5]
+  audit_commitment: [6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6]
+- id: voucher_expired_devnet
+  domain_name: z00z.core.vouchers.expired.devnet.v1
+  issuer_fixture: wallet_alice
+  holder_fixture: wallet_bob
+  beneficiary_fixture: wallet_bob
+  backing:
+    genesis_reserve:
+      reserve_id: reserve_devnet_expired
+  face_value: 25
+  remaining_value: 0
+  policy_label: voucher_non_transferable_policy_v1
+  lifecycle: expired
+  validity:
+    valid_from: 0
+    valid_until: 1
+  acceptance:
+    receiver_must_accept: true
+    allow_reject: true
+    refund_target_fixture: wallet_alice
+  replay_nonce: [7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7]
+  disclosure_commitment: [8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8]
+  audit_commitment: [9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9]

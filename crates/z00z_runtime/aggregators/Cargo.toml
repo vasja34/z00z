@@ -1,0 +1,30 @@
+
+[package]
+name = "z00z_aggregators"
+version = "0.2.0"
+edition = "2021"
+license = "MIT OR BSD-3-Clause"
+
+[lib]
+doctest = false
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+sha2 = "0.10"
+z00z_core = { path = "../../z00z_core" }
+z00z_storage = { path = "../../z00z_storage" }
+z00z_utils = { path = "../../z00z_utils" }
+z00z_wallets = { path = "../../z00z_wallets" }
+
+[dev-dependencies]
+hex = "0.4"
+tempfile = "3"
+z00z_crypto = { path = "../../z00z_crypto" }
+z00z_rollup_node = { path = "../../z00z_rollup_node" }
+
+[features]
+test-params-fast = [
+  "z00z_core/test-params-fast",
+  "z00z_storage/test-params-fast",
+  "z00z_wallets/test-params-fast",
+]

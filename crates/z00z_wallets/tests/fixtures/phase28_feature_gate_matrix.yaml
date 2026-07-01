@@ -1,0 +1,21 @@
+phase: 28
+scope: w2_s1_skeleton_hygiene
+release_lane:
+  cmd: "cargo test --workspace --release -F z00z_simulator/test-params-fast,z00z_wallets/test-params-fast,z00z_simulator/wallet_debug_tools"
+matrix:
+  - module: tx_mod
+    path: crates/z00z_wallets/src/tx/mod.rs
+    status: compile-ready
+    release_impact: "public tx facade exported in release"
+  - module: tx_verifier
+    path: crates/z00z_wallets/src/tx/tx_verifier.rs
+    status: compile-ready
+    release_impact: "tx package checks available in release"
+  - module: fee_estimator
+    path: crates/z00z_wallets/src/tx/fee_estimator.rs
+    status: compile-ready
+    release_impact: "canonical fee model available in release"
+  - module: tx_assembler
+    path: crates/z00z_wallets/src/tx/tx_assembler.rs
+    status: compile-ready
+    release_impact: "assembly boundary compiles in release"

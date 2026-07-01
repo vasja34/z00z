@@ -1,0 +1,366 @@
+$schema: http://json-schema.org/draft-07/schema#
+title: Z00Z Policies Config YAML Schema
+description: 'Standalone schema for canonical policies catalog YAML files.
+
+  '
+allOf:
+- $ref: '#/definitions/policies_catalog'
+definitions:
+  non_empty_string:
+    type: string
+    minLength: 1
+  underscore_name_value:
+    type: string
+    pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+  domain_name_value:
+    type: string
+    pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*(?:\.[a-z0-9]+(?:_[a-z0-9]+)*)+$
+  metadata_string_map:
+    type: object
+    propertyNames:
+      minLength: 1
+    additionalProperties:
+      $ref: '#/definitions/non_empty_string'
+  object_family:
+    type: string
+    enum:
+    - asset
+    - voucher
+    - right
+  required_signature:
+    type: string
+    enum:
+    - owner
+    - issuer
+    - holder
+    - beneficiary
+    - controller
+  lifecycle_effect:
+    type: string
+    enum:
+    - no_state_change
+    - offer
+    - accept
+    - transfer
+    - redeem
+    - partial_redeem
+    - refund
+    - expire
+    - grant
+    - delegate
+    - use
+    - revoke
+    - challenge
+  expiry_rule:
+    type: string
+    enum:
+    - none
+    - valid_until
+    - fixed_epoch
+  replay_protection:
+    type: string
+    enum:
+    - none
+    - nonce
+    - nonce_and_root
+  conservation:
+    type: string
+    enum:
+    - final_value
+    - conditional_value
+    - zero_value_authority
+  condition_kind:
+    type: string
+    enum:
+    - time_window
+    - acceptance_required
+    - replay_nonce
+    - maximum_uses
+    - right_scope
+    - disclosure_commitment
+    - external_attestation
+  condition_trust_tier:
+    type: string
+    enum:
+    - deterministic
+    - verifier_attested
+  unknown_policy_validator:
+    type: string
+    enum:
+    - fail_closed
+  unknown_policy_wallet:
+    type: string
+    enum:
+    - quarantine
+  right_action:
+    type: string
+    enum:
+    - grant
+    - use
+    - delegate
+    - revoke
+    - expire
+    - challenge
+    - disclose
+  witness_requirement:
+    oneOf:
+    - type: string
+      enum:
+      - acceptance_proof
+      - replay_nonce
+      - prior_state_root
+      - disclosure_commitment
+    - type: object
+      required:
+      - signature
+      additionalProperties: false
+      properties:
+        signature:
+          $ref: '#/definitions/required_signature'
+    - type: object
+      required:
+      - right_reference
+      additionalProperties: false
+      properties:
+        right_reference:
+          $ref: '#/definitions/underscore_name_value'
+    - type: object
+      required:
+      - verifier_attestation
+      additionalProperties: false
+      properties:
+        verifier_attestation:
+          $ref: '#/definitions/underscore_name_value'
+  condition_descriptor:
+    type: object
+    required:
+    - label
+    - kind
+    - trust_tier
+    additionalProperties: false
+    properties:
+      label:
+        $ref: '#/definitions/underscore_name_value'
+      kind:
+        $ref: '#/definitions/condition_kind'
+      trust_tier:
+        $ref: '#/definitions/condition_trust_tier'
+      verifier:
+        $ref: '#/definitions/underscore_name_value'
+      metadata:
+        $ref: '#/definitions/metadata_string_map'
+  right_scope:
+    oneOf:
+    - type: object
+      required:
+      - object_family
+      additionalProperties: false
+      properties:
+        object_family:
+          $ref: '#/definitions/object_family'
+    - type: object
+      required:
+      - specific_object
+      additionalProperties: false
+      properties:
+        specific_object:
+          $ref: '#/definitions/underscore_name_value'
+    - type: object
+      required:
+      - policy
+      additionalProperties: false
+      properties:
+        policy:
+          $ref: '#/definitions/underscore_name_value'
+    - type: object
+      required:
+      - domain
+      additionalProperties: false
+      properties:
+        domain:
+          $ref: '#/definitions/domain_name_value'
+  right_requirement:
+    type: object
+    required:
+    - right_policy
+    - allowed_actions
+    - scope
+    - delegation_allowed
+    - attenuation_only
+    additionalProperties: false
+    properties:
+      right_policy:
+        $ref: '#/definitions/underscore_name_value'
+      allowed_actions:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/right_action'
+      scope:
+        $ref: '#/definitions/right_scope'
+      max_uses:
+        type: integer
+        minimum: 1
+      delegation_allowed:
+        type: boolean
+      attenuation_only:
+        type: boolean
+  attestation_requirement:
+    type: object
+    required:
+    - label
+    - verifier
+    additionalProperties: false
+    properties:
+      label:
+        $ref: '#/definitions/underscore_name_value'
+      verifier:
+        $ref: '#/definitions/underscore_name_value'
+  unknown_policy_handling:
+    type: object
+    required:
+    - validator
+    - wallet
+    additionalProperties: false
+    properties:
+      validator:
+        $ref: '#/definitions/unknown_policy_validator'
+      wallet:
+        $ref: '#/definitions/unknown_policy_wallet'
+  action_descriptor:
+    type: object
+    required:
+    - label
+    - allowed_input_families
+    - allowed_output_families
+    - lifecycle_effect
+    - witness_requirements
+    - receiver_must_accept
+    - preserves_beneficiary
+    - preserves_refund_authority
+    additionalProperties: false
+    properties:
+      label:
+        $ref: '#/definitions/underscore_name_value'
+      allowed_input_families:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/object_family'
+      allowed_output_families:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/object_family'
+      lifecycle_effect:
+        $ref: '#/definitions/lifecycle_effect'
+      witness_requirements:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/witness_requirement'
+      receiver_must_accept:
+        type: boolean
+      preserves_beneficiary:
+        type: boolean
+      preserves_refund_authority:
+        type: boolean
+  action_pool:
+    type: object
+    required:
+    - label
+    - actions
+    additionalProperties: false
+    properties:
+      label:
+        $ref: '#/definitions/underscore_name_value'
+      actions:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/action_descriptor'
+  policy_template:
+    type: object
+    required:
+    - label
+    - primary_family
+    - allowed_input_families
+    - allowed_output_families
+    - expiry_rule
+    - replay_protection
+    - conservation
+    additionalProperties: false
+    properties:
+      label:
+        $ref: '#/definitions/underscore_name_value'
+      primary_family:
+        $ref: '#/definitions/object_family'
+      allowed_input_families:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/object_family'
+      allowed_output_families:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/object_family'
+      conditions:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/condition_descriptor'
+      required_rights:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/right_requirement'
+      required_signatures:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/required_signature'
+      required_attestations:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/attestation_requirement'
+      expiry_rule:
+        $ref: '#/definitions/expiry_rule'
+      replay_protection:
+        $ref: '#/definitions/replay_protection'
+      conservation:
+        $ref: '#/definitions/conservation'
+      unknown_policy_handling:
+        $ref: '#/definitions/unknown_policy_handling'
+  policy_entry:
+    type: object
+    required:
+    - domain_name
+    - action_pool
+    - template
+    additionalProperties: false
+    properties:
+      domain_name:
+        $ref: '#/definitions/domain_name_value'
+      action_pool:
+        $ref: '#/definitions/action_pool'
+      template:
+        $ref: '#/definitions/policy_template'
+  policies_catalog:
+    type: object
+    required:
+    - policies
+    additionalProperties: false
+    properties:
+      policies:
+        type: array
+        minItems: 1
+        items:
+          $ref: '#/definitions/policy_entry'

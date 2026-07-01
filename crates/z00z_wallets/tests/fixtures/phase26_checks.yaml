@@ -1,0 +1,17 @@
+phase: 26
+checkpoints:
+  - id: CP-1
+    name: domain_parity
+    need: "code merged + vectors green + docs frozen"
+  - id: CP-2
+    name: wire_parity
+    need: "vectors green + parser tests green + wire notes updated"
+  - id: CP-3
+    name: proof_parity
+    need: "public input parity + transcript tests green + spec frozen"
+  - id: CP-4
+    name: interop_parity
+    need: "card/request one-domain policy + interop tests green"
+  - id: CP-5
+    name: release_gate
+    need: "no open critical in T-1..T-9 + release lane green"

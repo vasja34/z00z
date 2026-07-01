@@ -1,0 +1,10 @@
+{
+  "capabilities": {
+    "alwaysMatch": {
+      "browserName": "firefox",
+      "moz:firefoxOptions": {
+        "args": ["-headless"]
+      }
+    }
+  }
+}

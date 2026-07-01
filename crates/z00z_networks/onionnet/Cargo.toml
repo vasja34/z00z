@@ -1,0 +1,13 @@
+[package]
+name = "onionnet"
+version = "0.1.0"
+edition = "2021"
+authors = ["Z00Z Development Team"]
+description = "Z00Z OnionNet privacy-ingress placeholder crate"
+keywords = ["onionnet", "overlay", "privacy", "network"]
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]

@@ -1,0 +1,29 @@
+phase: 24
+scope: protocol_invariants
+cadence: per_release
+invariants:
+  - id: T24_I1
+    name: class_field
+    module: crates/z00z_wallets/tests/test_tx_gate.rs
+    owner: wallet
+    verify: t24_class_field
+  - id: T24_I2
+    name: id_stable
+    module: crates/z00z_wallets/tests/test_tx_gate.rs
+    owner: wallet
+    verify: t24_id_stable
+  - id: T24_I3
+    name: bind_commit
+    module: crates/z00z_wallets/tests/test_tx_gate.rs
+    owner: wallet
+    verify: t24_bind_commit
+  - id: T24_I4
+    name: prev_root
+    module: crates/z00z_wallets/tests/test_tx_gate.rs
+    owner: runtime
+    verify: t24_prev_root
+  - id: T24_I5
+    name: spent_gate
+    module: crates/z00z_wallets/tests/test_tx_gate.rs
+    owner: runtime
+    verify: t24_spent_gate

@@ -1,0 +1,192 @@
+version: 1
+manifest_refs:
+  assets: devnet_assets_config.yaml
+  rights: devnet_rights_config.yaml
+  policies: devnet_policies_config.yaml
+  vouchers: devnet_vouchers_config.yaml
+chain:
+  id: 3
+  type: devnet
+  name: z00z-devnet-1
+  magic_bytes: [90, 48, 48, 68]
+  domains:
+    genesis_seed: [216, 229, 13, 31, 236, 27, 5, 92, 100, 178, 100, 58, 65, 108, 63, 52, 97, 148, 251, 97, 59, 216, 136, 110, 134, 243, 237, 175, 10, 155, 0, 183]
+outputs:
+  assets_export_path: crates/z00z_core/outputs/genesis/
+  snapshot_export_path: crates/z00z_core/outputs/genesis/
+  logging_path: crates/z00z_core/outputs/log/
+performance:
+  num_threads: auto
+wallet_profiles:
+- id: fee_credit_v1
+  object_family: voucher
+  live_anchor: existing voucher object model
+  product_anchor: FeeCredit
+  transitions:
+  - issue
+  - accept
+  - redeem
+  - expire
+  - refund
+  backing_kind: genesis_reserve
+  transferability: non_transferable
+  redeem_target: fee_lane
+  expiry_rule: valid_until
+  fail_closed:
+  - voucher_as_cash
+  - missing_backing
+  - replay
+  - expired_use
+  - unknown_policy
+- id: service_entitlement_v1
+  object_family: right
+  live_anchor: service_entitlement
+  transitions:
+  - grant
+  - delegate
+  - consume
+  - revoke
+  - expire
+  disclosure_policy: policy_disclosure_devnet_service
+  retention_policy: policy_retention_devnet_service
+  provider_scope: scoped
+  beneficiary_scope: scoped
+  fail_closed:
+  - right_as_value
+  - out_of_scope_use
+  - revoked_or_expired
+  - unknown_policy
+- id: data_access_v1
+  object_family: right
+  live_anchor: data_access
+  transitions:
+  - grant
+  - consume
+  - challenge
+  - revoke
+  - expire
+  disclosure_policy: policy_disclosure_devnet_data
+  retention_policy: policy_retention_devnet_data
+  audit_trail: required
+  challenge_window: bounded
+  fail_closed:
+  - expired_access
+  - wrong_beneficiary
+  - challenge_window_misuse
+  - unknown_policy
+- id: agent_budget_v1
+  object_family: right
+  live_anchor:
+  - machine_capability
+  - one_time_use
+  transitions:
+  - delegate
+  - consume_quota
+  - revoke
+  - expire
+  action_whitelist:
+  - compute
+  - submit
+  - reconcile
+  quota: bounded
+  service_scope: bounded
+  expiry_rule: valid_until
+  replay_mode: nonce
+  fail_closed:
+  - over_budget_action
+  - unauthorized_action_family
+  - consumed_right_reuse
+  - unknown_policy
+- id: validator_mandate_lock_v1
+  object_family: right
+  live_anchor: validator_mandate
+  transitions:
+  - lock
+  - unlock
+  - redelegate
+  - reward_claim
+  - revoke
+  - expire
+  locked_asset_id: z00z
+  locked_amount: committed
+  binding_surfaces:
+  - holder
+  - control
+  - beneficiary
+  - payload
+  payload_binding: payload_commitment
+  lock_window:
+    valid_from: 0
+    valid_until: 4102444800
+  revoke_mode: challenge_bounded
+  disclosure_policy: policy_disclosure_devnet_validator
+  retention_policy: policy_retention_devnet_validator
+  ordinary_spend: forbidden
+  fail_closed:
+  - soft_lock_only
+  - ordinary_spend_of_locked_asset
+  - replay
+  - wrong_family_proof
+- id: transferable_claim_v1
+  object_family: voucher
+  live_anchor: existing Phase 059 voucher object model
+  transitions:
+  - offer
+  - accept
+  - transfer
+  - partial_redeem
+  - redeem
+  - reject
+  - expire
+  backing_kind: genesis_reserve
+  accept_policy: receiver_must_accept
+  transferability: transferable
+  partial_redeem: allowed
+  residual_policy: return_residual_voucher
+  expiry_rule: valid_until
+  fail_closed:
+  - wrong_family_proof
+  - double_redeem
+  - expired_use
+  - residual_mismatch
+  - unknown_policy
+policy_profiles:
+- id: corporate_eu_transfer_v1
+  enforced_actions:
+  - create
+  - transfer
+  - consume
+  - revoke
+  - challenge
+  - disclose
+  selected_fields:
+  - invoice_reference
+  - counterparty_reference
+  require_purpose: true
+  require_expiry: true
+  bind_policy_id: true
+  bind_checkpoint_anchor: true
+  bind_retained_document_hash: true
+  disclosure_receipt_required: true
+  retention_profile: enterprise_retention_7y_v1
+- id: enterprise_retention_7y_v1
+  retained_object_type: EvidencePackage
+  required_bindings:
+  - policy_id
+  - action
+  - field_set
+  - purpose
+  - expiry
+  - document_hash
+  - checkpoint_anchor
+  retention_years: 7
+  disclosure_receipt_type: DisclosureReceipt
+- id: sanctions_screened_counterparty_v1
+  applies_to_profiles:
+  - corporate_eu_transfer_v1
+  selected_fields:
+  - counterparty_reference
+  - sanctions_screening_metadata
+  require_expiry: true
+  bind_policy_id: true
+  bind_retained_document_hash: true

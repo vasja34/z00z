@@ -1,0 +1,473 @@
+use z00z_storage::fixture_support::checkpoint_fixtures;
+
+use tempfile::TempDir;
+use z00z_core::assets::AssetLeaf;
+use z00z_storage::{
+    checkpoint::{
+        decode_link_bin, derive_exec_id, encode_art_bin, encode_exec_bin, load_artifact,
+        CheckpointExecInput, CheckpointExecInputId, CheckpointExecOut, CheckpointExecTx,
+        CheckpointExecVersion, CheckpointFsStore, CheckpointId, CheckpointInRef, CheckpointLink,
+        CheckpointLinkVersion, CheckpointProof, CheckpointStore,
+    },
+    settlement::{CheckRoot, DefinitionId, SerialId, TerminalLeaf},
+    snapshot::{build_snapshot, PrepFsStore, PrepSnapshotId, PrepSnapshotStore},
+    CheckpointError,
+};
+use z00z_utils::{
+    codec::{BincodeCodec, Codec},
+    io::{create_dir_all, write_file},
+};
+
+const CHECKPOINT_STORE_SRC: &str = include_str!("../src/checkpoint/store.rs");
+const STAGE4_STORAGE_VIEW_SRC: &str =
+    include_str!("../../z00z_simulator/src/scenario_1/stage_4/storage_view.rs");
+const STAGE12_FINALIZE_SRC: &str =
+    include_str!("../../z00z_simulator/src/scenario_1/stage_12/finalize_flow.rs");
+
+fn attest_proof(
+    draft: &z00z_storage::checkpoint::CheckpointDraft,
+    snap_id: PrepSnapshotId,
+    exec_id: CheckpointExecInputId,
+) -> CheckpointProof {
+    draft.attest_proof(snap_id, exec_id).expect("proof")
+}
+
+fn temp_dir() -> TempDir {
+    TempDir::new().expect("temp dir")
+}
+
+fn hex_id(bytes: &[u8; 32]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+fn exec(snapshot_id: PrepSnapshotId, prev_root: CheckRoot) -> CheckpointExecInput {
+    CheckpointExecInput::new(
+        CheckpointExecVersion::CURRENT,
+        snapshot_id,
+        prev_root,
+        vec![CheckpointExecTx::new(
+            vec![CheckpointInRef::new([0x31u8; 32], SerialId::new(1))],
+            vec![CheckpointExecOut::new(
+                DefinitionId::new([0x32u8; 32]),
+                TerminalLeaf::from(AssetLeaf::dummy_for_scan(13)),
+            )
+            .expect("exec out")],
+            vec![0x33u8],
+        )
+        .expect("exec tx")],
+    )
+    .expect("exec")
+}
+
+fn save_snapshot(root: &std::path::Path, prev_root: CheckRoot) -> PrepSnapshotId {
+    let (snapshot, snapshot_id) = build_snapshot(prev_root, Vec::new()).expect("snapshot");
+    let mut store = PrepFsStore::new(root);
+    let saved_id = store.save_snapshot(&snapshot).expect("save snapshot");
+    assert_eq!(saved_id, snapshot_id);
+    saved_id
+}
+
+fn save_artifact_file(
+    root: &std::path::Path,
+    artifact: &z00z_storage::checkpoint::CheckpointArtifact,
+) -> CheckpointId {
+    let checkpoint_id =
+        z00z_storage::checkpoint::derive_checkpoint_id(artifact).expect("derive checkpoint id");
+    let path = root
+        .join("checkpoint/artifact")
+        .join(format!("{}.bin", hex_id(checkpoint_id.as_bytes())));
+    if let Some(parent) = path.parent() {
+        create_dir_all(parent).expect("mkdir");
+    }
+    write_file(&path, &encode_art_bin(artifact).expect("encode artifact")).expect("write artifact");
+    checkpoint_id
+}
+
+#[test]
+fn test_store_keeps_surfaces_separate() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let draft_val = checkpoint_fixtures::draft();
+    let draft_id = store.save_draft(&draft_val).expect("save draft");
+    let draft_got = store.load_draft(&draft_id).expect("load draft");
+    let snap_id = save_snapshot(dir.path(), draft_val.prev_root());
+    let exec = exec(snap_id, draft_val.prev_root());
+    let exec_id = store.save_exec_input(&exec).expect("save exec");
+    let exec_got = store.load_exec_input(&exec_id).expect("load exec");
+    let proof = attest_proof(&draft_val, exec.prep_snapshot_id(), exec_id);
+    let link = store
+        .seal_artifact(&draft_val, proof.clone(), exec.prep_snapshot_id(), exec_id)
+        .expect("seal artifact");
+    let art = draft_val.finalize(proof).expect("artifact");
+    let checkpoint_id = link.checkpoint_id();
+    let art_got = store.load_artifact(&checkpoint_id).expect("load artifact");
+    let link_got = store.load_link(&checkpoint_id).expect("load link");
+    let audit = checkpoint_fixtures::audit(checkpoint_id);
+    store.save_audit(&audit).expect("save audit");
+    let audit_got = store.load_audit(&checkpoint_id).expect("load audit");
+
+    assert_eq!(draft_got, checkpoint_fixtures::draft());
+    assert_eq!(exec_got, exec);
+    assert_eq!(art_got, art);
+    assert_eq!(link_got, link);
+    assert_eq!(audit_got, audit);
+}
+
+#[test]
+fn test_seal_path_stays_canonical() {
+    assert!(!CHECKPOINT_STORE_SRC.contains("fn save_artifact("));
+    assert!(CHECKPOINT_STORE_SRC.contains("fn export_noncanonical_final_bundle("));
+    assert!(CHECKPOINT_STORE_SRC.contains("self.check_link_evidence(&link)?;"));
+    assert!(CHECKPOINT_STORE_SRC.contains("self.persist_artifact_bin(&artifact)?;"));
+    assert!(STAGE12_FINALIZE_SRC.contains("build_attest_proof"));
+    assert!(STAGE12_FINALIZE_SRC.contains(".seal_artifact("));
+}
+
+#[test]
+fn test_stage4_raw_lane_local() {
+    assert!(STAGE4_STORAGE_VIEW_SRC.contains("stay noncanonical"));
+    assert!(STAGE4_STORAGE_VIEW_SRC.contains("export_noncanonical_final_bundle"));
+    assert!(STAGE4_STORAGE_VIEW_SRC.contains("\"final_lane\": \"noncanonical_export\""));
+    assert!(!STAGE4_STORAGE_VIEW_SRC.contains(".save_artifact(artifact)"));
+}
+
+#[test]
+fn test_noncanonical_export_stays_explicit() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let draft = checkpoint_fixtures::draft();
+    let snap_id = save_snapshot(dir.path(), draft.prev_root());
+    let exec = exec(snap_id, draft.prev_root());
+    let exec_id = store.save_exec_input(&exec).expect("save exec");
+    let proof = attest_proof(&draft, snap_id, exec_id);
+    let artifact = draft.finalize(proof).expect("artifact");
+    let checkpoint_id =
+        z00z_storage::checkpoint::derive_checkpoint_id(&artifact).expect("derive checkpoint id");
+    let link = CheckpointLink::new(
+        CheckpointLinkVersion::CURRENT,
+        checkpoint_id,
+        snap_id,
+        exec_id,
+    )
+    .expect("link");
+    let audit = checkpoint_fixtures::audit(checkpoint_id);
+
+    let exported_id = store
+        .export_noncanonical_final_bundle(&artifact, &link, &audit)
+        .expect("export noncanonical bundle");
+
+    assert_eq!(exported_id, checkpoint_id);
+    assert_eq!(
+        store
+            .load_noncanonical_artifact(&checkpoint_id)
+            .expect("load exported artifact"),
+        artifact
+    );
+    assert_eq!(
+        store
+            .load_noncanonical_link(&checkpoint_id)
+            .expect("load exported link"),
+        link
+    );
+    assert_eq!(
+        store
+            .load_noncanonical_audit(&checkpoint_id)
+            .expect("load exported audit"),
+        audit
+    );
+}
+
+#[test]
+fn test_canonical_load_rejects_noncanonical_export_lane() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let draft = checkpoint_fixtures::draft();
+    let snap_id = save_snapshot(dir.path(), draft.prev_root());
+    let exec = exec(snap_id, draft.prev_root());
+    let exec_id = store.save_exec_input(&exec).expect("save exec");
+    let proof = attest_proof(&draft, snap_id, exec_id);
+    let artifact = draft.finalize(proof).expect("artifact");
+    let checkpoint_id =
+        z00z_storage::checkpoint::derive_checkpoint_id(&artifact).expect("derive checkpoint id");
+    let link = CheckpointLink::new(
+        CheckpointLinkVersion::CURRENT,
+        checkpoint_id,
+        snap_id,
+        exec_id,
+    )
+    .expect("link");
+    let audit = checkpoint_fixtures::audit(checkpoint_id);
+    store
+        .export_noncanonical_final_bundle(&artifact, &link, &audit)
+        .expect("export noncanonical bundle");
+
+    let art_err = store
+        .load_artifact(&checkpoint_id)
+        .expect_err("canonical artifact load must reject noncanonical export");
+    let link_err = store
+        .load_link(&checkpoint_id)
+        .expect_err("canonical link load must reject noncanonical export");
+    let audit_err = store
+        .load_audit(&checkpoint_id)
+        .expect_err("canonical audit load must reject noncanonical export");
+
+    assert!(matches!(art_err, CheckpointError::ArtifactCompatMix));
+    assert!(matches!(link_err, CheckpointError::ArtifactCompatMix));
+    assert!(matches!(audit_err, CheckpointError::ArtifactCompatMix));
+}
+
+#[test]
+fn test_link_key_mismatch_rejects() {
+    let dir = temp_dir();
+    let store = CheckpointFsStore::new(dir.path());
+    let checkpoint_id = CheckpointId::new([9u8; 32]);
+    let wrong_id = CheckpointId::new([8u8; 32]);
+    let link = CheckpointLink::new(
+        CheckpointLinkVersion::CURRENT,
+        checkpoint_id,
+        PrepSnapshotId::new([7u8; 32]),
+        CheckpointExecInputId::new([6u8; 32]),
+    )
+    .expect("link");
+    let bytes = BincodeCodec.serialize(&link).expect("encode link");
+    let path = dir
+        .path()
+        .join("checkpoint/link")
+        .join(format!("{}.bin", hex_id(wrong_id.as_bytes())));
+    if let Some(parent) = path.parent() {
+        create_dir_all(parent).expect("mkdir");
+    }
+    write_file(&path, &bytes).expect("write link");
+
+    let err = store
+        .load_link(&wrong_id)
+        .expect_err("wrong key must reject");
+
+    assert!(matches!(err, CheckpointError::KeyMix));
+}
+
+#[test]
+fn test_wrapper_shaped_payload_rejects() {
+    let audit = checkpoint_fixtures::audit(CheckpointId::new([1u8; 32]));
+    let bytes = BincodeCodec.serialize(&audit).expect("encode audit");
+    let err = load_artifact(&bytes).expect_err("audit bytes must reject");
+
+    assert!(matches!(err, CheckpointError::Codec(_)));
+}
+
+#[test]
+fn test_incomplete_link_payload_rejects() {
+    let err = decode_link_bin(&[1u8, 2, 3]).expect_err("bad link bytes");
+
+    assert!(matches!(err, CheckpointError::Codec(_)));
+}
+
+#[test]
+fn test_link_without_artifact_rejects() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let bad = CheckpointLink::new(
+        CheckpointLinkVersion::CURRENT,
+        CheckpointId::new([1u8; 32]),
+        PrepSnapshotId::new([7u8; 32]),
+        CheckpointExecInputId::new([6u8; 32]),
+    )
+    .expect("link");
+
+    let err = store
+        .save_link(&bad)
+        .expect_err("missing artifact must reject");
+
+    assert!(matches!(err, CheckpointError::LinkMix));
+}
+
+#[test]
+fn test_artifact_keeps_codec_error() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let checkpoint_id = CheckpointId::new([4u8; 32]);
+    let art_path = dir
+        .path()
+        .join("checkpoint/artifact")
+        .join(format!("{}.bin", hex_id(checkpoint_id.as_bytes())));
+    if let Some(parent) = art_path.parent() {
+        create_dir_all(parent).expect("mkdir");
+    }
+    write_file(&art_path, &[1u8, 2, 3]).expect("write bad artifact");
+    let link = CheckpointLink::new(
+        CheckpointLinkVersion::CURRENT,
+        checkpoint_id,
+        PrepSnapshotId::new([7u8; 32]),
+        CheckpointExecInputId::new([6u8; 32]),
+    )
+    .expect("link");
+
+    let err = store
+        .save_link(&link)
+        .expect_err("broken artifact must keep codec error");
+
+    assert!(matches!(err, CheckpointError::Codec(_)));
+}
+
+#[test]
+fn test_save_link_requires_exec_row_at_write_time() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let draft = checkpoint_fixtures::draft();
+    let snap_id = save_snapshot(dir.path(), draft.prev_root());
+    let exec = exec(snap_id, draft.prev_root());
+    let exec_id = derive_exec_id(&encode_exec_bin(&exec).expect("exec bytes"));
+    let proof = attest_proof(&draft, snap_id, exec_id);
+    let artifact = draft.finalize(proof).expect("artifact");
+    let checkpoint_id = save_artifact_file(dir.path(), &artifact);
+    let link = CheckpointLink::new(
+        CheckpointLinkVersion::CURRENT,
+        checkpoint_id,
+        snap_id,
+        exec_id,
+    )
+    .expect("link");
+
+    let err = store
+        .save_link(&link)
+        .expect_err("missing exec row must reject link write");
+
+    assert!(matches!(err, CheckpointError::ReplayMix));
+}
+
+#[test]
+fn test_save_link_requires_snapshot_row_at_write_time() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let draft = checkpoint_fixtures::draft();
+    let snap_id = PrepSnapshotId::new([7u8; 32]);
+    let exec = exec(snap_id, draft.prev_root());
+    let exec_id = store.save_exec_input(&exec).expect("save exec");
+    let proof = attest_proof(&draft, snap_id, exec_id);
+    let artifact = draft.finalize(proof).expect("artifact");
+    let checkpoint_id = save_artifact_file(dir.path(), &artifact);
+    let link = CheckpointLink::new(
+        CheckpointLinkVersion::CURRENT,
+        checkpoint_id,
+        snap_id,
+        exec_id,
+    )
+    .expect("link");
+
+    let err = store
+        .save_link(&link)
+        .expect_err("missing snapshot row must reject link write");
+
+    assert!(matches!(err, CheckpointError::LinkMix));
+}
+
+#[test]
+fn test_save_link_rejects_root_drift_at_write_time() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let draft = checkpoint_fixtures::draft();
+    let snap_id = save_snapshot(dir.path(), draft.prev_root());
+    let exec = exec(snap_id, CheckRoot::new([0xA5; 32]));
+    let exec_id = store.save_exec_input(&exec).expect("save exec");
+    let proof = attest_proof(&draft, snap_id, exec_id);
+    let artifact = draft.finalize(proof).expect("artifact");
+    let checkpoint_id = save_artifact_file(dir.path(), &artifact);
+    let link = CheckpointLink::new(
+        CheckpointLinkVersion::CURRENT,
+        checkpoint_id,
+        snap_id,
+        exec_id,
+    )
+    .expect("link");
+
+    let err = store
+        .save_link(&link)
+        .expect_err("root drift must reject link write");
+
+    assert!(matches!(err, CheckpointError::RootMix));
+}
+
+#[test]
+fn test_seal_rejects_exec_row() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let draft = checkpoint_fixtures::draft();
+    let snap_id = save_snapshot(dir.path(), draft.prev_root());
+    let exec = exec(snap_id, draft.prev_root());
+    let exec_id = derive_exec_id(&encode_exec_bin(&exec).expect("exec bytes"));
+    let proof = attest_proof(&draft, snap_id, exec_id);
+    let err = store
+        .seal_artifact(&draft, proof, snap_id, exec_id)
+        .expect_err("missing exec row must reject");
+
+    assert!(matches!(err, CheckpointError::ReplayMix));
+}
+
+#[test]
+fn test_seal_rejects_snapshot_row() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let draft = checkpoint_fixtures::draft();
+    let snap_id = PrepSnapshotId::new([7u8; 32]);
+    let exec = exec(snap_id, draft.prev_root());
+    let exec_id = store.save_exec_input(&exec).expect("save exec");
+    let proof = attest_proof(&draft, snap_id, exec_id);
+
+    let err = store
+        .seal_artifact(&draft, proof, snap_id, exec_id)
+        .expect_err("missing snapshot row must reject");
+
+    assert!(matches!(err, CheckpointError::LinkMix));
+}
+
+#[test]
+fn test_load_rejects_exec_row() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let draft = checkpoint_fixtures::draft();
+    let snap_id = save_snapshot(dir.path(), draft.prev_root());
+    let exec = exec(snap_id, draft.prev_root());
+    let exec_id = store.save_exec_input(&exec).expect("save exec");
+    let proof = attest_proof(&draft, snap_id, exec_id);
+    let link = store
+        .seal_artifact(&draft, proof, snap_id, exec_id)
+        .expect("seal artifact");
+
+    let exec_path = dir
+        .path()
+        .join("checkpoint/exec_input")
+        .join(format!("{}.bin", hex_id(exec_id.as_bytes())));
+    std::fs::remove_file(exec_path).expect("remove exec row");
+
+    let err = store
+        .load_link(&link.checkpoint_id())
+        .expect_err("missing exec row must reject link reload");
+
+    assert!(matches!(err, CheckpointError::ReplayMix));
+}
+
+#[test]
+fn test_load_rejects_snapshot_row() {
+    let dir = temp_dir();
+    let mut store = CheckpointFsStore::new(dir.path());
+    let draft = checkpoint_fixtures::draft();
+    let snap_id = save_snapshot(dir.path(), draft.prev_root());
+    let exec = exec(snap_id, draft.prev_root());
+    let exec_id = store.save_exec_input(&exec).expect("save exec");
+    let proof = attest_proof(&draft, snap_id, exec_id);
+    let link = store
+        .seal_artifact(&draft, proof, snap_id, exec_id)
+        .expect("seal artifact");
+
+    let snap_path = dir
+        .path()
+        .join("prep_snapshot")
+        .join(format!("{}.bin", hex_id(snap_id.as_bytes())));
+    std::fs::remove_file(snap_path).expect("remove snapshot row");
+
+    let err = store
+        .load_link(&link.checkpoint_id())
+        .expect_err("missing snapshot row must reject link reload");
+
+    assert!(matches!(err, CheckpointError::LinkMix));
+}

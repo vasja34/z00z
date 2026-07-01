@@ -1,0 +1,347 @@
+redb_spec_v4_structures:
+  spec:
+    name: "RedB-SPEC.v4"
+    schema_version: 4
+    scope:
+      purpose: "Document the on-disk schema for Z00Z .wlt wallets backed by RedB."
+      note: |
+        This schema is reverse-engineered from the implementation and is intended to match
+        the currently implemented storage format.
+
+        Canonical encoding rules are enforced by code:
+        - crates/z00z_wallets/src/db/schema_keys.rs
+        - crates/z00z_wallets/src/db/schema_codecs.rs
+        - crates/z00z_wallets/src/db/index_codecs.rs
+        - crates/z00z_wallets/src/db/wallet_store.rs
+        - crates/z00z_wallets/src/db/wallet_store_crypto.rs
+
+    wallet_file:
+      extension: ".wlt"
+      container:
+        format: "zstd-compressed RedB database bytes"
+        plaintext_redb_on_disk: false
+        tmpfs_work_file:
+          required: true
+          path: "/dev/shm"
+          note: "Wallet creation/open uses a tmpfs-backed work file to avoid writing an uncompressed RedB DB to disk."
+
+  primitives:
+    types:
+      Str:
+        encoding: "UTF-8"
+      Bytes:
+        encoding: "opaque byte array"
+      ObjectId:
+        type: "u128"
+        encoding: "16 bytes, big-endian"
+        codec:
+          encode: "encode_object_id_be (schema_codecs.rs)"
+          decode: "decode_object_id_be (schema_codecs.rs)"
+      TimestampUnixSecs:
+        type: "u64"
+        meaning: "Unix timestamp seconds"
+      BoolU8:
+        type: "u8"
+        values:
+          false: 0
+          true: 1
+
+  codecs:
+    bincode:
+      codec: "z00z_utils::codec::BincodeCodec"
+      note: "Bincode is used for most value encodings in meta/secrets/objects, except where noted per-key."
+
+  crypto:
+    aead:
+      algorithm: "xchacha20poly1305"
+      nonce_bytes: 24
+      tag_bytes: 16
+      envelope_type: "z00z_crypto::redb_wallet_crypto::AeadEnvelope"
+    kdf:
+      params_type: "z00z_crypto::redb_wallet_crypto::KdfParams"
+      pw_key_bytes: 32
+    keys:
+      master_key_bytes: 32
+      hkdf_infos:
+        data_key: "z00z.crypto.redb_wallet_crypto.hkdf.data_key.v1"
+        index_key: "z00z.crypto.redb_wallet_crypto.hkdf.index_key.v1"
+        integrity_key: "z00z.crypto.redb_wallet_crypto.hkdf.integrity_key.v1"
+    secret_records:
+      master_key_record_type: "z00z_crypto::redb_wallet_crypto::MasterKeyRecord"
+      secrets_record_type: "z00z_crypto::redb_wallet_crypto::SecretsRecord"
+      secrets_kind_enum:
+        - "seed"
+        - "xprv"
+        - "view_key"
+        - "device_binding_key"
+        - "signing_key"
+        - "custom"
+
+  tables:
+    meta:
+      name: "meta"
+      kv:
+        key:
+          type: "Str"
+        value:
+          type: "Bytes"
+          encoding: "per-key (mostly bincode; some raw ObjectId bytes)"
+
+      required_keys:
+        # Required on open (see REQUIRED_META_KEYS_OPEN in backends/wallet_store.rs)
+        wallet.id:
+          key: "wallet.id"
+          type: "WalletId"
+          encoding: "bincode(WalletId)"
+          note: "WalletId is stored as a bincode-encoded newtype around a string."
+        wallet.chain:
+          key: "wallet.chain"
+          type: "String"
+          encoding: "bincode(String)"
+        wallet.schema_version:
+          key: "wallet.schema_version"
+          type: "u32"
+          encoding: "bincode(u32)"
+        wallet.kdf:
+          key: "wallet.kdf"
+          type: "KdfParams"
+          encoding: "bincode(KdfParams)"
+        wallet.initialized:
+          key: "wallet.initialized"
+          type: "BoolU8"
+          encoding: "bincode(u8)"
+          note: "Initialization marker (must be 1 for initialized)."
+
+      required_write_keys:
+        # Required for deterministic write meta bumping (see REQUIRED_META_KEYS_WRITE)
+        wallet.created_at:
+          key: "wallet.created_at"
+          type: "TimestampUnixSecs"
+          encoding: "bincode(u64)"
+        wallet.updated_at:
+          key: "wallet.updated_at"
+          type: "TimestampUnixSecs"
+          encoding: "bincode(u64)"
+        wallet.save_seq:
+          key: "wallet.save_seq"
+          type: "u64"
+          encoding: "bincode(u64)"
+          note: "Monotonic save sequence bumped on writes."
+
+      required_pointer_keys:
+        # Required on open (see REQUIRED_META_POINTER_KEYS_OPEN)
+        wallet.derivation_state_object_id:
+          key: "wallet.derivation_state_object_id"
+          type: "ObjectId"
+          encoding: "raw 16-byte big-endian"
+        wallet.scan_state_object_id:
+          key: "wallet.scan_state_object_id"
+          type: "ObjectId"
+          encoding: "raw 16-byte big-endian"
+        wallet.app_object_id:
+          key: "wallet.app_object_id"
+          type: "ObjectId"
+          encoding: "raw 16-byte big-endian"
+        wallet.chain_object_id:
+          key: "wallet.chain_object_id"
+          type: "ObjectId"
+          encoding: "raw 16-byte big-endian"
+        wallet.keys_object_id:
+          key: "wallet.keys_object_id"
+          type: "ObjectId"
+          encoding: "raw 16-byte big-endian"
+
+      transitional_keys:
+        wallet.index_format_version:
+          key: "wallet.index_format_version"
+          type: "u32"
+          encoding: "bincode(u32)"
+          note: |
+            Transitional migration marker for index-key encoding format.
+            Missing implies an older index format.
+
+    secrets:
+      name: "secrets"
+      kv:
+        key:
+          type: "Str"
+        value:
+          type: "Bytes"
+          encoding: "bincode(Record)"
+
+      required_keys:
+        master_key:
+          key: "master_key"
+          type: "MasterKeyRecord"
+          encoding: "bincode(MasterKeyRecord)"
+          encryption:
+            wrapped_by: "PW_KEY"
+            aad: "aad_master_key(wallet_id)"
+        seed_main:
+          key: "seed_main"
+          type: "SecretsRecord"
+          encoding: "bincode(SecretsRecord)"
+          constraints:
+            kind: "seed"
+            label: "main"
+            version: 1
+          encryption:
+            wrapped_by: "MASTER_KEY"
+            aad: "aad_secret(wallet_id, \"seed_main\")"
+
+      optional_keys:
+        seed_main.revealed_at:
+          key: "seed_main.revealed_at"
+          type: "SecretsRecord"
+          encoding: "bincode(SecretsRecord)"
+          constraints:
+            kind: "custom"
+            label: "seed_main_revealed_at"
+            version: 1
+          plaintext:
+            type: "TimestampUnixSecs"
+            encoding: "bincode(u64)"
+          note: "Persistent marker enforcing the 'show seed phrase once' policy."
+
+    objects:
+      name: "objects"
+      kv:
+        key:
+          type: "ObjectId"
+          encoding: "raw 16-byte big-endian"
+        value:
+          type: "Bytes"
+          encoding: "bincode(EncryptedObjectRecord)"
+
+      record_types:
+        encrypted_object_record:
+          rust_type: "crate::db::wallet_store::EncryptedObjectRecord"
+          fields:
+            envelope: "AeadEnvelope"
+            payload_version: "u16"
+          encryption:
+            wrapped_by: "DATA_KEY"
+            aad: "aad_object(wallet_id, object_id, payload_version)"
+
+  object_kinds:
+    kind_id_encoding: "u8 (repr)"
+    kinds:
+      1:
+        name: "wallet_root"
+        payload_version: 1
+      2:
+        name: "account"
+        payload_version: 1
+      7:
+        name: "derivation_state"
+        payload_version: 1
+      8:
+        name: "scan_state"
+        payload_version: 1
+      15:
+        name: "app"
+        payload_version: 1
+      16:
+        name: "chain"
+        payload_version: 1
+      17:
+        name: "keys"
+        payload_version: 1
+      18:
+        name: "stealth_meta"
+        payload_version: 1
+      19:
+        name: "tofu_pins"
+        payload_version: 1
+      20:
+        name: "wallet_profile"
+        payload_version: 1
+      21:
+        name: "owned_asset"
+        payload_version: 1
+      22:
+        name: "wallet_tx"
+        payload_version: 1
+      23:
+        name: "wallet_tx_event"
+        payload_version: 1
+      24:
+        name: "backup_manifest"
+        payload_version: 1
+      25:
+        name: "owned_voucher"
+        payload_version: 1
+      26:
+        name: "owned_right"
+        payload_version: 1
+
+  indexes:
+    note: |
+      Index tables are optional accelerators.
+
+      Their encoding is validated and canonicalized by crates/z00z_wallets/src/db/index_codecs.rs.
+      Index keys and values are stored as raw bytes in RedB.
+
+    size_limits:
+      max_index_key_bytes: 256
+      max_index_value_bytes: 1024
+
+    key_format:
+      description: "Canonical index key format"
+      format: "zidx(4) || table_tag(u8) || semantic_len(u16be) || semantic_key || object_id_be(16)"
+      semantic_key_format:
+        format: "zsem(4) || version(u8=1) || domain_len(u16be) || domain || field_len(u16be) || field || value_len(u32be) || value"
+
+    tables:
+      - name: "index_account_by_label"
+        tag: 1
+      - name: "index_receiver_by_kind"
+        tag: 2
+      - name: "index_asset_def_by_symbol"
+        tag: 3
+      - name: "index_asset_out_by_def"
+        tag: 4
+      - name: "index_asset_out_by_spentflag"
+        tag: 5
+      - name: "index_tracked_asset_by_spentflag"
+        tag: 6
+      - name: "index_tx_by_status"
+        tag: 7
+      - name: "index_tx_by_time"
+        tag: 8
+      - name: "index_pending_by_status_expiry"
+        tag: 9
+      - name: "index_receipt_by_txhash"
+        tag: 10
+      - name: "index_wallet_by_wallet_id"
+        tag: 11
+      - name: "index_owned_asset_by_id"
+        tag: 12
+      - name: "index_owned_asset_by_def_status"
+        tag: 13
+      - name: "index_owned_asset_by_status"
+        tag: 14
+      - name: "index_owned_asset_by_tx"
+        tag: 15
+      - name: "index_owned_asset_by_scan"
+        tag: 16
+      - name: "index_owned_object_by_family"
+        tag: 17
+      - name: "index_owned_object_by_status"
+        tag: 18
+      - name: "index_owned_object_by_policy"
+        tag: 19
+      - name: "index_owned_object_by_holder"
+        tag: 20
+      - name: "index_owned_voucher_by_id"
+        tag: 21
+      - name: "index_owned_right_by_id"
+        tag: 22
+
+    manifest_table:
+      name: "index_manifest"
+      key: "Bytes"
+      value: "Bytes"
+      note: |
+        Tracks which index entries exist for an object to enable deterministic updates/removals.
+        The exact manifest encoding is defined by the implementation.

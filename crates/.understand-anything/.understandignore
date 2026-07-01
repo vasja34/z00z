@@ -1,0 +1,31 @@
+# .understandignore — patterns for files/dirs to exclude from analysis
+# Syntax: same as .gitignore (globs, # comments, ! negation, trailing / for dirs)
+# Lines below are suggestions — uncomment to activate.
+# Use ! prefix to force-include something excluded by defaults.
+#
+# Built-in defaults (always excluded unless negated):
+#   node_modules/, .git/, dist/, build/, obj/, *.lock, *.min.js, etc.
+#
+#- Active exclusions for a clean crates architecture graph
+.understand-anything/
+z00z_crypto/tari/
+
+#- Exclude bulky non-core artifacts from architecture view
+**/docs/
+**/benches/
+**/tests/
+**/fuzz/
+**/examples/
+
+#- Test file patterns (uncomment to exclude)
+
+#- *.test.*
+#- *.spec.*
+#- *.snap
+
+# --- Active excludes for cleaner crates graph ---
+z00z_crypto/tari/
+**/target/
+**/*.lock
+**/node_modules/
+**/.understand-anything/

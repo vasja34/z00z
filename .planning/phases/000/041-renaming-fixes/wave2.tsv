@@ -1,0 +1,8 @@
+339	test fn	assert_send_sync	crates/z00z_utils/src/time/test_time.rs	113	test_assert_send_sync_r339
+393	test fn	asset_import_rejects_secret	crates/z00z_wallets/src/adapters/rpc/methods/asset_impl_tests.rs	1178	test_asset_import_secret_r393
+397	test fn	asset_claim_reserve_conflict	crates/z00z_wallets/src/adapters/rpc/methods/asset_impl_tests.rs	1264	test_asset_reserve_conflict_r397
+407	test fn	asset_receive_no_claim	crates/z00z_wallets/src/adapters/rpc/methods/asset_impl_tests.rs	1496	test_asset_no_claim_r407
+411	test fn	asset_receive_status_sync	crates/z00z_wallets/src/adapters/rpc/methods/asset_impl_tests.rs	1580	test_asset_status_sync_r411
+413	test fn	asset_receive_not_claim	crates/z00z_wallets/src/adapters/rpc/methods/asset_impl_tests.rs	1647	test_asset_not_claim_r413
+415	test fn	asset_receive_path_parity	crates/z00z_wallets/src/adapters/rpc/methods/asset_impl_tests.rs	1801	test_asset_path_parity_r415
+417	test fn	asset_receive_reject_proof	crates/z00z_wallets/src/adapters/rpc/methods/asset_impl_tests.rs	1956	test_asset_receive_proof_r417

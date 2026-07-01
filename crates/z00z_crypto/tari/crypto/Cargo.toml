@@ -1,0 +1,66 @@
+[package]
+name = "tari_crypto"
+description = "Tari Cryptography library"
+authors = ["The Tari Development Community"]
+repository = "https://github.com/tari-project/tari"
+categories = ["cryptography"]
+homepage = "https://tari.com"
+readme = "README.md"
+license = "BSD-3-Clause"
+version = "0.22.1"
+edition = "2018"
+
+[dependencies]
+tari_utilities = { workspace = true, default-features = false }
+blake2 = { version = "0.10", default-features = false  }
+borsh = { version = "1.5" , optional = true , default-features = false, features = ["derive"]}
+bulletproofs_plus = { version = "0.4.1", package="tari_bulletproofs_plus", optional = true }
+curve25519-dalek = { version = "4", default-features = false, features = [ "alloc", "rand_core", "precomputed-tables", "zeroize"] }
+digest = { version = "0.10", default-features = false }
+log = { version = "0.4" , default-features = false}
+merlin = { version = "3", default-features = false }
+rand_chacha = { version = "0.3", default-features = false }
+rand_core = { version = "0.6" , default-features = false}
+serde = { version = "1.0", optional = true }
+sha3 = { version = "0.10", default-features = false  }
+snafu = { version = "0.7", default-features = false}
+subtle = { version = "2.5.0", default-features = false }
+zeroize = {version = "1" , default-features = false}
+
+[dev-dependencies]
+tari_utilities = { workspace = true, features = ["std"] }
+serde = { version = "1.0"}
+bincode = { version = "1.1" }
+criterion = { version = "0.5", default-features = false }
+sha2 = { version = "0.10" }
+rand = { version = "0.8" }
+
+
+[features]
+default = ["bulletproofs_plus", "serde", "precomputed_tables", "borsh"]
+std = [
+    "blake2/std",
+    "borsh?/std",
+    "digest/std",
+    "log/std",
+    "merlin/std",
+    "rand_chacha/std",
+    "rand_core/std",
+    "serde?/std",
+    "sha3/std",
+    "snafu/std",
+    "subtle/std",
+    "tari_utilities/std",
+    "zeroize/std",
+]
+precomputed_tables = []
+
+[lib]
+# Disable benchmarks to allow Criterion to take over
+bench = false
+crate-type = ["lib", "cdylib"]
+
+[[bench]]
+name = "benches"
+path = "benches/mod.rs"
+harness = false

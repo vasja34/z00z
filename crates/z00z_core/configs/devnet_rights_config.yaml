@@ -1,0 +1,106 @@
+rights:
+- id: machine_compute_capability
+  right_class: machine_capability
+  issuer_scope: issuer_devnet_compute
+  provider_scope: provider_devnet_compute
+  holder_fixture: wallet_alice
+  control_fixture: service_compute_scheduler
+  beneficiary_fixture: wallet_alice
+  count: 3
+  domain_name: z00z.core.rights.machine_capability.devnet.v1
+  valid_from: 0
+  valid_until: 4102444800
+  challenge_from: 0
+  challenge_until: 0
+  revocation_policy_id: policy_revoke_devnet_compute
+  transition_policy_id: policy_transition_devnet_compute
+  challenge_policy_id: policy_challenge_devnet_compute
+  disclosure_policy_id: policy_disclosure_devnet_compute
+  retention_policy_id: policy_retention_devnet_compute
+  payload_commitment_seed: payload_devnet_machine_compute_capability
+  metadata:
+    purpose: create, transfer, consume, replay reject
+- id: confidential_access
+  right_class: data_access
+  issuer_scope: issuer_devnet
+  provider_scope: provider_devnet
+  holder_fixture: wallet_bob
+  control_fixture: service_guard
+  beneficiary_fixture: wallet_bob
+  count: 3
+  domain_name: z00z.core.rights.data_access.devnet.v1
+  valid_from: 0
+  valid_until: 4102444800
+  challenge_from: 0
+  challenge_until: 0
+  revocation_policy_id: policy_revoke_devnet_data
+  transition_policy_id: policy_transition_devnet_data
+  challenge_policy_id: policy_challenge_devnet_data
+  disclosure_policy_id: policy_disclosure_devnet_data
+  retention_policy_id: policy_retention_devnet_data
+  payload_commitment_seed: payload_devnet_confidential_access
+  metadata:
+    purpose: create, expire, absence proof after expiry cleanup
+- id: service_entitlement
+  right_class: service_entitlement
+  issuer_scope: issuer_devnet_service
+  provider_scope: provider_devnet_service
+  holder_fixture: wallet_charlie
+  control_fixture: service_billing_router
+  beneficiary_fixture: wallet_charlie
+  count: 3
+  domain_name: z00z.core.rights.service_entitlement.devnet.v1
+  valid_from: 0
+  valid_until: 4102444800
+  challenge_from: 0
+  challenge_until: 0
+  revocation_policy_id: policy_revoke_devnet_service
+  transition_policy_id: policy_transition_devnet_service
+  challenge_policy_id: policy_challenge_devnet_service
+  disclosure_policy_id: policy_disclosure_devnet_service
+  retention_policy_id: policy_retention_devnet_service
+  payload_commitment_seed: payload_devnet_service_entitlement
+  metadata:
+    purpose: create, transfer, revoke
+- id: validator_mandate
+  right_class: validator_mandate
+  issuer_scope: issuer_devnet_validator
+  provider_scope: provider_devnet_validator
+  holder_fixture: service_validator_primary
+  control_fixture: service_validator_orchestrator
+  beneficiary_fixture: service_validator_primary
+  count: 2
+  domain_name: z00z.core.rights.validator_mandate.devnet.v1
+  valid_from: 0
+  valid_until: 4102444800
+  challenge_from: 1
+  challenge_until: 4102444800
+  revocation_policy_id: policy_revoke_devnet_validator
+  transition_policy_id: policy_transition_devnet_validator
+  challenge_policy_id: policy_challenge_devnet_validator
+  disclosure_policy_id: policy_disclosure_devnet_validator
+  retention_policy_id: policy_retention_devnet_validator
+  payload_commitment_seed: payload_devnet_validator_mandate
+  metadata:
+    purpose: create, challenge, revoke
+- id: one_time_agent_action
+  right_class: one_time_use
+  issuer_scope: issuer_devnet_agent
+  provider_scope: provider_devnet_agent
+  holder_fixture: wallet_charlie
+  control_fixture: service_agent_scheduler
+  beneficiary_fixture: wallet_charlie
+  count: 3
+  domain_name: z00z.core.rights.one_time_use.devnet.v1
+  valid_from: 0
+  valid_until: 4102444800
+  challenge_from: 0
+  challenge_until: 0
+  revocation_policy_id: policy_revoke_devnet_agent
+  transition_policy_id: policy_transition_devnet_agent
+  challenge_policy_id: policy_challenge_devnet_agent
+  disclosure_policy_id: policy_disclosure_devnet_agent
+  retention_policy_id: policy_retention_devnet_agent
+  payload_commitment_seed: payload_devnet_one_time_agent_action
+  metadata:
+    purpose: create, consume, second consume reject

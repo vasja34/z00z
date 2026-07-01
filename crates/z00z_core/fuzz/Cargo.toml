@@ -1,0 +1,21 @@
+[package]
+name = "z00z_core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+z00z_core = { path = ".." }
+
+[[bin]]
+name = "fuzz_target_asset_pack_from_bytes"
+path = "fuzz_targets/fuzz_target_asset_pack_from_bytes.rs"
+test = false
+doc = false
+bench = false

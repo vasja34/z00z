@@ -1,0 +1,11 @@
+
+[package]
+name = "z00z_telemetry"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR BSD-3-Clause"
+
+[lib]
+doctest = false
+
+[dependencies]

@@ -1,0 +1,43 @@
+phase: 26
+scope: consistency_audit
+items:
+  - id: T-1
+    severity: critical
+    status: done
+    owner: wallet_crypto_lead
+    deadline: 2026-03-20
+  - id: T-2
+    severity: critical
+    status: done
+    owner: wallet_lead
+    deadline: 2026-03-18
+  - id: T-4
+    severity: low
+    status: done
+    owner: wallet_core_maint
+    deadline: 2026-03-25
+  - id: T-5
+    severity: low
+    status: done
+    owner: crypto_test_maint
+    deadline: 2026-03-25
+  - id: T-6
+    severity: medium
+    status: done
+    owner: wallet_crypto_maint
+    deadline: 2026-03-22
+  - id: T-7
+    severity: low
+    status: done
+    owner: wallet_core_maint
+    deadline: 2026-03-12
+  - id: T-8
+    severity: high
+    status: done
+    owner: wallet_addr_maint
+    deadline: 2026-03-24
+  - id: T-9
+    severity: high
+    status: done
+    owner: wallet_addr_maint
+    deadline: 2026-03-24

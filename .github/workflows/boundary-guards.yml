@@ -1,0 +1,42 @@
+name: boundary-guards
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  phase-064-boundary-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Audit z00z_utils boundary
+        run: bash scripts/audit/audit_z00z_utils_boundary.sh
+
+      - name: Audit crypto facade boundary
+        run: bash scripts/audit/audit_crypto_facade.sh
+
+      - name: Audit extensions boundary
+        run: bash scripts/audit/audit_extensions_boundary.sh
+
+      - name: Audit local docs links
+        run: bash scripts/audit/audit_local_docs_links.sh
+
+      - name: Audit target layout
+        run: bash scripts/audit/audit_target_layout.sh
+
+      - name: Audit tool manifest-path usage
+        run: bash scripts/audit/audit_tool_manifest_paths.sh
+
+      - name: Run core guardrail tests
+        run: cargo test --release -p z00z_core --test test_live_guardrails -- --nocapture
+
+      - name: Run wallet live-boundary tests
+        run: cargo test --release -p z00z_wallets --test test_live_boundary_claims -- --nocapture

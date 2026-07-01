@@ -1,0 +1,84 @@
+wallet:
+  network:
+    type: "p2p"
+    use_tor_default: false
+    onionet_chain_type: "devnet"
+
+  chain:
+    type: "devnet"
+    id: "devnet"
+    endpoints: []
+
+  receiver:
+    # In-memory ReceiverManager cache size (number of derived entries).
+    # Must be > 0 and <= 100_000.
+    cache_size: 1000
+    async_batch_threshold: 32
+    cache_ttl_seconds: 300
+    purge_interval_seconds: 300
+    purge_min_size: 64
+    timing_safe_mode: false
+    rate_limit:
+      enabled: false
+      rate_per_sec: 100
+      burst: 500
+
+  paths:
+    # Default wallet persistence root directory.
+    # This is intentionally relative to the current working directory so it is stable
+    # across build layouts and packaged deployments.
+    output_dir: "/home/vadim/Projects/z00z/crates/z00z_wallets/outputs/wallets"
+
+  settings:
+    auto_lock_timeout_secs: 900
+    default_fee: "0.001"
+    currency_display: "Z00Z"
+
+  auto_lock:
+    timeout_secs: 900
+    triggers:
+      - "system_suspend"
+      - "screen_lock"
+      - "manual"
+
+  backup:
+    auto_backup_enabled: false
+    backup_interval_hours: 24
+    location: "/home/vadim/Projects/z00z/crates/z00z_wallets/outputs/backups"
+    encrypt_backups: true
+    create_rate_limit_window_ms: 3600000
+
+  recovery:
+    gap_limit: 20
+
+  security:
+    password_policy:
+      min_length: 14
+      recommended_length: 20
+      max_length: 128
+
+  logger:
+    rpc:
+      # If true, RPC middleware emits JSONL logs for all dispatcher calls.
+      enabled: true
+      # Log level mapping is implementation-defined (e.g., info/warn/error).
+      level: "info"
+
+      output:
+        # Log file path (relative to current working directory unless absolute).
+        path: "/home/vadim/Projects/z00z/crates/z00z_wallets/outputs/log/rpc_logger.json"
+        rotation:
+          # Rotate when log file grows beyond this size. (4 MB)
+          max_bytes: 4194304
+          # Keep N rotated files (oldest is removed).
+          keep_files: 3
+
+      # Maximum size of a single JSONL line. Optional fields must be dropped/truncated to fit.
+      max_line_bytes: 8192
+
+      truncation:
+        # Truncate non-secret string values longer than this threshold.
+        non_secret_min_bytes: 24
+        # Head/tail format: <len=64 12ab56...1234ab>
+        head_chars: 10
+        tail_chars: 4

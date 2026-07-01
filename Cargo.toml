@@ -1,0 +1,90 @@
+[workspace]
+
+members = [
+  "crates/z00z_core",
+  "crates/z00z_crypto",
+  "crates/z00z_extensions",
+  "crates/z00z_networks/onionnet",
+  "crates/z00z_networks/rpc",
+  "crates/z00z_rollup_node",
+  "crates/z00z_runtime/aggregators",
+  "crates/z00z_runtime/validators",
+  "crates/z00z_runtime/watchers",
+  "crates/z00z_simulator",
+  "crates/z00z_storage",
+  "crates/z00z_telemetry",
+  "crates/z00z_utils",
+  "crates/z00z_wallets",
+]
+
+exclude = [
+  "reports/*",
+  "reports/**",
+  "tools/formal_verification/*",
+  "tools/formal_verification/**",
+]
+
+default-members = [
+  "crates/z00z_core",
+  "crates/z00z_crypto",
+  "crates/z00z_extensions",
+  "crates/z00z_networks/onionnet",
+  "crates/z00z_networks/rpc",
+  "crates/z00z_rollup_node",
+  "crates/z00z_runtime/aggregators",
+  "crates/z00z_runtime/validators",
+  "crates/z00z_runtime/watchers",
+  "crates/z00z_simulator",
+  "crates/z00z_storage",
+  "crates/z00z_telemetry",
+  "crates/z00z_utils",
+  "crates/z00z_wallets",
+]
+
+resolver = "2"
+
+[workspace.lints.clippy]
+# Vendored Tari code lives under `crates/z00z_crypto/tari/` and is treated as read-only.
+# Allow a small set of clippy lints that currently trigger there so workspace-wide clippy
+# stays warning-free without patching vendor sources.
+too_many_arguments = "allow"
+empty_line_after_doc_comments = "allow"
+manual_repeat_n = "allow"
+cloned_ref_to_slice_refs = "allow"
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+  'cfg(kani)',
+  'cfg(z00z_formal_no_serde)',
+] }
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90.0"
+authors = ["Z00Z Development Team"]
+repository = "https://github.com/vasja34/z00z"
+homepage = "https://z00z.io"
+documentation = "https://github.com/vasja34/z00z"
+readme = "README.md"
+keywords = ["privacy", "blockchain", "confidential-transactions"]
+categories = ["cryptography"]
+license = "MIT"
+
+[workspace.dependencies]
+# Minimal Tari keep-set for the active Z00Z crypto backend.
+tari_bulletproofs_plus = { path = "crates/z00z_crypto/tari/bulletproofs_plus" }
+tari_crypto = { path = "crates/z00z_crypto/tari/crypto" }
+tari_utilities = { path = "crates/z00z_crypto/tari/utils", default-features = false, features = [
+  "std",
+] }
+
+# Common dependencies
+anyhow = { version = "1.0" }
+serde = "1"
+thiserror = { version = "2" }
+
+[profile.samply]
+inherits = "release"
+debug = 1
+strip = "none"

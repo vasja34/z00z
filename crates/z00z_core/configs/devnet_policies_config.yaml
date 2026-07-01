@@ -1,0 +1,205 @@
+policies:
+- action_pool:
+    label: voucher_transferable_policy_v1
+    actions:
+    - label: voucher_accept
+      allowed_input_families:
+      - voucher
+      allowed_output_families:
+      - voucher
+      lifecycle_effect: accept
+      witness_requirements:
+      - acceptance_proof
+      - replay_nonce
+      receiver_must_accept: true
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+    - label: voucher_transfer
+      allowed_input_families:
+      - voucher
+      allowed_output_families:
+      - voucher
+      lifecycle_effect: transfer
+      witness_requirements:
+      - acceptance_proof
+      - replay_nonce
+      receiver_must_accept: true
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+    - label: voucher_redeem_full
+      allowed_input_families:
+      - voucher
+      allowed_output_families:
+      - asset
+      lifecycle_effect: redeem
+      witness_requirements:
+      - replay_nonce
+      receiver_must_accept: false
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+    - label: voucher_partial_redeem
+      allowed_input_families:
+      - voucher
+      allowed_output_families:
+      - asset
+      - voucher
+      lifecycle_effect: partial_redeem
+      witness_requirements:
+      - replay_nonce
+      receiver_must_accept: false
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+    - label: voucher_refund_after_expiry
+      allowed_input_families:
+      - voucher
+      allowed_output_families:
+      - asset
+      lifecycle_effect: refund
+      witness_requirements:
+      - prior_state_root
+      - replay_nonce
+      receiver_must_accept: false
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+  template:
+    label: voucher_transferable_policy_v1
+    primary_family: voucher
+    allowed_input_families:
+    - voucher
+    allowed_output_families:
+    - asset
+    - voucher
+    required_signatures:
+    - holder
+    expiry_rule: valid_until
+    replay_protection: nonce_and_root
+    conservation: conditional_value
+  domain_name: z00z.core.policies.voucher_transferable.devnet.v1
+- action_pool:
+    label: voucher_non_transferable_policy_v1
+    actions:
+    - label: voucher_accept_static
+      allowed_input_families:
+      - voucher
+      allowed_output_families:
+      - voucher
+      lifecycle_effect: accept
+      witness_requirements:
+      - acceptance_proof
+      - replay_nonce
+      receiver_must_accept: true
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+    - label: voucher_redeem_static
+      allowed_input_families:
+      - voucher
+      allowed_output_families:
+      - asset
+      lifecycle_effect: redeem
+      witness_requirements:
+      - replay_nonce
+      receiver_must_accept: false
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+    - label: voucher_expire_static
+      allowed_input_families:
+      - voucher
+      allowed_output_families:
+      - asset
+      lifecycle_effect: expire
+      witness_requirements:
+      - prior_state_root
+      - replay_nonce
+      receiver_must_accept: false
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+  template:
+    label: voucher_non_transferable_policy_v1
+    primary_family: voucher
+    allowed_input_families:
+    - voucher
+    allowed_output_families:
+    - asset
+    - voucher
+    required_signatures:
+    - holder
+    expiry_rule: valid_until
+    replay_protection: nonce_and_root
+    conservation: conditional_value
+  domain_name: z00z.core.policies.voucher_non_transferable.devnet.v1
+- action_pool:
+    label: right_delegate_policy_v1
+    actions:
+    - label: right_delegate
+      allowed_input_families:
+      - right
+      allowed_output_families:
+      - right
+      lifecycle_effect: delegate
+      witness_requirements:
+      - replay_nonce
+      receiver_must_accept: false
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+    - label: right_use
+      allowed_input_families:
+      - right
+      allowed_output_families:
+      - right
+      lifecycle_effect: use
+      witness_requirements:
+      - replay_nonce
+      receiver_must_accept: false
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+    - label: right_revoke
+      allowed_input_families:
+      - right
+      allowed_output_families:
+      - right
+      lifecycle_effect: revoke
+      witness_requirements:
+      - replay_nonce
+      receiver_must_accept: false
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+  template:
+    label: right_delegate_policy_v1
+    primary_family: right
+    allowed_input_families:
+    - right
+    allowed_output_families:
+    - right
+    required_signatures:
+    - controller
+    expiry_rule: none
+    replay_protection: nonce
+    conservation: zero_value_authority
+  domain_name: z00z.core.policies.right_delegate.devnet.v1
+- action_pool:
+    label: right_one_time_policy_v1
+    actions:
+    - label: right_one_time_use
+      allowed_input_families:
+      - right
+      allowed_output_families:
+      - right
+      lifecycle_effect: use
+      witness_requirements:
+      - replay_nonce
+      receiver_must_accept: false
+      preserves_beneficiary: true
+      preserves_refund_authority: true
+  template:
+    label: right_one_time_policy_v1
+    primary_family: right
+    allowed_input_families:
+    - right
+    allowed_output_families:
+    - right
+    required_signatures:
+    - holder
+    expiry_rule: none
+    replay_protection: nonce
+    conservation: zero_value_authority
+  domain_name: z00z.core.policies.right_one_time.devnet.v1

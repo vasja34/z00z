@@ -1,0 +1,4 @@
+# Clippy configuration for Z00Z project
+#
+# NOTE: Vendored Tari code lives under `crates/z00z_crypto/tari/` and is treated as read-only.
+# Keep `.clippy.toml` free of rules that would emit warnings inside vendored crates.

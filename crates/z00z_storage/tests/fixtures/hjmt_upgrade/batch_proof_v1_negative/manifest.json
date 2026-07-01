@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "BPB-T-001",
+      "base_case": "BPB-G-001",
+      "mutation": "header_missing_checkpoint",
+      "mutation_point": "header.journal_checkpoint",
+      "expected_verdict": "verifier_reject",
+      "reject_stage": "check_header",
+      "expected_error": "BatchCheckpointMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof_negative -- --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_proof_negative.rs::test_negative_fixtures_reject_with_expected_error"
+    },
+    {
+      "id": "BPB-T-002",
+      "base_case": "BPB-G-001",
+      "mutation": "path_terminal_family_right",
+      "mutation_point": "path_table[0].terminal_family",
+      "expected_verdict": "verifier_reject",
+      "reject_stage": "check_paths",
+      "expected_error": "BatchLeafFamilyMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof_negative -- --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_proof_negative.rs::test_negative_fixtures_reject_with_expected_error"
+    },
+    {
+      "id": "BPB-T-003",
+      "base_case": "BPB-G-001",
+      "mutation": "opening_version_2",
+      "mutation_point": "opening_table[0].payload.version",
+      "expected_verdict": "verifier_reject",
+      "reject_stage": "check_openings",
+      "expected_error": "UnsupportedBatchProofVersion",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof_negative -- --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_proof_negative.rs::test_negative_fixtures_reject_with_expected_error"
+    },
+    {
+      "id": "BPB-T-004",
+      "base_case": "BPB-G-001",
+      "mutation": "witness_child_index_flip",
+      "mutation_point": "witness_dag[0].child_index",
+      "expected_verdict": "verifier_reject",
+      "reject_stage": "check_atomic_roots",
+      "expected_error": "BatchWitnessStepMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof_negative -- --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_proof_negative.rs::test_negative_fixtures_reject_with_expected_error"
+    },
+    {
+      "id": "BPB-T-005",
+      "base_case": "BPB-G-001",
+      "mutation": "reference_witness_oob",
+      "mutation_point": "reference_table[0].witness_indexes[0]",
+      "expected_verdict": "verifier_reject",
+      "reject_stage": "check_paths",
+      "expected_error": "BatchIndexMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof_negative -- --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_proof_negative.rs::test_negative_fixtures_reject_with_expected_error"
+    },
+    {
+      "id": "BPB-T-006",
+      "base_case": "BPB-G-001",
+      "mutation": "proof_family_deletion_with_inclusion_opening",
+      "mutation_point": "header.proof_family",
+      "expected_verdict": "verifier_reject",
+      "reject_stage": "check_openings",
+      "expected_error": "BatchOpeningKindMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof_negative -- --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_proof_negative.rs::test_negative_fixtures_reject_with_expected_error"
+    },
+    {
+      "id": "BPB-T-007",
+      "base_case": "BPB-G-001",
+      "mutation": "opening_payload_family_right",
+      "mutation_point": "opening_table[0].payload.leaf_bytes",
+      "expected_verdict": "verifier_reject",
+      "reject_stage": "check_paths",
+      "expected_error": "BatchLeafFamilyMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof_negative -- --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_proof_negative.rs::test_negative_fixtures_reject_with_expected_error"
+    },
+    {
+      "id": "BPB-T-008",
+      "base_case": "BPB-G-002",
+      "mutation": "witness_hash_material_count_2",
+      "mutation_point": "witness_dag[0].hash_material_count",
+      "expected_verdict": "verifier_reject",
+      "reject_stage": "check_witnesses",
+      "expected_error": "BatchHashCountMix",
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof_negative -- --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_proof_negative.rs::test_negative_fixtures_reject_with_expected_error"
+    }
+  ]
+}

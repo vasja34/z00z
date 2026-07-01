@@ -1,0 +1,25 @@
+{
+  "kind": "TxPackage",
+  "package_type": "regular_tx",
+  "version": 1,
+  "chain_id": 3,
+  "chain_type": "devnet",
+  "chain_name": "z00z-devnet-1",
+  "tx": {
+    "tx_type": "regular_tx_v1",
+    "inputs": [
+      {
+        "asset_id_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "serial_id": 7
+      }
+    ],
+    "outputs": [],
+    "fee": 0,
+    "nonce": 0,
+    "context": {},
+    "proof": {},
+    "auth": {}
+  },
+  "tx_digest_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+  "status": "prepared"
+}

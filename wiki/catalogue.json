@@ -1,0 +1,289 @@
+{
+  "items": `
+    {
+      "title": "Onboarding",
+      "name": "onboarding",
+      "prompt": "Audience-specific onboarding guides derived from the workspace layout, crate facades, and repository verification workflow. Sources: [Cargo.toml:1-76`, `README.md:1-8`, `crates/z00z_wallets/README.md:11-37`, `crates/z00z_simulator/README.md:6-30`, `.github/skills/z00z-full-verify-gate/scripts/full_verify.sh:64-103`.",
+      "children": [
+        {
+          "title": "Onboarding Hub",
+          "name": "index",
+          "prompt": "Landing page for contributor, staff, executive, and product-manager reading paths.",
+          "children": []
+        },
+        {
+          "title": "Contributor Guide",
+          "name": "contributor-guide",
+          "prompt": "Contributor path grounded in workspace manifests, verification gate, and stable crate facades.",
+          "children": []
+        },
+        {
+          "title": "Staff Engineer Guide",
+          "name": "staff-engineer-guide",
+          "prompt": "Architectural reading guide centered on ownership boundaries and stable facades.",
+          "children": []
+        },
+        {
+          "title": "Executive Guide",
+          "name": "executive-guide",
+          "prompt": "Capability, risk, and scaling overview sourced from crate boundaries and verification flows.",
+          "children": []
+        },
+        {
+          "title": "Product Manager Guide",
+          "name": "product-manager-guide",
+          "prompt": "User-facing capability and limitation guide translated from the codebase's object model and workflow boundaries.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Getting Started",
+      "name": "01-getting-started",
+      "prompt": "Workspace-level setup, verification, and orientation docs derived from manifests and repository scripts. Sources: `Cargo.toml:1-76`, `README.md:1-8`, `deep-wiki-readme.md:29-70`, `.github/skills/z00z-full-verify-gate/scripts/full_verify.sh:64-103`.",
+      "children": [
+        {
+          "title": "Workspace Overview",
+          "name": "workspace-overview",
+          "prompt": "Explain why Z00Z is a Cargo workspace rather than one binary and map the major crate families.",
+          "children": []
+        },
+        {
+          "title": "Setup And Verify",
+          "name": "setup-and-verify",
+          "prompt": "Document reproducible setup and verification commands using the canonical repository gate and crate-specific commands.",
+          "children": []
+        },
+        {
+          "title": "Workspace Map",
+          "name": "workspace-map",
+          "prompt": "Catalogue the major crates and their responsibilities from crate roots and README boundaries.",
+          "children": []
+        },
+        {
+          "title": "Wiki Routing Status",
+          "name": "wiki-routing-status",
+          "prompt": "Explain why overview pages should remain landing or router pages, how deep leaf pages hang under them in the catalogue-driven wiki structure, and how to label repository surfaces as live, partial, adapter-only, placeholder, or planned.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Deep Dive",
+      "name": "deep-dive",
+      "prompt": "Architecture and subsystem documentation derived from crate roots, module facades, and owner READMEs.",
+      "children": [
+        {
+          "title": "Architecture",
+          "name": "02-architecture",
+          "prompt": "System-level architecture and crate-boundary analysis.",
+          "children": [
+            {
+              "title": "System Overview",
+              "name": "system-overview",
+              "prompt": "Describe the system layers and primary runtime/data flow.",
+              "children": []
+            },
+            {
+              "title": "Crate Boundaries",
+              "name": "crate-boundaries",
+              "prompt": "Explain ownership seams and stable facades across the workspace.",
+              "children": []
+            },
+            {
+              "title": "Z00Z Utils Admission",
+              "name": "z00z-utils-admission",
+              "prompt": "Document z00z_utils as the cross-cutting admission-policy crate, its one-source-of-truth utility surfaces, and the boundary lines that keep domain semantics out.",
+              "children": []
+            },
+            {
+              "title": "Z00Z Crypto Facade",
+              "name": "z00z-crypto-facade",
+              "prompt": "Explain the stable z00z_crypto root facade, the expert lane, the explicit vendor Tari lane, and why workspace code should avoid direct Tari subpaths.",
+              "children": []
+            },
+            {
+              "title": "Extensions Boundary Rules",
+              "name": "extensions-boundary-rules",
+              "prompt": "Explain why z00z_extensions exists as a reserved extension namespace, which concerns must stay in owner crates or z00z_utils, and how roadmap examples fit the non-core add-on boundary without turning the crate into a dumping ground.",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Core Protocol",
+          "name": "03-core-protocol",
+          "prompt": "Core object model and genesis bootstrap authority.",
+          "children": [
+            {
+              "title": "Object Model And Genesis",
+              "name": "object-model-and-genesis",
+              "prompt": "Explain the genesis pipeline, object families, voucher bootstrap entries, and settlement artifacts.",
+              "children": []
+            },
+            {
+              "title": "Genesis Run Artifacts",
+              "name": "genesis-run-artifacts",
+              "prompt": "Walk run_genesis phase by phase and document the real output layout, export directories, and settlement manifest write path.",
+              "children": []
+            },
+            {
+              "title": "Genesis Manifest Refs",
+              "name": "genesis-manifest-refs",
+              "prompt": "Explain the canonical root manifest, manifest_refs rules, allowed sections, single-key subfiles, and unsupported actions_config handling.",
+              "children": []
+            },
+        {
+          "title": "Genesis Voucher Bootstrap",
+          "name": "genesis-voucher-bootstrap",
+          "prompt": "Clarify why vouchers enter genesis as VoucherBootstrapEntryV1 and how bootstrap records materialize into concrete voucher config with real policy and action identities.",
+          "children": []
+        },
+        {
+          "title": "Genesis Caveats",
+          "name": "genesis-caveats",
+          "prompt": "Document non-obvious genesis constraints: performance.num_threads is parsed, validated, and wired into a dedicated genesis Rayon pool in the inspected path, while genesis.rs now declares explicit internal submodules and genesis_output.rs remains the one canonical output entry with a nested support-module import.",
+          "children": []
+        }
+      ]
+    },
+        {
+          "title": "Wallet And RPC",
+          "name": "04-wallet-and-rpc",
+          "prompt": "Wallet surface, object inventory, and JSON-RPC wiring.",
+          "children": [
+            {
+              "title": "Wallet Architecture",
+              "name": "wallet-architecture",
+              "prompt": "Explain wallet ownership boundaries, object inventory, services, and RPC registration.",
+              "children": []
+            },
+            {
+              "title": "Wallet Stub Surface",
+              "name": "wallet-stub-surface",
+              "prompt": "Map which wallet surfaces are genuinely stateful today, which are mixed, and which are still placeholders.",
+              "children": []
+            },
+            {
+              "title": "Wallet RPC Gaps",
+              "name": "wallet-rpc-gaps",
+              "prompt": "Document the real wallet RPC wiring state, current missing routes, and where static audit output can overstate gaps.",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Storage Runtime And Rollup",
+          "name": "05-storage-runtime",
+          "prompt": "Settlement storage, runtime planners, validators, watchers, and rollup verification.",
+          "children": [
+            {
+              "title": "Settlement Runtime And Rollup",
+              "name": "settlement-runtime-and-rollup",
+              "prompt": "Explain settlement storage ownership and how runtime and rollup layers compose it.",
+              "children": []
+            },
+            {
+              "title": "Object Package Rejects",
+              "name": "object-package-rejects",
+              "prompt": "Explain the typed object admission package, reject-code taxonomy, and wallet or validator integration path.",
+              "children": []
+            },
+            {
+              "title": "Publication Route Authority",
+              "name": "publication-route-authority",
+              "prompt": "Explain why runtime owns publication binding construction, storage owns route verification, and downstream crates must not fork either path.",
+              "children": []
+            },
+            {
+              "title": "Settlement Path Proofs",
+              "name": "settlement-path-proofs",
+              "prompt": "Explain the canonical definition_id to serial_id to terminal_id path, semantic versus physical roots, and storage-owned proof boundaries.",
+              "children": []
+            },
+            {
+              "title": "Settlement Recovery Failover",
+              "name": "settlement-recovery-failover",
+              "prompt": "Document SettlementRecoveryState, journal lineage, same-lineage takeover rules, and fail-closed restart behavior across storage and runtime.",
+              "children": []
+            },
+            {
+              "title": "Runtime Aggregator Surface",
+              "name": "runtime-aggregator-surface",
+              "prompt": "Expand the runtime aggregator layer into planner, placement, dispatch, simulation, and recovery invariants instead of leaving them inside one overview chapter.",
+              "children": []
+            },
+            {
+              "title": "Rollup Theorem Verifier",
+              "name": "rollup-theorem-verifier",
+              "prompt": "Explain exactly what the rollup theorem verifier checks, what it intentionally does not reconstruct, and how it differs from broader preflight gates.",
+              "children": []
+            },
+            {
+              "title": "Validator Verdict Lanes",
+              "name": "validator-verdict-lanes",
+              "prompt": "Document the validator-owned verdict surface, how checkpoint and typed object verdicts compose, and how object reject codes collapse into stable reject classes.",
+              "children": []
+            },
+            {
+              "title": "Watchers Alert Boundaries",
+              "name": "watchers-alert-boundaries",
+              "prompt": "Document the watcher-owned observation surface, alert families, evidence export, and the non-authoritative boundary that keeps publication, route acceptance, and settlement truth with runtime, validators, and storage.",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Simulator And Quality",
+          "name": "06-simulator-and-quality",
+          "prompt": "Scenario harness, release-packet boundaries, and verification flow.",
+          "children": [
+            {
+              "title": "Scenario Pipeline",
+              "name": "scenario-pipeline",
+              "prompt": "Document scenario_1 as the canonical integration harness and explain how it interacts with the release-style verify gate.",
+              "children": []
+            },
+            {
+              "title": "Scenario1 Object Artifacts",
+              "name": "scenario1-object-artifacts",
+              "prompt": "Map scenario_1 object flows, emitted public artifacts, Stage 13 evidence, and the strict packet contract enforced by the simulator tests.",
+              "children": []
+            },
+            {
+              "title": "Scenario1 Runner Guards",
+              "name": "scenario1-runner-guards",
+              "prompt": "Explain the canonical 13-stage scenario_1 runner contract, sandbox and process guards, and the drift checks that keep the emitted release packet aligned with the design and trace contracts.",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Networking And Observability",
+          "name": "07-networking-and-observability",
+          "prompt": "RPC transport, OnionNet placeholder boundary, and telemetry/watcher surfaces.",
+          "children": [
+            {
+              "title": "Networking And Telemetry",
+              "name": "networking-and-telemetry",
+              "prompt": "Describe RPC, privacy-overlay placeholder seams, and workspace observability boundaries.",
+              "children": []
+            },
+            {
+              "title": "OnionNet Target Architecture",
+              "name": "onionnet-target-architecture",
+              "prompt": "Separate the current OnionNet placeholder crate from the intended deterministic anonymous-ingress architecture and its unfrozen blockers.",
+              "children": []
+            },
+            {
+              "title": "RPC Overlay Boundary",
+              "name": "rpc-overlay-boundary",
+              "prompt": "Separate the transport-focused RPC crate from the future OnionNet privacy overlay so request transport and anonymous ingress do not read as interchangeable layers.",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

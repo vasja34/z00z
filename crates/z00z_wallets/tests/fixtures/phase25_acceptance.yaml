@@ -1,0 +1,23 @@
+phase: 25
+streams:
+  - id: domains
+    close_if:
+      - "canonical domain set is selected"
+      - "wallet/proof vectors match byte-for-byte"
+      - "retired domain aliases are removed from runtime"
+    verify:
+      - "cargo test -p z00z_wallets --test test_golden_vectors -q"
+  - id: scanner
+    close_if:
+      - "scanner finds builder-generated leaves"
+      - "no false skip in tag16 prefilter path"
+      - "fallback path remains deterministic"
+    verify:
+      - "cargo test -p z00z_wallets --test test_e2e_stealth test_tag16_scan_accelerator -q"
+  - id: retired_api
+    close_if:
+      - "no runtime refs to retired paths"
+      - "all retired items have migration links"
+      - "compliance check stays green in release lane"
+    verify:
+      - "./scripts/verify_compliance.sh"

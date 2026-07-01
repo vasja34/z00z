@@ -1,0 +1,17 @@
+{
+  "run_id": "uniform_all|mock:7|consume=true",
+  "mode": "uniform_all",
+  "rng_kind": "mock:7",
+  "step": "WalletsUpdated",
+  "started_at_unix": 1700000001,
+  "claimed_rows": [
+    {
+      "wallet_id": "alice",
+      "asset_id_hex": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    {
+      "wallet_id": "bob",
+      "asset_id_hex": "2222222222222222222222222222222222222222222222222222222222222222"
+    }
+  ]
+}

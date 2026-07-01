@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Rust
+**/target/
+**/fuzz_targets/
+**/*.rs.bak
+
+# Node
+**/node_modules/
+**/dist/
+**/build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Backup files
+*.backup
+*.bak
+
+# ZIP files
+# **/*.zip
+# Exception: Keep genesis golden snapshot archive
+!crates/z00z_core/tests/genesis/fixtures/genesis_golden.json.zip
+# Ignore extracted genesis golden snapshot (auto-extracted from .zip)
+crates/z00z_core/tests/genesis/fixtures/genesis_golden.json
+z00z-*.tar.gz
+
+# Environment
+.env
+.env.*
+.venv/
+.gsd/
+
+# Documentation
+/docs/**/*.pdf
+/tools/
+/reports/
+
+# Misc
+**/.temp/
+**/data/
+**/outputs
+**/.codacy/
+**/.cache/
+**/cache/
+.codex/
+.bg-shell/
+**/.z00z-storage-redb/

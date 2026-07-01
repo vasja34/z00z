@@ -1,0 +1,50 @@
+assets:
+- id: z00z
+  symbol: Z00Z
+  class: Coin
+  name: Z00Z Native Coin
+  description: Native confidential coin
+  domain_name: z00z.core.assets.coin.devnet.v1
+  policy:
+    allow_burn: false
+    decimals: 8
+    serials: 20
+    nominal: 10000
+    is_gas: true
+  metadata: {}
+- id: zUSD
+  symbol: zUSD
+  class: Token
+  name: Z00Z USD Stablecoin
+  description: Confidential USD-pegged stablecoin
+  domain_name: z00z.core.assets.token.devnet.v1
+  policy:
+    allow_burn: true
+    decimals: 6
+    serials: 20
+    nominal: 10000
+  metadata: {}
+- id: zNFT
+  symbol: zNFT
+  class: Nft
+  name: Z00Z Event Ticket
+  description: NFT event ticket
+  domain_name: z00z.core.assets.nft.devnet.v1
+  policy:
+    allow_burn: true
+    decimals: 0
+    serials: 20
+    nominal: 1
+  metadata: {}
+- id: zBurnSink
+  symbol: zBurnSink
+  class: Void
+  name: Burn Sink
+  description: Special void asset for burning coins
+  domain_name: z00z.core.assets.void.devnet.v1
+  policy:
+    allow_burn: true
+    decimals: 0
+    serials: 20
+    nominal: 0
+  metadata: {}

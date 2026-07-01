@@ -1,0 +1,185 @@
+[package]
+name = "z00z_core"
+version = "0.2.0"
+edition = "2021"
+license = "MIT OR BSD-3-Clause"
+description = "Z00Z core protocol - unified modular implementation"
+autobins = false
+autoexamples = false
+autobenches = false
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+doctest = false
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", optional = true }
+rand = "0.8"
+rand_core = "0.6"
+rand_chacha = "0.3"
+blake2 = "0.10"
+chrono = { version = "0.4", features = ["serde"] }
+z00z_crypto = { path = "../z00z_crypto" }
+thiserror = "2.0"
+digest = "0.10"
+serde_yaml = "0.9"
+bincode = { version = "2.0.1", features = ["serde"], optional = true }
+merlin = "3"
+rayon = "1.11"
+hex = "0.4"
+once_cell = "1"
+regex = "1.11"
+walkdir = "2"
+tracing = "0.1"
+z00z_utils = { path = "../z00z_utils" }                                # MANDATORY: Always use z00z_utils abstractions
+clap = { version = "4.5", features = ["derive"], optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Snapshot ZIP export is part of the canonical genesis output contract.
+zip = "7.0.0"
+jsonschema = "0.38.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# WASM-compatible RNG - enable js/wasm_js feature for both getrandom versions
+getrandom = { version = "0.3", features = ["wasm_js"] }
+
+[features]
+# JSON/Bincode export remains crate-owned because `run_genesis()` emits those
+# artifacts directly. The operator-facing asset CLI stays behind an explicit
+# `cli` feature boundary even though this crate still owns the live support
+# surface in Phase 063.
+default = [
+  "std",
+  "serde_json_support",
+  "bincode_support",
+  "export_json",
+  "export_binary",
+  "cli",
+]
+std = []
+test-params-fast = ["deterministic-rng"]
+deterministic-rng = ["z00z_utils/deterministic-rng"]
+serde_json_support = ["serde_json"]
+bincode_support = ["bincode"]
+export_json = ["serde_json_support"]
+export_binary = ["bincode_support"]
+cli = ["dep:clap"]
+
+
+[dev-dependencies]
+once_cell = "1"
+syn = { version = "2", features = ["parsing", "full"] }
+criterion = "0.5"
+rayon = "1.11"
+zip = "7.0.0"
+walkdir = "2"
+proptest = "1.5"
+clap = { version = "4.5", features = ["derive"] }
+tempfile = "3.8"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+zeroize = "1.7"
+z00z_utils = { path = "../z00z_utils", features = ["deterministic-rng"] }
+
+[[bench]]
+name = "metadata_validation_bench"
+path = "benches/metadata_validation_bench.rs"
+harness = false
+
+[[bench]]
+name = "metadata_ops_bench"
+path = "benches/metadata_ops_bench.rs"
+harness = false
+
+[[bench]]
+name = "commitment_properties_bench"
+path = "benches/commitment_properties_bench.rs"
+harness = false
+
+[[bench]]
+name = "gas_calculation_bench"
+path = "benches/gas_calculation_bench.rs"
+harness = false
+
+[[bench]]
+name = "registry_bench"
+path = "benches/registry_bench.rs"
+harness = false
+
+[[bench]]
+name = "genesis_bench"
+path = "benches/genesis_bench.rs"
+harness = false
+
+# Genesis Assets Generator CLI Binary
+[[bin]]
+name = "genesis_cli"
+path = "bin/genesis_cli.rs"
+
+# Genesis Assets Analyzer CLI Binary
+[[bin]]
+name = "assets_analyzer_cli"
+path = "bin/assets_analyzer_cli.rs"
+
+# Genesis Assets Extractor CLI Binary
+[[bin]]
+name = "assets_extractor_cli"
+path = "bin/assets_extractor_cli.rs"
+
+# Assets Generation CLI Binary
+[[bin]]
+name = "assets_generation_cli"
+path = "bin/assets_generation_cli.rs"
+required-features = ["cli", "deterministic-rng"]
+
+# Asset Integration Tests - Entry Point
+[[test]]
+name = "assets_tests"
+path = "tests/test_assets.rs"
+
+# Genesis Integration Tests - Entry Point
+[[test]]
+name = "genesis_tests"
+path = "tests/test_genesis.rs"
+
+[[test]]
+name = "asset_signature_domain"
+path = "tests/test_assets_signature_domain.rs"
+
+[[test]]
+name = "stealth_consistency"
+path = "tests/test_assets_stealth_consistency.rs"
+required-features = ["deterministic-rng"]
+
+[[test]]
+name = "test_live_guardrails"
+path = "tests/test_live_guardrails.rs"
+
+[[test]]
+name = "test_genesis_manifest_goldens"
+path = "tests/test_genesis_manifest_goldens.rs"
+
+[[test]]
+name = "test_genesis_manifest_refs"
+path = "tests/test_genesis_manifest_refs.rs"
+
+[[example]]
+name = "asset_registry_basic"
+path = "examples/asset_registry_basic.rs"
+
+[[example]]
+name = "asset_registry_with_metrics"
+path = "examples/asset_registry_with_metrics.rs"
+
+[[example]]
+name = "asset_config_loading"
+path = "examples/asset_config_loading.rs"
+
+[[example]]
+name = "asset_snapshot"
+path = "examples/asset_snapshot.rs"
+
+[[example]]
+name = "genesis_example"
+path = "examples/genesis_example.rs"

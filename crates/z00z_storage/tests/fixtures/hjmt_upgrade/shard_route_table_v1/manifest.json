@@ -1,0 +1,163 @@
+{
+  "version": 1,
+  "golden": [
+    {
+      "id": "SRT-G-001",
+      "kind": "bridge",
+      "table_hex": "00000000000000000000000100000000000000010000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000b",
+      "digest_hex": "b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82",
+      "old_table_hex": null,
+      "old_digest_hex": null,
+      "new_table_hex": null,
+      "new_digest_hex": null,
+      "activation_checkpoint": 11,
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRT-G-002",
+      "kind": "split",
+      "table_hex": "0000000000000001000000030000000000000001000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555556aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
+      "digest_hex": "c6f78bca1dd639dd9c45114abc850d3050a0ca8a8ccee256d98cfe7c0dff5b10",
+      "old_table_hex": null,
+      "old_digest_hex": null,
+      "new_table_hex": null,
+      "new_digest_hex": null,
+      "activation_checkpoint": 42,
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRT-G-003",
+      "kind": "migration_pair",
+      "table_hex": null,
+      "digest_hex": null,
+      "old_table_hex": "00000000000000000000000100000000000000010000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000b",
+      "old_digest_hex": "b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82",
+      "new_table_hex": "0000000000000001000000030000000000000001000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555556aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
+      "new_digest_hex": "c6f78bca1dd639dd9c45114abc850d3050a0ca8a8ccee256d98cfe7c0dff5b10",
+      "activation_checkpoint": 42,
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRT-G-004",
+      "kind": "reencode",
+      "table_hex": "0000000000000001000000030000000000000001000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555556aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
+      "digest_hex": "c6f78bca1dd639dd9c45114abc850d3050a0ca8a8ccee256d98cfe7c0dff5b10",
+      "old_table_hex": null,
+      "old_digest_hex": null,
+      "new_table_hex": null,
+      "new_digest_hex": null,
+      "activation_checkpoint": 42,
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    }
+  ],
+  "tamper": [
+    {
+      "id": "SRT-T-001",
+      "kind": "unsorted_shard_set",
+      "source_id": "SRT-G-002",
+      "table_hex": "0000000000000001000000030000000100000000000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555556aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
+      "old_table_hex": null,
+      "new_table_hex": null,
+      "claimed_digest_hex": null,
+      "expected_stage": "parser_reject",
+      "expected_error": "route table shard_set must stay sorted ascending",
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRT-T-002",
+      "kind": "dup_shard_set",
+      "source_id": "SRT-G-002",
+      "table_hex": "0000000000000001000000030000000000000000000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555556aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
+      "old_table_hex": null,
+      "new_table_hex": null,
+      "claimed_digest_hex": null,
+      "expected_stage": "parser_reject",
+      "expected_error": "route table shard_set must stay unique",
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRT-T-003",
+      "kind": "unsorted_rules",
+      "source_id": "SRT-G-002",
+      "table_hex": "0000000000000001000000030000000000000001000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555556aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000000015555555555555555555555555555555555555555555555555555555555555556ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
+      "old_table_hex": null,
+      "new_table_hex": null,
+      "claimed_digest_hex": null,
+      "expected_stage": "parser_reject",
+      "expected_error": "route table range_rules must stay sorted by start_hash",
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRT-T-004",
+      "kind": "overlap",
+      "source_id": "SRT-G-002",
+      "table_hex": "0000000000000001000000030000000000000001000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555555aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
+      "old_table_hex": null,
+      "new_table_hex": null,
+      "claimed_digest_hex": null,
+      "expected_stage": "parser_reject",
+      "expected_error": "route table range_rules must not overlap",
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRT-T-005",
+      "kind": "gap",
+      "source_id": "SRT-G-002",
+      "table_hex": "0000000000000001000000030000000000000001000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555557aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
+      "old_table_hex": null,
+      "new_table_hex": null,
+      "claimed_digest_hex": null,
+      "expected_stage": "parser_reject",
+      "expected_error": "route table range_rules must stay gap-free over the full hash domain",
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRT-T-006",
+      "kind": "foreign_shard",
+      "source_id": "SRT-G-002",
+      "table_hex": "0000000000000001000000030000000000000001000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555556aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000063aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
+      "old_table_hex": null,
+      "new_table_hex": null,
+      "claimed_digest_hex": null,
+      "expected_stage": "parser_reject",
+      "expected_error": "route table range_rules must reference declared shard_set ids",
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRT-T-007",
+      "kind": "wrong_previous_generation_digest",
+      "source_id": "SRT-G-003",
+      "table_hex": null,
+      "old_table_hex": "00000000000000000000000100000000000000010000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000b",
+      "new_table_hex": "0000000000000001000000030000000000000001000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555556aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000002014444444444444444444444444444444444444444444444444444444444444444000000000000002a",
+      "claimed_digest_hex": null,
+      "expected_stage": "migration_reject",
+      "expected_error": "route table previous_generation_digest linkage is invalid",
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    },
+    {
+      "id": "SRT-T-008",
+      "kind": "digest_mismatch",
+      "source_id": "SRT-G-002",
+      "table_hex": "0000000000000001000000030000000000000001000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555556aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
+      "old_table_hex": null,
+      "new_table_hex": null,
+      "claimed_digest_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "expected_stage": "digest_reject",
+      "expected_error": "route table digest mismatch",
+      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+    }
+  ]
+}

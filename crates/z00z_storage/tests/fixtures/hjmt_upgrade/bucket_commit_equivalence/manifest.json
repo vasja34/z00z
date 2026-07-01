@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "BCM-G-001",
+      "kind": "same_bucket_insert_batch",
+      "expected_verdict": "accept",
+      "bucket_bits": 1,
+      "seed": [],
+      "ops": [
+        {
+          "kind": "put",
+          "definition_mark": 41,
+          "serial_id": 9,
+          "terminal_mark": 1,
+          "item_mark": 64
+        },
+        {
+          "kind": "put",
+          "definition_mark": 41,
+          "serial_id": 9,
+          "terminal_mark": 2,
+          "item_mark": 65
+        },
+        {
+          "kind": "put",
+          "definition_mark": 41,
+          "serial_id": 9,
+          "terminal_mark": 3,
+          "item_mark": 66
+        },
+        {
+          "kind": "put",
+          "definition_mark": 41,
+          "serial_id": 9,
+          "terminal_mark": 4,
+          "item_mark": 67
+        }
+      ],
+      "old_root_hex": "9ce84515902f7f139816da5282bf9be4b377142326c6b473e6ebf1d2740ec0d1",
+      "expected_root_hex": "c240d3a1216b8389393cbaf92c6bb1ab545963737fb203ae222ecb88034cfe5b",
+      "touched_bucket_ids_hex": [
+        "0000000000000000000000000000000000000000000000000000000000000000"
+      ],
+      "expected_row_count": 4,
+      "reload_roundtrip": true,
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_commit print_bucket_commit_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_commit.rs::test_bucket_commit_manifest_matches_live_contract"
+    },
+    {
+      "id": "BCM-G-002",
+      "kind": "delete_and_replace_reload",
+      "expected_verdict": "accept",
+      "bucket_bits": 1,
+      "seed": [
+        {
+          "definition_mark": 52,
+          "serial_id": 17,
+          "terminal_mark": 1,
+          "item_mark": 80
+        },
+        {
+          "definition_mark": 52,
+          "serial_id": 17,
+          "terminal_mark": 2,
+          "item_mark": 81
+        },
+        {
+          "definition_mark": 52,
+          "serial_id": 17,
+          "terminal_mark": 3,
+          "item_mark": 82
+        }
+      ],
+      "ops": [
+        {
+          "kind": "delete",
+          "definition_mark": 52,
+          "serial_id": 17,
+          "terminal_mark": 1,
+          "item_mark": null
+        },
+        {
+          "kind": "put",
+          "definition_mark": 52,
+          "serial_id": 17,
+          "terminal_mark": 5,
+          "item_mark": 99
+        },
+        {
+          "kind": "put",
+          "definition_mark": 52,
+          "serial_id": 17,
+          "terminal_mark": 7,
+          "item_mark": 100
+        }
+      ],
+      "old_root_hex": "d1209ca3465ed523d5de9945b7ed92e7a7956f4254394f55b76f0567a65a08ad",
+      "expected_root_hex": "93998de74afaee3a6376ad51011606305f4740a17be023b0c662947ded7338f0",
+      "touched_bucket_ids_hex": [
+        "8000000000000000000000000000000000000000000000000000000000000000"
+      ],
+      "expected_row_count": 4,
+      "reload_roundtrip": true,
+      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_commit print_bucket_commit_manifest_json -- --ignored --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_commit.rs::test_bucket_commit_manifest_matches_live_contract"
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+{
+  "version": 1,
+  "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_failover_same_lineage print_failover_manifest_json -- --ignored --nocapture",
+  "test_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_failover_same_lineage test_failover_manifest_matches_live_contract -- --nocapture",
+  "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_failover_same_lineage.rs::test_failover_manifest_matches_live_contract",
+  "cases": [
+    {
+      "fixture_id": "FOV-001",
+      "fixture_class": "Failover fixture",
+      "kind": "same-lineage takeover",
+      "expected_verdict": "accept",
+      "expected_reject_class": null,
+      "expected_detail": null,
+      "shard_id": 3,
+      "routing_generation": 9,
+      "requester_aggregator_id": 8,
+      "primary_aggregator_id": 7,
+      "standby_ids": [
+        8
+      ],
+      "journal_lineage_hex": "a2ea47bd5a701b45b6d686695e7563b287d55cda41c188099a0106d5d994b701",
+      "state_root_hex": "2431e032f31015cfddbf6e614537505d6cfac978b7274429f512627e2a68a1ff",
+      "root_generation": 1
+    },
+    {
+      "fixture_id": "FOV-T-001",
+      "fixture_class": "Failover fixture",
+      "kind": "wrong lineage",
+      "expected_verdict": "recovery_reject",
+      "expected_reject_class": "PolicyReject",
+      "expected_detail": "wrong lineage",
+      "shard_id": 5,
+      "routing_generation": 12,
+      "requester_aggregator_id": 22,
+      "primary_aggregator_id": 21,
+      "standby_ids": [
+        22
+      ],
+      "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
+      "state_root_hex": "cfc388cc8d271032536321619e65b2c8a0046a76354ceaa25f7a08bbe43c68ec",
+      "root_generation": 1
+    },
+    {
+      "fixture_id": "FOV-T-001",
+      "fixture_class": "Failover fixture",
+      "kind": "wrong generation",
+      "expected_verdict": "recovery_reject",
+      "expected_reject_class": "PolicyReject",
+      "expected_detail": "wrong generation",
+      "shard_id": 5,
+      "routing_generation": 12,
+      "requester_aggregator_id": 22,
+      "primary_aggregator_id": 21,
+      "standby_ids": [
+        22
+      ],
+      "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
+      "state_root_hex": "cfc388cc8d271032536321619e65b2c8a0046a76354ceaa25f7a08bbe43c68ec",
+      "root_generation": 1
+    },
+    {
+      "fixture_id": "FOV-T-001",
+      "fixture_class": "Failover fixture",
+      "kind": "stale local root",
+      "expected_verdict": "recovery_reject",
+      "expected_reject_class": "PolicyReject",
+      "expected_detail": "stale local root",
+      "shard_id": 5,
+      "routing_generation": 12,
+      "requester_aggregator_id": 22,
+      "primary_aggregator_id": 21,
+      "standby_ids": [
+        22
+      ],
+      "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
+      "state_root_hex": "cfc388cc8d271032536321619e65b2c8a0046a76354ceaa25f7a08bbe43c68ec",
+      "root_generation": 1
+    },
+    {
+      "fixture_id": "FOV-T-001",
+      "fixture_class": "Failover fixture",
+      "kind": "stale restart",
+      "expected_verdict": "recovery_reject",
+      "expected_reject_class": "PolicyReject",
+      "expected_detail": "stale restart",
+      "shard_id": 5,
+      "routing_generation": 12,
+      "requester_aggregator_id": 22,
+      "primary_aggregator_id": 21,
+      "standby_ids": [
+        22
+      ],
+      "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
+      "state_root_hex": "cfc388cc8d271032536321619e65b2c8a0046a76354ceaa25f7a08bbe43c68ec",
+      "root_generation": 1
+    },
+    {
+      "fixture_id": "FOV-T-002",
+      "fixture_class": "Failover fixture",
+      "kind": "standby down",
+      "expected_verdict": "recovery_reject",
+      "expected_reject_class": "DeferredRetry",
+      "expected_detail": "standby down",
+      "shard_id": 5,
+      "routing_generation": 12,
+      "requester_aggregator_id": 22,
+      "primary_aggregator_id": 21,
+      "standby_ids": [
+        22
+      ],
+      "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
+      "state_root_hex": "cfc388cc8d271032536321619e65b2c8a0046a76354ceaa25f7a08bbe43c68ec",
+      "root_generation": 1
+    },
+    {
+      "fixture_id": "FOV-T-002",
+      "fixture_class": "Failover fixture",
+      "kind": "split-brain",
+      "expected_verdict": "recovery_reject",
+      "expected_reject_class": "PolicyReject",
+      "expected_detail": "split-brain",
+      "shard_id": 5,
+      "routing_generation": 12,
+      "requester_aggregator_id": 21,
+      "primary_aggregator_id": 21,
+      "standby_ids": [
+        22
+      ],
+      "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
+      "state_root_hex": "cfc388cc8d271032536321619e65b2c8a0046a76354ceaa25f7a08bbe43c68ec",
+      "root_generation": 1
+    },
+    {
+      "fixture_id": "FOV-T-002",
+      "fixture_class": "Route migration fixture",
+      "kind": "route migration during crash",
+      "expected_verdict": "recovery_reject",
+      "expected_reject_class": "PolicyReject",
+      "expected_detail": "wrong generation",
+      "shard_id": 5,
+      "routing_generation": 12,
+      "requester_aggregator_id": 22,
+      "primary_aggregator_id": 21,
+      "standby_ids": [
+        22
+      ],
+      "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
+      "state_root_hex": "cfc388cc8d271032536321619e65b2c8a0046a76354ceaa25f7a08bbe43c68ec",
+      "root_generation": 1
+    },
+    {
+      "fixture_id": "FOV-G-002",
+      "fixture_class": "Carry-forward fixture",
+      "kind": "failed-shard carry-forward publication accepts",
+      "expected_verdict": "accept",
+      "expected_reject_class": null,
+      "expected_detail": null,
+      "shard_id": 3,
+      "routing_generation": 9,
+      "requester_aggregator_id": 8,
+      "primary_aggregator_id": 7,
+      "standby_ids": [
+        8
+      ],
+      "journal_lineage_hex": "4b9e6c788f59695d59813f6530a72c53f0a0cbbf627184d25757256e0b4740f8",
+      "state_root_hex": "0859750294ffca0b064be39dfe7274f07788cf169fc618e464686184e1765cb9",
+      "root_generation": 1,
+      "expected_public_root_hexes": [
+        "c2c5af48140cc5243ee225c90b9ce91c6da8687725300185fa51688c2db46d13"
+      ],
+      "carried_forward_leaf_hex": "0000000303cce5543b8a369d595382bec8b12e22460f0279868c5f3780391c659d8e366200000000000000050000000000000009ce99417724bc5f91494507ba51c2aab027244c69920f92d86c102e094c805e7350ed81056d5ec7eaf8581c0e3c9ce5b6173612acdb4b60536fe7e810a1f56afd0000000000000015000000000000000900000000"
+    },
+    {
+      "fixture_id": "FOV-G-003",
+      "fixture_class": "Crash fixture",
+      "kind": "crash after durable commit before publication recovers lawfully",
+      "expected_verdict": "accept",
+      "expected_reject_class": null,
+      "expected_detail": null,
+      "shard_id": 6,
+      "routing_generation": 14,
+      "requester_aggregator_id": 8,
+      "primary_aggregator_id": 7,
+      "standby_ids": [
+        8
+      ],
+      "journal_lineage_hex": "b18ab093eef9f9ebeaee4a3dc03a76eb3dd030cbea962a229edbd04bf0acf78d",
+      "state_root_hex": "7f7bd0e6e261ee0e6b062a1cb4418bb6dcdd7601407b67d394b390034c698e73",
+      "root_generation": 1,
+      "expected_public_root_hexes": [
+        "e6a82d240b7161a8c3664602a1314978027b0e768c2b4bc44cb9aebc09ae48e8",
+        "50c67e30d84cb86fe6b6b1c8fae93a748f24c0f4b1fd6d29fcebf46c8d009726"
+      ]
+    },
+    {
+      "fixture_id": "FOV-G-004",
+      "fixture_class": "Route migration fixture",
+      "kind": "crash during route migration resolves lawfully",
+      "expected_verdict": "recovery_reject",
+      "expected_reject_class": "PolicyReject",
+      "expected_detail": "wrong generation",
+      "shard_id": 5,
+      "routing_generation": 12,
+      "requester_aggregator_id": 22,
+      "primary_aggregator_id": 21,
+      "standby_ids": [
+        22
+      ],
+      "journal_lineage_hex": "76fa664456bf90f7f6f1b1c9bae72d96f5242759a9d28e9c20358a9e3c05281f",
+      "state_root_hex": "46f06ea8903b0da2ef0a2983ae8305c06e747e4f93b1119a4d7c9c98c87d9592",
+      "root_generation": 1,
+      "expected_public_root_hexes": [
+        "17dee7c0394fd320e8e78f287cd686a6309d877b609a1fcf618aaffb214ac340"
+      ]
+    }
+  ]
+}

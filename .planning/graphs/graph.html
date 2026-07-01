@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Z00Z Graphify Knowledge Graph</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f9fc;
+      --panel: #ffffff;
+      --panel-soft: #eef5f8;
+      --border: #d4e2e8;
+      --text: #1f2933;
+      --muted: #60717c;
+      --primary: #1f6f8b;
+      --primary-dark: #15566e;
+      --accent: #b45f06;
+      --extracted: #1b7f5c;
+      --inferred: #4b6f9f;
+      --ambiguous: #8a6d3b;
+      --shadow: 0 12px 28px rgba(31, 65, 82, 0.12);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: linear-gradient(180deg, #edf6fa 0%, var(--bg) 42%, #f8fbfd 100%);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      border-right: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      overflow: auto;
+    }
+
+    main {
+      position: relative;
+      min-width: 0;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 24px 0 10px;
+      font-size: 14px;
+      line-height: 1.2;
+      letter-spacing: 0;
+      color: var(--primary-dark);
+    }
+
+    p {
+      margin: 0 0 14px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .metric {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+      min-width: 0;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    input[type="search"],
+    input[type="file"],
+    input[type="range"],
+    select {
+      width: 100%;
+    }
+
+    input[type="search"],
+    input[type="file"],
+    select {
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--text);
+      padding: 8px 10px;
+    }
+
+    input[type="range"] {
+      accent-color: var(--primary);
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      min-height: 38px;
+      border: 1px solid var(--primary);
+      border-radius: 7px;
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--primary-dark);
+    }
+
+    button:disabled {
+      border-color: var(--border);
+      background: #dfe9ee;
+      color: #6f7f89;
+      cursor: not-allowed;
+    }
+
+    .legend {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+
+    .dot.extracted {
+      background: var(--extracted);
+    }
+
+    .dot.inferred {
+      background: var(--inferred);
+    }
+
+    .dot.ambiguous {
+      background: var(--ambiguous);
+    }
+
+    .notice {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid #d6c09b;
+      border-radius: var(--radius);
+      background: #fff9ec;
+      color: #654510;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .details {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 12px;
+      overflow-wrap: anywhere;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .details dl {
+      margin: 0;
+    }
+
+    .details dt {
+      margin-top: 10px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .details dd {
+      margin: 2px 0 0;
+    }
+
+    .neighbors {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      position: absolute;
+      z-index: 2;
+      inset: 18px 18px auto auto;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100vh;
+      cursor: grab;
+    }
+
+    canvas.dragging {
+      cursor: grabbing;
+    }
+
+    .status {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      z-index: 2;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        max-height: 46vh;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      main,
+      canvas {
+        min-height: 54vh;
+        height: 54vh;
+      }
+
+      .toolbar {
+        inset: 10px 10px auto auto;
+      }
+
+      .status {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <h1>Z00Z Knowledge Graph</h1>
+      <p>Interactive canvas view for the Graphify output. Search narrows the graph to matching nodes and nearby relationships.</p>
+
+      <div class="meta-grid" aria-live="polite">
+        <div class="metric"><span>Nodes</span><strong id="nodeCount">0</strong></div>
+        <div class="metric"><span>Links</span><strong id="linkCount">0</strong></div>
+        <div class="metric"><span>Visible</span><strong id="visibleCount">0</strong></div>
+        <div class="metric"><span>Communities</span><strong id="communityCount">0</strong></div>
+      </div>
+
+      <label for="graphFile">Graph JSON fallback</label>
+      <input id="graphFile" type="file" accept="application/json,.json">
+
+      <label for="search">Search nodes</label>
+      <input id="search" type="search" placeholder="receiver, wallet, proof, rpc..." autocomplete="off">
+
+      <label for="confidence">Confidence</label>
+      <select id="confidence">
+        <option value="ALL">All</option>
+        <option value="EXTRACTED">EXTRACTED</option>
+        <option value="INFERRED">INFERRED</option>
+        <option value="AMBIGUOUS">AMBIGUOUS</option>
+      </select>
+
+      <label for="relation">Relation</label>
+      <select id="relation">
+        <option value="ALL">All relations</option>
+      </select>
+
+      <label for="limit">Visible node limit: <span id="limitLabel">2500</span></label>
+      <input id="limit" type="range" min="300" max="8000" step="100" value="2500">
+
+      <div class="button-row">
+        <button id="apply">Apply</button>
+        <button class="secondary" id="reset">Reset View</button>
+      </div>
+
+      <h2>Legend</h2>
+      <div class="legend">
+        <div class="legend-row"><span class="dot extracted"></span><span>Extracted relationship</span></div>
+        <div class="legend-row"><span class="dot inferred"></span><span>Inferred relationship</span></div>
+        <div class="legend-row"><span class="dot ambiguous"></span><span>Ambiguous relationship</span></div>
+        <div class="legend-row"><span class="dot"></span><span>Node color is derived from its community</span></div>
+      </div>
+
+      <div id="loadNotice" class="notice">Loading <strong>graph.json</strong> from this folder. If your browser blocks local file loading, choose the same file above.</div>
+
+      <h2>Selected Node</h2>
+      <section id="details" class="details">Click a visible node to inspect it.</section>
+    </aside>
+
+    <main>
+      <div class="toolbar"><span>Wheel: zoom</span><span>Drag: pan</span><span>Click: inspect</span></div>
+      <canvas id="graphCanvas" aria-label="Graphify knowledge graph visualization"></canvas>
+      <div id="status" class="status">Preparing graph viewer...</div>
+    </main>
+  </div>
+
+  <script>
+    const state = {
+      graph: undefined,
+      nodes: [],
+      links: [],
+      idToNode: new Map(),
+      degree: new Map(),
+      visibleNodes: [],
+      visibleLinks: [],
+      positions: new Map(),
+      selectedId: undefined,
+      scale: 1,
+      offsetX: 0,
+      offsetY: 0,
+      dragging: false,
+      lastPointer: undefined,
+    };
+
+    const canvas = document.getElementById('graphCanvas');
+    const context = canvas.getContext('2d');
+    const elements = {
+      nodeCount: document.getElementById('nodeCount'),
+      linkCount: document.getElementById('linkCount'),
+      visibleCount: document.getElementById('visibleCount'),
+      communityCount: document.getElementById('communityCount'),
+      graphFile: document.getElementById('graphFile'),
+      search: document.getElementById('search'),
+      confidence: document.getElementById('confidence'),
+      relation: document.getElementById('relation'),
+      limit: document.getElementById('limit'),
+      limitLabel: document.getElementById('limitLabel'),
+      apply: document.getElementById('apply'),
+      reset: document.getElementById('reset'),
+      details: document.getElementById('details'),
+      status: document.getElementById('status'),
+      loadNotice: document.getElementById('loadNotice'),
+    };
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat('en-US').format(value || 0);
+    }
+
+    function colorForCommunity(community) {
+      const hue = (Number(community || 0) * 47 + 196) % 360;
+      return `hsl(${hue}, 48%, 42%)`;
+    }
+
+    function hashString(input) {
+      let hash = 2166136261;
+      for (let index = 0; index < input.length; index += 1) {
+        hash ^= input.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    }
+
+    function normalizeGraph(rawGraph) {
+      const nodes = Array.isArray(rawGraph.nodes) ? rawGraph.nodes : [];
+      const links = Array.isArray(rawGraph.links) ? rawGraph.links : (Array.isArray(rawGraph.edges) ? rawGraph.edges : []);
+      return { nodes, links };
+    }
+
+    function setStatus(text) {
+      elements.status.textContent = text;
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+      canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      draw();
+    }
+
+    function initializeGraph(rawGraph) {
+      const normalized = normalizeGraph(rawGraph);
+      state.graph = rawGraph;
+      state.nodes = normalized.nodes;
+      state.links = normalized.links;
+      state.idToNode = new Map();
+      state.degree = new Map();
+
+      for (const node of state.nodes) {
+        state.idToNode.set(node.id, node);
+        state.degree.set(node.id, 0);
+      }
+
+      for (const link of state.links) {
+        const source = link.source || link._src;
+        const target = link.target || link._tgt;
+        if (!state.idToNode.has(source) || !state.idToNode.has(target)) continue;
+        state.degree.set(source, (state.degree.get(source) || 0) + 1);
+        state.degree.set(target, (state.degree.get(target) || 0) + 1);
+      }
+
+      const relations = Array.from(new Set(state.links.map((link) => link.relation).filter(Boolean))).sort();
+      elements.relation.innerHTML = '<option value="ALL">All relations</option>' + relations.map((relation) => `<option value="${escapeHtml(relation)}">${escapeHtml(relation)}</option>`).join('');
+
+      const communities = new Set(state.nodes.map((node) => node.community).filter((value) => value !== undefined));
+      elements.nodeCount.textContent = formatNumber(state.nodes.length);
+      elements.linkCount.textContent = formatNumber(state.links.length);
+      elements.communityCount.textContent = formatNumber(communities.size);
+      elements.loadNotice.classList.add('hidden');
+
+      applyFilters();
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function pickVisibleNodes(term, limit) {
+      if (term) {
+        const direct = state.nodes.filter((node) => {
+          const haystack = `${node.label || ''} ${node.id || ''} ${node.source_file || ''}`.toLowerCase();
+          return haystack.includes(term);
+        });
+        const visible = new Map(direct.map((node) => [node.id, node]));
+        for (const link of state.links) {
+          const source = link.source || link._src;
+          const target = link.target || link._tgt;
+          if (visible.has(source) && state.idToNode.has(target)) visible.set(target, state.idToNode.get(target));
+          if (visible.has(target) && state.idToNode.has(source)) visible.set(source, state.idToNode.get(source));
+          if (visible.size >= limit) break;
+        }
+        return Array.from(visible.values()).slice(0, limit);
+      }
+
+      return [...state.nodes]
+        .sort((left, right) => (state.degree.get(right.id) || 0) - (state.degree.get(left.id) || 0))
+        .slice(0, limit);
+    }
+
+    function applyFilters() {
+      if (!state.graph) return;
+      const term = elements.search.value.trim().toLowerCase();
+      const limit = Number(elements.limit.value);
+      const relation = elements.relation.value;
+      const confidence = elements.confidence.value;
+
+      const visibleNodes = pickVisibleNodes(term, limit);
+      const visibleIds = new Set(visibleNodes.map((node) => node.id));
+      const visibleLinks = state.links.filter((link) => {
+        const source = link.source || link._src;
+        const target = link.target || link._tgt;
+        if (!visibleIds.has(source) || !visibleIds.has(target)) return false;
+        if (relation !== 'ALL' && link.relation !== relation) return false;
+        if (confidence !== 'ALL' && link.confidence !== confidence) return false;
+        return true;
+      });
+
+      state.visibleNodes = visibleNodes;
+      state.visibleLinks = visibleLinks;
+      layoutVisibleNodes();
+      elements.visibleCount.textContent = formatNumber(visibleNodes.length);
+      setStatus(`Showing ${formatNumber(visibleNodes.length)} nodes and ${formatNumber(visibleLinks.length)} links. Search or increase the limit to inspect more of the ${formatNumber(state.nodes.length)} node graph.`);
+      draw();
+    }
+
+    function layoutVisibleNodes() {
+      const width = canvas.clientWidth || 1000;
+      const height = canvas.clientHeight || 700;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = Math.min(width, height) * 0.36;
+      const groups = new Map();
+
+      for (const node of state.visibleNodes) {
+        const key = node.community === undefined ? 'unknown' : String(node.community);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(node);
+      }
+
+      const sortedGroups = Array.from(groups.entries()).sort((left, right) => right[1].length - left[1].length);
+      state.positions = new Map();
+
+      sortedGroups.forEach(([community, nodes], groupIndex) => {
+        const angle = (Math.PI * 2 * groupIndex) / Math.max(1, sortedGroups.length);
+        const groupRadius = sortedGroups.length === 1 ? 0 : radius;
+        const groupX = centerX + Math.cos(angle) * groupRadius;
+        const groupY = centerY + Math.sin(angle) * groupRadius;
+        const localRadius = Math.max(28, Math.sqrt(nodes.length) * 13);
+
+        nodes.forEach((node, nodeIndex) => {
+          const hash = hashString(`${community}:${node.id}`);
+          const nodeAngle = (Math.PI * 2 * nodeIndex) / Math.max(1, nodes.length) + ((hash % 100) / 100) * 0.4;
+          const ring = Math.sqrt((nodeIndex + 1) / Math.max(1, nodes.length));
+          const jitter = ((hash % 17) - 8) * 1.6;
+          const x = groupX + Math.cos(nodeAngle) * (localRadius * ring + jitter);
+          const y = groupY + Math.sin(nodeAngle) * (localRadius * ring + jitter);
+          state.positions.set(node.id, { x, y });
+        });
+      });
+
+      if (state.scale === 1 && state.offsetX === 0 && state.offsetY === 0) {
+        state.offsetX = 0;
+        state.offsetY = 0;
+      }
+    }
+
+    function draw() {
+      if (!context) return;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      context.clearRect(0, 0, width, height);
+      context.save();
+      context.translate(state.offsetX, state.offsetY);
+      context.scale(state.scale, state.scale);
+
+      for (const link of state.visibleLinks) {
+        const source = link.source || link._src;
+        const target = link.target || link._tgt;
+        const sourcePoint = state.positions.get(source);
+        const targetPoint = state.positions.get(target);
+        if (!sourcePoint || !targetPoint) continue;
+        context.beginPath();
+        context.moveTo(sourcePoint.x, sourcePoint.y);
+        context.lineTo(targetPoint.x, targetPoint.y);
+        context.strokeStyle = edgeColor(link.confidence);
+        context.globalAlpha = state.selectedId && source !== state.selectedId && target !== state.selectedId ? 0.08 : 0.22;
+        context.lineWidth = Math.max(0.4, Math.min(2, Number(link.weight || 1))) / state.scale;
+        context.stroke();
+      }
+
+      context.globalAlpha = 1;
+      const term = elements.search.value.trim().toLowerCase();
+      for (const node of state.visibleNodes) {
+        const point = state.positions.get(node.id);
+        if (!point) continue;
+        const degree = state.degree.get(node.id) || 0;
+        const radius = Math.max(2.4, Math.min(8, 2.4 + Math.sqrt(degree) * 0.5));
+        const isSelected = state.selectedId === node.id;
+        const isMatch = term && `${node.label || ''} ${node.source_file || ''}`.toLowerCase().includes(term);
+        context.beginPath();
+        context.arc(point.x, point.y, isSelected ? radius + 3 : radius, 0, Math.PI * 2);
+        context.fillStyle = isSelected ? '#b45f06' : colorForCommunity(node.community);
+        context.globalAlpha = state.selectedId && !isSelected ? 0.45 : 0.95;
+        context.fill();
+        if (isSelected || isMatch) {
+          context.lineWidth = 1.4 / state.scale;
+          context.strokeStyle = isSelected ? '#5e3407' : '#1f2933';
+          context.stroke();
+        }
+      }
+
+      context.restore();
+      context.globalAlpha = 1;
+    }
+
+    function edgeColor(confidence) {
+      if (confidence === 'EXTRACTED') return 'rgba(27, 127, 92, 0.7)';
+      if (confidence === 'INFERRED') return 'rgba(75, 111, 159, 0.68)';
+      if (confidence === 'AMBIGUOUS') return 'rgba(138, 109, 59, 0.68)';
+      return 'rgba(83, 103, 116, 0.45)';
+    }
+
+    function screenToWorld(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (clientX - rect.left - state.offsetX) / state.scale,
+        y: (clientY - rect.top - state.offsetY) / state.scale,
+      };
+    }
+
+    function selectNearest(clientX, clientY) {
+      const point = screenToWorld(clientX, clientY);
+      let nearest = undefined;
+      let nearestDistance = Infinity;
+      for (const node of state.visibleNodes) {
+        const position = state.positions.get(node.id);
+        if (!position) continue;
+        const distance = Math.hypot(position.x - point.x, position.y - point.y);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearest = node;
+        }
+      }
+      if (nearest && nearestDistance * state.scale <= 16) {
+        state.selectedId = nearest.id;
+        renderDetails(nearest);
+        draw();
+      }
+    }
+
+    function renderDetails(node) {
+      const related = state.visibleLinks
+        .filter((link) => (link.source || link._src) === node.id || (link.target || link._tgt) === node.id)
+        .slice(0, 18)
+        .map((link) => {
+          const source = link.source || link._src;
+          const target = link.target || link._tgt;
+          const otherId = source === node.id ? target : source;
+          const other = state.idToNode.get(otherId);
+          return `<li>${escapeHtml(link.relation || 'related')} -> ${escapeHtml((other && other.label) || otherId)} <small>${escapeHtml(link.confidence || '')}</small></li>`;
+        })
+        .join('');
+
+      elements.details.innerHTML = `
+        <dl>
+          <dt>Label</dt><dd>${escapeHtml(node.label || node.id)}</dd>
+          <dt>ID</dt><dd>${escapeHtml(node.id)}</dd>
+          <dt>File</dt><dd>${escapeHtml(node.source_file || 'n/a')}</dd>
+          <dt>Location</dt><dd>${escapeHtml(node.source_location || 'n/a')}</dd>
+          <dt>Community</dt><dd>${escapeHtml(node.community === undefined ? 'n/a' : node.community)}</dd>
+          <dt>Degree</dt><dd>${formatNumber(state.degree.get(node.id) || 0)}</dd>
+        </dl>
+        <ol class="neighbors">${related || '<li>No visible neighbors under current filters.</li>'}</ol>
+      `;
+    }
+
+    async function loadAdjacentGraph() {
+      try {
+        const response = await fetch('graph.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        initializeGraph(await response.json());
+      } catch (error) {
+        setStatus(`Browser could not load adjacent graph.json automatically: ${error.message}. Choose graph.json using the file picker.`);
+      }
+    }
+
+    elements.graphFile.addEventListener('change', async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      try {
+        initializeGraph(JSON.parse(await file.text()));
+      } catch (error) {
+        setStatus(`Could not parse selected graph file: ${error.message}`);
+      }
+    });
+
+    elements.apply.addEventListener('click', applyFilters);
+    elements.search.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') applyFilters();
+    });
+    elements.limit.addEventListener('input', () => {
+      elements.limitLabel.textContent = elements.limit.value;
+    });
+    elements.reset.addEventListener('click', () => {
+      state.scale = 1;
+      state.offsetX = 0;
+      state.offsetY = 0;
+      state.selectedId = undefined;
+      elements.details.textContent = 'Click a visible node to inspect it.';
+      draw();
+    });
+
+    canvas.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      const direction = event.deltaY > 0 ? -1 : 1;
+      const factor = direction > 0 ? 1.12 : 0.89;
+      const before = screenToWorld(event.clientX, event.clientY);
+      state.scale = Math.max(0.18, Math.min(6, state.scale * factor));
+      const rect = canvas.getBoundingClientRect();
+      state.offsetX = event.clientX - rect.left - before.x * state.scale;
+      state.offsetY = event.clientY - rect.top - before.y * state.scale;
+      draw();
+    }, { passive: false });
+
+    canvas.addEventListener('pointerdown', (event) => {
+      state.dragging = true;
+      state.lastPointer = { x: event.clientX, y: event.clientY };
+      canvas.classList.add('dragging');
+      canvas.setPointerCapture(event.pointerId);
+    });
+
+    canvas.addEventListener('pointermove', (event) => {
+      if (!state.dragging || !state.lastPointer) return;
+      state.offsetX += event.clientX - state.lastPointer.x;
+      state.offsetY += event.clientY - state.lastPointer.y;
+      state.lastPointer = { x: event.clientX, y: event.clientY };
+      draw();
+    });
+
+    canvas.addEventListener('pointerup', (event) => {
+      if (state.lastPointer) {
+        const moved = Math.hypot(event.clientX - state.lastPointer.x, event.clientY - state.lastPointer.y);
+        if (moved < 2) selectNearest(event.clientX, event.clientY);
+      }
+      state.dragging = false;
+      state.lastPointer = undefined;
+      canvas.classList.remove('dragging');
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    loadAdjacentGraph();
+  </script>
+</body>
+</html>

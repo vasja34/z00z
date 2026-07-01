@@ -1,0 +1,49 @@
+phase: 25
+scope: tx_retired_api_cleanup
+tickets:
+  critical:
+    - id: TXL-251
+      finding: T-1
+      title: unify_domain_set
+      labels: ["severity:critical", "stream:domains", "phase:25"]
+      owner: wallet_crypto
+      status: closed
+      verify:
+        - "cargo test -p z00z_wallets --test test_golden_vectors test_golden_owner_handle -q"
+      evidence:
+        - "code: consensus domains wired for owner_handle/view_sk/k_dh/owner_tag"
+        - "tests: crates/z00z_wallets/tests/test_spec_terms_guard.rs parity checks"
+    - id: TXL-252
+      finding: T-2
+      title: align_tag16_scan
+      labels: ["severity:critical", "stream:scanner", "phase:25"]
+      owner: wallet_core
+      status: closed
+      verify:
+        - "cargo test -p z00z_wallets --test test_e2e_stealth test_tag16_scan_accelerator -q"
+      evidence:
+        - "code: DefaultTag16Ops switched to leaf_ad canonical path"
+        - "tests: crates/z00z_wallets/tests/test_spec_terms_guard.rs tag checks"
+  low:
+    - id: TXL-253
+      finding: T-4
+      title: drop_dead_paths
+      labels: ["severity:low", "stream:retired_api", "phase:25"]
+      owner: runtime
+      status: open
+      verify:
+        - "./scripts/check_phase25_recur.sh"
+      evidence:
+        - "pending: dead-path removal not merged"
+  medium:
+    - id: TXL-254
+      finding: P23
+      title: lock_merge_guard
+      labels: ["severity:medium", "stream:asset_merge", "phase:25"]
+      owner: wallet_rpc
+      status: closed
+      verify:
+        - "cargo test -p z00z_wallets asset_merge_rejects_locked_assets -q"
+      evidence:
+        - "tests: asset_merge_rejects_locked_assets"
+        - "runtime: merge_assets rejects LOCKED_ASSET_NOT_SPENDABLE"

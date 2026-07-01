@@ -1,0 +1,11 @@
+phase: 25
+cadence:
+  weekly:
+    - run: "./scripts/check_phase25_recur.sh"
+    - run: "./scripts/run_phase25_regress.sh"
+  per_release:
+    - run: "./scripts/verify_compliance.sh"
+    - run: "cargo test --workspace --release -F z00z_simulator/test-params-fast,z00z_wallets/test-params-fast,z00z_simulator/wallet_debug_tools test_no_receiver_secret_field -q"
+  monthly:
+    - run: "./scripts/check_phase24_drift.sh"
+    - run: "./scripts/check_phase25_drift.sh"

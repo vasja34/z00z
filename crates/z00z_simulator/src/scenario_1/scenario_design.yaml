@@ -1,0 +1,437 @@
+# Scenario 1 - Design (descriptive 13-stage surface)
+# The honest whole-chain story is layered.
+# Delivered bucket: live cryptography exists at the claim, stealth, scan, and
+# current-stack spend seams.
+# Partial bucket: ownership continuity, checkpoint handoff, and replay/spent
+# gating still rely in part on wallet-local or structural boundaries.
+# Not-proved bucket: full validator trustlessness, end-to-end trustless
+# closure, and other final-proof claims remain open or out of scope.
+# Review rule: do not flatten the validator leg into fully live crypto or claim
+# full end-to-end trustless closure.
+# Phase 056 runtime topology is loaded from
+# config/hjmt_runtime/sim_5a7s and models each aggregator as a separate
+# OS process with its own explicit aggregator-config.yaml path.
+# Runtime observability profiles stay synchronized with scenario_config.yaml:
+# - SIM-SMALL: fast deterministic correctness
+# - SIM-MEDIUM: deterministic integration correctness
+# - SIM-CACHE-EDGE: capacity-relative queue/cache validation
+# - SIM-BATCH-1000: live heavy-only benchmark/readiness profile
+# Phase 057 publication acceptance stays synchronized with scenario_config.yaml:
+# - SIM-5A7S-PUB: canonical publication acceptance fixture derived from the
+#   live SIM-5A7S runtime lineage
+# - mandatory YAML exemplar: SIM-5A7S-OWNER (`5x7 -> 6x7`)
+# - positive YAML-only topology example: SIM-4A3S-OWNER
+# - staged YAML exemplar: SIM-3A7S-2A7S-5A7S (`3x7 -> 2x7 -> 5x7`) with
+#   decommission cleanup and lineage continuity flags
+# Required trace pack:
+# - run_meta.json
+# - cfg_flow.json
+# - tx_flow.json
+# - route_flow.json
+# - plan_flow.json
+# - journal_flow.json
+# - scope_flow.json
+# - proc_flow.json
+# - leaf_flow.json
+# - proof_flow.json
+# - pub_flow.json
+# - val_flow.json
+# - watch_flow.json
+# - wallet_scan.json
+# - hist_flow.json
+# - occ_flow.json
+# - recovery_flow.json
+# - sim_summary.md
+# Pending same-lane exact homes that stay phase-authority inventory until they
+# land on this release packet:
+# - asset_flow.json
+# - voucher_flow.json
+# - right_flow.json
+
+stages:
+  - stage: 1
+    name: "genesis_init"
+    description: |
+      Generate deterministic genesis settlement corpus through the z00z_core genesis pipeline,
+      persist per-definition binary packs plus policy/right/voucher settlement artifacts,
+      and snapshot the canonical stage-1 state.
+    rust_entry: "stage_1::run(ctx)"
+    config_source: "scenario_config.yaml::stage1_paths + stage1_genesis_config"
+    steps:
+      - id: "S1-1"
+        action: "Load the canonical genesis config and validate the derived seed"
+        post_conditions:
+          - "Genesis config is readable from the configured or fallback path"
+          - "GenesisSeed::from_config succeeds"
+      - id: "S1-2"
+        action: "Prepare the stage-1 output directories"
+        post_conditions:
+          - "outputs/ exists"
+          - "outputs/genesis exists"
+      - id: "S1-3"
+        action: "Create every AssetDefinition and register it in ctx.registry"
+        post_conditions:
+          - "Each definition id is non-zero"
+          - "ctx.registry contains every generated definition"
+      - id: "S1-4"
+        action: "Generate the full genesis settlement corpus with the canonical genesis accumulator"
+        post_conditions:
+          - "Generated asset count matches the accumulator total"
+          - "ctx.assets and ctx.genesis_rights plus policy/voucher artifacts are populated"
+      - id: "S1-5"
+        action: "Verify all generated assets and proofs"
+        post_conditions:
+          - "verify_assets_all passes"
+      - id: "S1-6"
+        action: "Compute the deterministic genesis state hash"
+        post_conditions:
+          - "Repeated hash computation is stable"
+      - id: "S1-7"
+        action: "Persist one genesis binary pack per definition"
+        post_conditions:
+          - "genesis_Z00Z.bin, genesis_zUSD.bin, genesis_zNFT.bin, and genesis_zBurnSink.bin exist"
+      - id: "S1-8"
+        action: "Write the stage-1 snapshot and supporting settlement artifacts"
+        post_conditions:
+          - "stage_1_snapshot.json exists"
+          - "genesis state hash, policy/right/voucher artifacts, and settlement manifest exist"
+
+  - stage: 2
+    name: "wallet_create"
+    description: |
+      Create the three simulator wallets, derive public receiver material, prove
+      backup/restart/lifecycle behavior, and snapshot the actor runtime for the
+      later claim and transfer lanes.
+    rust_entry: "stage_2::run(ctx)"
+    config_source: "scenario_config.yaml::stage2_wallet_create"
+    steps:
+      - id: "S2-1"
+        action: "Prepare stage-2 dirs, env vars, and the logged RPC stack"
+        post_conditions:
+          - "outputs/wallets, outputs/keys, and outputs/logs exist"
+          - "Logged RPC transport is ready"
+      - id: "S2-2"
+        action: "Create the Alice, Bob, and Charlie wallets through RPC"
+        post_conditions:
+          - "Three wallet ids are issued"
+      - id: "S2-5"
+        action: "List wallets and verify the expected actor set"
+        post_conditions:
+          - "Wallet list contains alice, bob, and charlie"
+      - id: "S2-6"
+        action: "Derive stealth receiver keys and export receiver cards"
+        post_conditions:
+          - "Each actor has a non-degenerate owner handle"
+      - id: "S2-8"
+        action: "Export public key JSON artifacts without leaking secrets"
+        post_conditions:
+          - "alice_keys.json, bob_keys.json, and charlie_keys.json exist"
+      - id: "S2-9"
+        action: "Verify .wlt files and emit the wallet mapping artifact"
+        post_conditions:
+          - "Every created .wlt opens successfully"
+          - "wlt_map.md exists"
+      - id: "S2-10"
+        action: "Validate backup creation and listing for every wallet"
+        post_conditions:
+          - "Each wallet reports at least one backup"
+      - id: "S2-11"
+        action: "Write the stage-2 snapshot last after all checks pass"
+        post_conditions:
+          - "stage_2_snapshot.json exists"
+      - id: "S2-12"
+        action: "Verify show-seed integrity against the wallet creation response"
+        post_conditions:
+          - "Recovered seed phrases match the create_wallet response"
+      - id: "S2-13"
+        action: "Derive and list receivers for each actor"
+        post_conditions:
+          - "Every actor exposes at least one receiver id"
+      - id: "S2-14"
+        action: "Keep wallet-secret debug output behind an explicit debug-only private lane"
+        post_conditions:
+          - "Default stage-2 outputs contain no plaintext wallet secret artifact"
+      - id: "S2-15"
+        action: "Record stage-3 readiness for the actor runtime"
+        post_conditions:
+          - "ctx.actors is ready for the claim lane"
+      - id: "S2-16"
+        action: "Check lifecycle locking by denying receiver listing after backgrounding"
+        post_conditions:
+          - "list_receivers is rejected after the lifecycle event"
+      - id: "S2-17"
+        action: "Validate export/import persistence roundtrip for Bob"
+        post_conditions:
+          - "export_wallet_encrypted_payload.json exists"
+          - "Imported wallet id matches Bob's original wallet id"
+      - id: "S2-18"
+        action: "Prove restart determinism for key derivation"
+        post_conditions:
+          - "The same derived public key is produced before and after restart"
+      - id: "S2-19"
+        action: "Check RPC log privacy and risk labeling"
+        post_conditions:
+          - "The RPC log contains no leaked passwords or seed phrases"
+
+  - stage: 3
+    name: "claim_prepare"
+    description: |
+      Load the stage-1 genesis packs, distribute claimable assets across the three
+      actors, import them into wallet runtime state, and snapshot the prepared
+      claim lane without anchoring it as a checkpoint yet.
+    rust_entry: "stage_3::run_claim_prepare(ctx, stage)"
+    config_source: "scenario_config.yaml::stage3_claim"
+    steps:
+      - id: "S3-1"
+        action: "Load the genesis binary packs and reconcile them with stage-1 snapshot counts"
+        post_conditions:
+          - "Loaded asset count matches stage_1_snapshot.assets_count"
+      - id: "S3-2"
+        action: "Distribute assets across Alice, Bob, and Charlie according to the configured mode"
+        post_conditions:
+          - "All loaded assets are assigned exactly once"
+      - id: "S3-3"
+        action: "Persist claim artifacts, import assets into wallets, and write the prepared snapshot"
+        post_conditions:
+          - "stage_3_snapshot.json exists"
+          - "wallet_import_stats is present for all three actors"
+      - id: "S3-4"
+        action: "Optionally consume the genesis bins and always write the audit log"
+        post_conditions:
+          - "claim/audit_log.json exists"
+
+  - stage: 4
+    name: "claim_publish"
+    description: |
+      Publish the prepared claim package into a claim-store surface, inject genesis rights into storage,
+      materialize a dedicated claim-publish snapshot, and emit claim-publish audit artifacts.
+    rust_entry: "stage_4::run_claim_publish(ctx, stage)"
+    config_source: "scenario_config.yaml::stage4_claim_publish"
+    steps:
+      - id: "P4-1"
+        action: "Prepare the claim-publish directories and log surface"
+        post_conditions:
+          - "claim_publish and logs_publish directories exist"
+      - id: "P4-2"
+        action: "Load the stage-3 snapshot and extract wallet import statistics"
+        post_conditions:
+          - "wallet_import_stats is present and non-empty"
+      - id: "P4-3"
+        action: "Publish the claim package, inject genesis rights into the claim store, and export the post-claim storage view"
+        post_conditions:
+          - "claim_store_pub.json exists"
+          - "claim_post storage view is exported with right rows"
+      - id: "P4-4"
+        action: "Write the claim-publish snapshot, logger, and audit artifacts"
+        post_conditions:
+          - "stage_4_snapshot.json exists"
+          - "claim_publish/audit_log.json exists"
+
+  - stage: 5
+    name: "tx_plan"
+    description: |
+      Validate the tx-lane planning surface without mutating wallet state or writing
+      transaction-history rows. The canonical transaction artifact and wallet history
+      producer is stage 6.
+    rust_entry: "stage_5::run_tx_plan(ctx, stage)"
+    config_source: "scenario_config.yaml::stage4_tx_prepare"
+    steps:
+      - id: "P5-1"
+        action: "Validate that stage4_tx_prepare is enabled and uses logged_local transport"
+      - id: "P5-2"
+        action: "Validate tx mode, asset class, sender, receiver, and fee sink references"
+      - id: "P5-3"
+        action: "Leave all tx package and tx-history writes to stage 6"
+
+  - stage: 6
+    name: "tx_prepare"
+    description: |
+      Execute the same shared tx-lane core behind the explicit stage-6 prepare facade.
+      This remains the canonical handoff producer for the transfer and bundle lanes.
+    rust_entry: "stage_6::run_tx_prepare(ctx, stage)"
+    config_source: "scenario_config.yaml::stage4_tx_prepare"
+    steps:
+      - id: "S4-1"
+        action: "Prepare tx, log, and wallet report directories"
+      - id: "S4-2"
+        action: "Load and de-duplicate the sender wallet inputs"
+      - id: "S4-12"
+        action: "Capture wallet state snapshots and report surfaces around the tx lane"
+      - id: "S4-3"
+        action: "Load verified receiver and fee cards"
+      - id: "S4-4"
+        action: "Build outputs and derive the fee-aware tx plan"
+      - id: "S4-5"
+        action: "Run sender-side self-decrypt and plaintext balance checks"
+      - id: "S4-9"
+        action: "Verify the fee-inclusive commitment balance gate"
+      - id: "S4-10"
+        action: "Verify the spend witness gate against the canonical snapshot"
+      - id: "S4-6"
+        action: "Write the prepared tx package and checkpoint prep reference"
+      - id: "S4-7"
+        action: "Persist sender-side wallet state changes"
+      - id: "S4-8"
+        action: "Run Bob-side upload and decrypt checks"
+      - id: "S4-C1"
+        action: "Emit pending and confirmed wallet views"
+      - id: "S4-11"
+        action: "Write the stage-4 tx snapshot"
+      - id: "S4-13"
+        action: "Mark the shared tx-lane core as complete"
+
+  - stage: 7
+    name: "transfer_receive"
+    description: |
+      Drive the report-only receive bridge for Bob's selected stage-4 output and
+      persist the receive handoff needed by the explicit claim step.
+    rust_entry: "stage_7::run_transfer_receive(ctx, stage)"
+    config_source: "scenario_config.yaml::stage5_transfer"
+    steps:
+      - id: "S5-1"
+        action: "Prepare transfer logs and transaction directories"
+      - id: "S5-2"
+        action: "Pick Bob's recipient output from the stage-4 tx package"
+      - id: "S5-3"
+        action: "Build the canonical asset leaf and decrypted asset view"
+      - id: "S5-4"
+        action: "Check canonical scan and runtime scanner parity"
+      - id: "S5-5"
+        action: "Run the report-only receive RPC flow without mutating claimed state"
+      - id: "S5-6"
+        action: "Persist the receive handoff for the explicit claim stage"
+
+  - stage: 8
+    name: "transfer_claim"
+    description: |
+      Consume the receive handoff, perform the explicit claim transition, and persist
+      the stage-5 receive/claim artifacts for the downstream bundle lane.
+    rust_entry: "stage_8::run_transfer_claim(ctx, stage)"
+    config_source: "scenario_config.yaml::stage5_transfer"
+    steps:
+      - id: "S5-1"
+        action: "Prepare transfer logs and transaction directories"
+      - id: "S5-2"
+        action: "Pick Bob's recipient output from the stage-4 tx package"
+      - id: "S5-3"
+        action: "Build the canonical asset leaf and decrypted asset view"
+      - id: "S5-4"
+        action: "Check canonical scan and runtime scanner parity"
+      - id: "S5-6"
+        action: "Run the explicit claim transition through recv_route"
+      - id: "S5-7"
+        action: "Write the stage-5 leaf artifact"
+      - id: "S5-8"
+        action: "Write the stage-5 snapshot"
+
+  - stage: 9
+    name: "bundle_build"
+    description: |
+      Build the checkpoint bridge from the transfer artifacts, persist fragment files,
+      and save the exec_input handoff needed by storage-backed apply.
+    rust_entry: "stage_9::run_bundle_build(ctx, stage)"
+    config_source: "scenario_config.yaml::stage6_bundle"
+    steps:
+      - id: "S6-1"
+        action: "Prepare bundle logs and transaction directories"
+      - id: "S6-2"
+        action: "Write checkpoint fragment artifacts from the transfer lane"
+      - id: "S6-3"
+        action: "Record that wallet mutation is represented by checkpoint artifacts"
+      - id: "S6-4"
+        action: "Write the stage-6 bridge and exec_input handoff"
+      - id: "S6-5"
+        action: "Confirm the ordered handoff pipeline toward storage apply"
+      - id: "S6-6"
+        action: "Persist the targeted fragment pair"
+      - id: "S6-7"
+        action: "Aggregate the fragment output amount"
+      - id: "S6-8"
+        action: "Check replay-safe checkpoint invariants"
+
+  - stage: 10
+    name: "bundle_publish"
+    description: |
+      Reuse the built bridge and fragments, publish the report surface for the bundle lane,
+      and keep the storage-apply handoff explicit.
+    rust_entry: "stage_10::run_bundle_publish(ctx, stage)"
+    config_source: "scenario_config.yaml::stage6_bundle"
+    steps:
+      - id: "S6-1"
+        action: "Prepare bundle logs and transaction directories"
+      - id: "S6-2"
+        action: "Reuse the saved fragment artifacts"
+      - id: "S6-3"
+        action: "Record that wallet mutation is represented by checkpoint artifacts"
+      - id: "S6-4"
+        action: "Reuse the saved stage-6 bridge and exec_input handoff"
+      - id: "S6-5"
+        action: "Confirm the ordered handoff pipeline toward storage apply"
+      - id: "S6-6"
+        action: "Publish the bundle report surface"
+      - id: "S6-7"
+        action: "Aggregate the fragment output amount"
+      - id: "S6-8"
+        action: "Check replay-safe checkpoint invariants"
+
+  - stage: 11
+    name: "checkpoint_apply_storage"
+    description: |
+      Load the published checkpoint bridge, apply the checkpoint draft through storage,
+      refresh Charlie's committed-state view while skipping right leaves before ownership detection,
+      and persist the shared stage-7 checkpoint summary.
+    rust_entry: "stage_11::run_apply(ctx, stage)"
+    config_source: "scenario_config.yaml::stage7_paths"
+    steps:
+      - id: "S7-1"
+        action: "Prepare checkpoint-apply logs and directories"
+      - id: "S7-2"
+        action: "Load the stage-6 bridge and exec_input handoff"
+      - id: "S7-3"
+        action: "Apply the checkpoint draft through storage-backed state"
+      - id: "S7-4"
+        action: "Write the shared stage-7 checkpoint summary"
+
+  - stage: 12
+    name: "checkpoint_finalize"
+    description: |
+      Finalize checkpoint publication from the shared stage-7 checkpoint summary,
+      seal the final checkpoint artifact, and export the final post-tx surfaces.
+    rust_entry: "stage_12::run_finalize(ctx, stage)"
+    config_source: "scenario_config.yaml::stage8_paths"
+    steps:
+      - id: "S8-1"
+        action: "Prepare checkpoint-finalize logs and directories"
+      - id: "S8-2"
+        action: "Load the shared stage-7 checkpoint summary"
+      - id: "S8-3"
+        action: "Finalize and optionally seal the checkpoint publication"
+      - id: "S8-4"
+        action: "Write the stage-8 checkpoint summary"
+
+  - stage: 13
+    name: "hjmt_settlement_examples"
+    description: |
+      Demonstrate live generalized settlement proofs and debug artifacts through
+      production storage APIs, including generated asset/right examples, fee support,
+      deletion and absence proofs, adaptive policy evidence, cache metrics, and
+      reload-debug verification against the persisted settlement root.
+    rust_entry: "stage_13::run_hjmt_examples(ctx, stage)"
+    config_source: "scenario_config.yaml::stage13_hjmt_settlement_examples"
+    steps:
+      - id: "S13-1"
+        action: "Prepare the deterministic HJMT output directory and link the Stage-1 settlement manifest"
+      - id: "S13-2"
+        action: "Seed generated asset and rights into the live settlement store"
+      - id: "S13-3"
+        action: "Verify asset/right inclusion and fee-supported right transition proofs"
+      - id: "S13-4"
+        action: "Verify right deletion and absent-right non-existence proofs"
+      - id: "S13-5"
+        action: "Emit deterministic adaptive split and policy-transition evidence"
+      - id: "S13-6"
+        action: "Emit bounded cache and scheduler metrics from warmed proof work"
+      - id: "S13-7"
+        action: "Reopen the settlement store and re-verify every emitted example artifact"
+      - id: "S13-8"
+        action: "Write settlement example, tamper, proof-size, cache, replay, and log artifacts"

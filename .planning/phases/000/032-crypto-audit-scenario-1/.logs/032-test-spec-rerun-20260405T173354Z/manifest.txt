@@ -1,0 +1,178 @@
+STAMP=20260405T173354Z
+LOG_DIR=/home/vadim/Projects/z00z/.planning/phases/032-crypto-audit-scenario-1/.logs/032-test-spec-rerun-20260405T173354Z
+
+CMD[01]=bash /home/vadim/Projects/z00z/.github/skills/smart-tests-bootstrap/scripts/bootstrap_tests.sh
+RESULT[01]=PASS
+
+CMD[02]=cargo test -p z00z_wallets --release --features test-fast --test test_scenario1_semantics -- --nocapture
+RESULT[02]=PASS
+
+CMD[03]=cargo test -p z00z_crypto --release --test test_claim_v2_contract -- --nocapture
+RESULT[03]=PASS
+
+CMD[04]=cargo test -p z00z_storage --release --test test_claim_source_proof -- --nocapture
+RESULT[04]=PASS
+
+CMD[05]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_claim_pkg_crypto_support -- --nocapture
+RESULT[05]=PASS
+
+CMD[06]=cargo test -p z00z_wallets --release --features test-fast --test test_spend_witness_gate -- --nocapture
+RESULT[06]=PASS
+
+CMD[07]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_scenario1_spend_gate -- --nocapture
+RESULT[07]=PASS
+
+CMD[08]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_checkpoint_acceptance -- --nocapture
+RESULT[08]=PASS
+
+CMD[09]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_stage2_secret_artifacts -- --nocapture
+RESULT[09]=PASS
+
+CMD[10]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_transport_rng_boundaries -- --nocapture
+RESULT[10]=PASS
+
+CMD[11]=cargo test -p z00z_wallets --release --features test-fast --test test_tx_spent_gate -- --nocapture
+RESULT[11]=PASS
+
+CMD[12]=cargo test -p z00z_wallets --release --features test-fast --test test_tx_wrong_root -- --nocapture
+RESULT[12]=PASS
+
+CMD[13]=cargo test -p z00z_wallets --release --features test-fast --test test_tx_tamper -- --nocapture
+RESULT[13]=PASS
+
+CMD[14]=cargo test -p z00z_wallets --release --features test-fast --test test_tx_stealth_flow -- --nocapture
+RESULT[14]=PASS
+
+CMD[15]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_claim_tx_pipeline -- --nocapture
+RESULT[15]=PASS
+
+CMD[16]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_scenario1_unified_gate -- --nocapture
+RESULT[16]=PASS
+
+CMD[17]=cargo test -p z00z_simulator --release --features test-fast --features wallet_debug_dump --test test_stage6_checkpoint_final_gate -- --nocapture
+RESULT[17]=PASS
+
+CMD[18]=cargo test --release --features test-fast --features wallet_debug_dump
+RESULT[18]=FAIL
+test s4_bob_pending_ok ... ok
+test s4_tx_pkg_ok ... ok
+test cross_stage_supply_conservation ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 83.55s
+
+     Running tests/test_s7_examples.rs (target/release/deps/test_s7_examples-7ffb8f515ff75c4f)
+
+running 1 test
+test stage7_runner_wires_real_storage_apply has been running for over 60 seconds
+test stage7_runner_wires_real_storage_apply ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 94.96s
+
+     Running tests/test_scenario1_spend_gate.rs (target/release/deps/test_scenario1_spend_gate-dfd91e98d4c5aa3c)
+
+running 2 tests
+test scenario1_public_spend_gate_rejects_placeholder_auth_gap ... ok
+test scenario1_public_spend_gate_matches_wallet_verifier has been running for over 60 seconds
+test scenario1_public_spend_gate_matches_wallet_verifier ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 62.88s
+
+     Running tests/test_scenario1_stage_surface.rs (target/release/deps/test_scenario1_stage_surface-a306e215915744cd)
+
+running 7 tests
+test test_scenario1_rejects_blank_stage_name ... ok
+test test_scenario1_rejects_desc_drift ... ok
+test test_scenario1_rejects_action_drift ... ok
+test test_scenario1_rejects_narrowed_stage_contract ... ok
+test test_scenario1_rejects_invalid_design_yaml ... ok
+test test_scenario1_rejects_post_drift ... ok
+test test_scenario1_stage_surface has been running for over 60 seconds
+test test_scenario1_stage_surface ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 125.32s
+
+     Running tests/test_scenario1_unified_gate.rs (target/release/deps/test_scenario1_unified_gate-582a59d91d1a83e1)
+
+running 1 test
+test test_unified_gate_rs ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.91s
+
+     Running tests/test_stage2_secret_artifacts.rs (target/release/deps/test_stage2_secret_artifacts-d77f1652f72f9a1a)
+
+running 2 tests
+test stage2_debug_secrets_stay_private ... ok
+test stage2_secrets_skip_public_path ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 43.44s
+
+     Running tests/test_stage3_nullifier_store.rs (target/release/deps/test_stage3_nullifier_store-760644601de45537)
+
+running 2 tests
+test test_corrupt_rows_closed ... ok
+test test_restart_replay_path ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+
+     Running tests/test_stage4_bob_flow.rs (target/release/deps/test_stage4_bob_flow-147512f8804bff39)
+
+running 1 test
+test test_stage4_bob_flow has been running for over 60 seconds
+test test_stage4_bob_flow ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 103.37s
+
+     Running tests/test_stage4_bob_support.rs (target/release/deps/test_stage4_bob_support-d20d0418b1055f55)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/test_stage4_card_gate.rs (target/release/deps/test_stage4_card_gate-caab97a7b998bf45)
+
+running 3 tests
+test stage4_card_missing ... ok
+test stage4_card_verify_fail ... ok
+test stage4_card_ok ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 58.57s
+
+     Running tests/test_stage4_cfg_guards.rs (target/release/deps/test_stage4_cfg_guards-90ed8809c6875d72)
+
+running 9 tests
+test stage4_rejects_bad_fraction has been running for over 60 seconds
+test stage4_rejects_bad_mode has been running for over 60 seconds
+test stage4_rejects_big_amount has been running for over 60 seconds
+test stage4_rejects_external_fee_without_pass has been running for over 60 seconds
+test stage4_rejects_missing_amount has been running for over 60 seconds
+test stage4_rejects_missing_fraction has been running for over 60 seconds
+test stage4_rejects_zero_amount has been running for over 60 seconds
+test stage4_repo_cfg_ok has been running for over 60 seconds
+test stage4_valid_cfg_ok has been running for over 60 seconds
+test stage4_rejects_bad_mode ... ok
+test stage4_rejects_external_fee_without_pass ... ok
+test stage4_rejects_zero_amount ... ok
+test stage4_valid_cfg_ok ... ok
+test stage4_rejects_missing_fraction ... ok
+test stage4_rejects_big_amount ... ok
+test stage4_rejects_missing_amount ... ok
+test stage4_rejects_bad_fraction ... ok
+test stage4_repo_cfg_ok ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 157.86s
+
+     Running tests/test_stage4_cfg_paths.rs (target/release/deps/test_stage4_cfg_paths-9607bfafaa86f984)
+
+running 4 tests
+test stage4_empty_import_fails ... ok
+test stage4_bad_mode_fails ... ok
+test stage4_paths_work ... ok
+test stage4_short_paths_work ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.57s
+
+     Running tests/test_stage4_chain_path.rs (target/release/deps/test_stage4_chain_path-a9bbfde91206c99f)
+
+running 2 tests
+
+FINAL=FAIL

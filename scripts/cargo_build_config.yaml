@@ -1,0 +1,141 @@
+crates:
+  aggregators:
+    path: crates/z00z_runtime/aggregators
+    name: z00z_aggregators
+    version: 0.1.0
+    description: aggregators crate
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  onionnet:
+    path: crates/z00z_networks/onionnet
+    name: onionnet
+    version: 0.1.0
+    description: Z00Z OnionNet privacy-ingress placeholder crate
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  rpc:
+    path: crates/z00z_networks/rpc
+    name: z00z_networks_rpc
+    version: 0.1.0
+    description: Generic RPC transport layer for Z00Z network protocols
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  validators:
+    path: crates/z00z_runtime/validators
+    name: z00z_validators
+    version: 0.1.0
+    description: validators crate
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  watchers:
+    path: crates/z00z_runtime/watchers
+    name: z00z_watchers
+    version: 0.1.0
+    description: watchers crate
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  z00z_core:
+    path: crates/z00z_core
+    name: z00z_core
+    version: 0.1.0
+    description: Z00Z core protocol - unified modular implementation
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: false
+  z00z_crypto:
+    path: crates/z00z_crypto
+    name: z00z_crypto
+    version: 0.22.1
+    description: Z00Z Cryptography library
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  z00z_extensions:
+    path: crates/z00z_extensions
+    name: z00z_extensions
+    version: 0.1.0
+    description: z00z_extensions crate
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  z00z_rollup_node:
+    path: crates/z00z_rollup_node
+    name: z00z_rollup_node
+    version: 0.1.0
+    description: z00z_rollup_node crate
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  z00z_simulator:
+    path: crates/z00z_simulator
+    name: z00z_simulator
+    version: 0.1.0
+    description: z00z_simulator crate
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  z00z_storage:
+    path: crates/z00z_storage
+    name: z00z_storage
+    version: 0.1.0
+    description: z00z_storage crate
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  z00z_telemetry:
+    path: crates/z00z_telemetry
+    name: z00z_telemetry
+    version: 0.1.0
+    description: z00z_telemetry crate
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  z00z_utils:
+    path: crates/z00z_utils
+    name: z00z_utils
+    version: 0.1.0
+    description: Generic utilities and cross-cutting concerns for Z00Z blockchain
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true
+  z00z_wallets:
+    path: crates/z00z_wallets
+    name: z00z_wallets
+    version: 0.1.0
+    description: z00z_wallets crate
+    build: true
+    clean: true
+    mode: release
+    run_tests: true
+    run_benches: true

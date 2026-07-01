@@ -1,0 +1,99 @@
+$schema: http://json-schema.org/draft-07/schema#
+title: Z00Z Assets Config YAML Schema
+description: 'Standalone schema for canonical asset catalog YAML files.
+
+  '
+allOf:
+- $ref: '#/definitions/assets_catalog'
+definitions:
+  non_empty_string:
+    type: string
+    minLength: 1
+  domain_name_value:
+    type: string
+    pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*(?:\.[a-z0-9]+(?:_[a-z0-9]+)*)+$
+  metadata_string_map:
+    type: object
+    propertyNames:
+      minLength: 1
+    additionalProperties:
+      $ref: '#/definitions/non_empty_string'
+  asset_class:
+    type: string
+    enum:
+    - Coin
+    - Token
+    - Nft
+    - Void
+  asset_policy:
+    type: object
+    required:
+    - decimals
+    - serials
+    - nominal
+    additionalProperties: false
+    properties:
+      decimals:
+        type: integer
+        minimum: 0
+        maximum: 32
+      serials:
+        type: integer
+        minimum: 1
+        maximum: 1000000000
+      nominal:
+        type: integer
+        minimum: 0
+        maximum: 1000000000000
+      policy_flags:
+        type: integer
+        minimum: 0
+        maximum: 255
+      has_policy_flags:
+        type: boolean
+      allow_burn:
+        type: boolean
+      is_gas:
+        type: boolean
+      is_mintable:
+        type: boolean
+  asset_entry:
+    type: object
+    required:
+    - id
+    - class
+    - name
+    - symbol
+    - domain_name
+    - policy
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/definitions/non_empty_string'
+      class:
+        $ref: '#/definitions/asset_class'
+      name:
+        $ref: '#/definitions/non_empty_string'
+      symbol:
+        $ref: '#/definitions/non_empty_string'
+      domain_name:
+        $ref: '#/definitions/domain_name_value'
+      description:
+        $ref: '#/definitions/non_empty_string'
+      policy:
+        $ref: '#/definitions/asset_policy'
+      metadata:
+        $ref: '#/definitions/metadata_string_map'
+  assets_list:
+    type: array
+    minItems: 1
+    items:
+      $ref: '#/definitions/asset_entry'
+  assets_catalog:
+    type: object
+    required:
+    - assets
+    additionalProperties: false
+    properties:
+      assets:
+        $ref: '#/definitions/assets_list'

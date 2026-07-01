@@ -1,0 +1,622 @@
+# ============================================================
+# Scenario 1 — Genesis → Single Transfer + Bundle Fragments
+# ============================================================
+# Canonical simulator flow for wallet transfer lifecycle.
+# Replaces legacy wallet example scripts.
+
+scenario:
+  id: 1
+  name: "genesis_to_confidential_transfer"
+  description: |
+    Happy path: genesis → wallet create → single stealth transfer (Alice→Bob)
+    + bundle fragments transfer (Alice→Charlie: 2 fragments, same serial_id).
+    Verifies supply conservation by serial_id.
+
+chain: "devnet"                          # ChainType::Devnet
+
+hjmt_runtime:
+  profile: "SIM-5A7S"
+  config_root: "config/hjmt_runtime/sim_5a7s"
+
+runtime_observability:
+  active_profile: "SIM-SMALL"
+  supported_profiles:
+    - id: "SIM-SMALL"
+      deterministic: true
+      purpose: "fast deterministic correctness"
+    - id: "SIM-MEDIUM"
+      deterministic: true
+      purpose: "integration correctness"
+    - id: "SIM-CACHE-EDGE"
+      deterministic: false
+      purpose: "capacity-relative queue and cache validation"
+    - id: "SIM-BATCH-1000"
+      deterministic: false
+      purpose: "heavy benchmark and readiness evidence only"
+  heavy_only_profiles:
+    - "SIM-BATCH-1000"
+  publication:
+    acceptance_profile: "SIM-5A7S-PUB"
+    inherited_runtime_profile: "SIM-5A7S"
+    topology_status: "canonical_acceptance_fixture"
+    public_leaf_count: 7
+    publication_activation_checkpoint: 101
+    positive_topology_examples:
+      - fixture_id: "SIM-5A7S-OWNER"
+        shard_id: 6
+        old_topology: "5x7"
+        new_topology: "6x7"
+        old_aggregator_count: 5
+        old_shard_count: 7
+        new_aggregator_count: 6
+        new_shard_count: 7
+        route_generation_from: 1
+        route_generation_to: 2
+        owner_aggregator_id: 5
+        standby_aggregator_ids: [0, 4]
+        join_mode: "owner_activation"
+        transfer_target: "aggregator-5"
+        activation_checkpoint: 101
+      - fixture_id: "SIM-4A3S-OWNER"
+        shard_id: 0
+        old_topology: "3x3"
+        new_topology: "4x3"
+        old_aggregator_count: 3
+        old_shard_count: 3
+        new_aggregator_count: 4
+        new_shard_count: 3
+        route_generation_from: 1
+        route_generation_to: 2
+        owner_aggregator_id: 3
+        standby_aggregator_ids: [0, 1]
+        join_mode: "owner_activation"
+        transfer_target: "aggregator-3"
+        activation_checkpoint: 42
+      - fixture_id: "SIM-3A7S-2A7S-5A7S"
+        shard_id: 5
+        old_topology: "3x7"
+        new_topology: "5x7"
+        old_aggregator_count: 3
+        old_shard_count: 7
+        new_aggregator_count: 5
+        new_shard_count: 7
+        route_generation_from: 1
+        route_generation_to: 3
+        owner_aggregator_id: 0
+        standby_aggregator_ids: [2, 4]
+        join_mode: "staged_fail_down_fail_up"
+        transfer_target: "aggregator-0"
+        activation_checkpoint: 101
+        transition_stages:
+          - stage_id: "bootstrap_3a7s"
+            topology: "3x7"
+            aggregator_count: 3
+            shard_count: 7
+            route_generation: 1
+            owner_aggregator_id: 5
+            standby_aggregator_ids: [0, 1]
+          - stage_id: "decommission_2a7s"
+            topology: "2x7"
+            aggregator_count: 2
+            shard_count: 7
+            route_generation: 2
+            owner_aggregator_id: 0
+            standby_aggregator_ids: [1]
+          - stage_id: "reexpand_5a7s"
+            topology: "5x7"
+            aggregator_count: 5
+            shard_count: 7
+            route_generation: 3
+            owner_aggregator_id: 0
+            standby_aggregator_ids: [2, 4]
+        removed_aggregator_ids: [5]
+        removed_aggregator_absent_from_owner_tables: true
+        removed_aggregator_absent_from_standby_tables: true
+        all_shards_owned_across_stages: true
+        prior_lineage_preserved: true
+        publication_continuity_preserved: true
+  traces:
+    cfg_flow_file: "cfg_flow.json"
+    tx_flow_file: "tx_flow.json"
+    route_flow_file: "route_flow.json"
+    plan_flow_file: "plan_flow.json"
+    journal_flow_file: "journal_flow.json"
+    scope_flow_file: "scope_flow.json"
+    proc_flow_file: "proc_flow.json"
+    recovery_flow_file: "recovery_flow.json"
+    leaf_flow_file: "leaf_flow.json"
+    proof_flow_file: "proof_flow.json"
+    pub_flow_file: "pub_flow.json"
+    val_flow_file: "val_flow.json"
+    watch_flow_file: "watch_flow.json"
+  packet:
+    run_meta_file: "run_meta.json"
+    wallet_scan_file: "wallet_scan.json"
+    sim_summary_file: "sim_summary.md"
+    emitted_public_files:
+      - "hist_flow.json"
+      - "occ_flow.json"
+      - "asset_flow.json"
+      - "voucher_flow.json"
+      - "right_flow.json"
+
+simulation:
+  use_mock_rng: true                       # deterministic for CI
+  mock_rng_seed: 42                        # Some(42) → MockRng; set to null / ~ → SystemRng (production mode)
+  abort_on_fail: true
+
+stage1_genesis:
+  genesis_config: "devnet_genesis_config.yaml"
+  paths:
+    genesis_dir: "genesis"
+    logs_dir: "logs"
+    snapshot_file: "stage_1_snapshot.json"
+    state_hash_file: "genesis_state_hash.txt"
+    rights_artifact_file: "genesis_rights.json"
+    settlement_manifest_file: "genesis_settlement_manifest.json"
+    logger_file: "logger.json"
+    fallback_genesis_dir: "crates/z00z_core/configs"
+    cli_target_dir: "_cargo_target_stage1_cli"
+
+
+stage2_wallet_create:
+  wallet_chain: "devnet"                # Wallet chain profile (used in WalletIdentity and env Z00Z_WALLET_CHAIN)
+  paths:
+    wallets_dir: "wallets"
+    keys_dir: "keys"
+    logs_dir: "logs"
+    snapshot_file: "stage_2_snapshot.json"
+    logger_file: "logger.json"
+    rpc_logger_file: "rpc_logger.json"
+  actors:
+    - name: "alice"
+      password: "Alice_Pass_Z00Z_42!"
+      mock_rng_seed: 42
+    - name: "bob"
+      password: "Bob_Pass_Z00Z_43!"
+      mock_rng_seed: 43
+    - name: "charlie"
+      password: "Charlie_Pass_Z00Z_44!"
+      mock_rng_seed: 44
+
+stage3_claim:
+  # active mode: class_split | coin_sets | uniform_all
+  active: "uniform_all"
+  # deterministic random seed for stage-3 distribution; null / ~ → SystemRng (production mode)
+  rng_seed: 42
+  # When true, stage-3 consumes (empties) the genesis_*.bin inputs after claim.
+  # This prevents double-claim from the same .bin files.
+  consume_bins: true
+  paths:
+    genesis_dir: "genesis"
+    claim_dir: "claim"
+    wallets_dir: "wallets"
+    events_dir: "events"
+    logs_dir: "logs"
+    export_dir: "wallets_export_import"
+    snapshot_file: "stage_3_snapshot.json"
+    claim_state_file: "claim_state.json"
+    logger_file: "logger.json"
+    rpc_logger_file: "rpc_logger.json"
+  scenarios:
+    - id: "class_split"
+      title: "All .bin by class"
+      description: "Alice gets Z00Z coins, Bob gets NFTs, Charlie gets stable coins (zUSD/token)."
+    - id: "coin_sets"
+      title: "Random coin serial sets"
+      description: "All agents get different random full sets of Z00Z coin serial_id; non-coins stay class-split."
+    - id: "uniform_all"
+      title: "Uniform random all assets"
+      description: "All serial_id of all assets are distributed random-uniformly among Alice, Bob, Charlie."
+
+stage4_claim_publish:
+  # active mode: class_split | coin_sets | uniform_all
+  active: "uniform_all"
+  rng_seed: 42
+  consume_bins: false
+  paths:
+    genesis_dir: "genesis"
+    claim_dir: "claim_publish"
+    wallets_dir: "wallets_publish"
+    events_dir: "events_publish"
+    logs_dir: "logs_publish"
+    export_dir: "wallets_publish_export"
+    snapshot_file: "stage_4_snapshot.json"
+    claim_state_file: "claim_publish_state.json"
+    logger_file: "claim_publish_logger.json"
+    rpc_logger_file: "rpc_publish_logger.json"
+  scenarios:
+    - id: "class_split"
+      title: "All .bin by class"
+      description: "Alice gets Z00Z coins, Bob gets NFTs, Charlie gets stable coins (zUSD/token)."
+    - id: "coin_sets"
+      title: "Random coin serial sets"
+      description: "All agents get different random full sets of Z00Z coin serial_id; non-coins stay class-split."
+    - id: "uniform_all"
+      title: "Uniform random all assets"
+      description: "All serial_id of all assets are distributed random-uniformly among Alice, Bob, Charlie."
+
+outputs:
+  dir: "crates/z00z_simulator/outputs/scenario_1"
+
+# Stage 4 parameters (single source of truth)
+stage4_tx_prepare:
+  enabled: true
+
+  sender_actor: "Alice"
+  receiver_actor: "Bob"
+
+  paths:
+    outputs_dir: "crates/z00z_simulator/outputs/scenario_1"
+    logs_dir: "crates/z00z_simulator/outputs/scenario_1/logs"
+    transactions_dir: "crates/z00z_simulator/outputs/scenario_1/transactions"
+    wallets_dir: "crates/z00z_simulator/outputs/scenario_1/wallets"
+    tx_pkg_file: "crates/z00z_simulator/outputs/scenario_1/transactions/tx_alice_to_bob_pkg.json"
+    snapshot_file: "crates/z00z_simulator/outputs/scenario_1/stage_4_snapshot.json"
+    logger_file: "crates/z00z_simulator/outputs/scenario_1/logs/logger.json"
+    rpc_logger_file: "crates/z00z_simulator/outputs/scenario_1/logs/rpc_logger.json"
+    alice_keys_file: "crates/z00z_simulator/outputs/scenario_1/keys/alice_keys.json"
+    bob_keys_file: "crates/z00z_simulator/outputs/scenario_1/keys/bob_keys.json"
+    wallets_state_before_file: "crates/z00z_simulator/outputs/scenario_1/transactions/wallets_state_before.json"
+    wallets_state_after_file: "crates/z00z_simulator/outputs/scenario_1/transactions/wallets_state_after.json"
+    wallets_state_diff_file: "crates/z00z_simulator/outputs/scenario_1/transactions/wallets_state_diff.json"
+    wallets_state_report_md_file: "crates/z00z_simulator/outputs/scenario_1/transactions/wallets_state_report.md"
+    wallets_state_report_xlsx_file: "crates/z00z_simulator/outputs/scenario_1/transactions/wallets_state_report.xlsx"
+
+  transaction:
+    class: "Coin"
+    symbol: "Z00Z"
+    fee_sink:
+      wallet_id: "sequencer"
+      password: "Sequencer_Pass_Z00Z_45!"
+      rng_seed: 45
+    input_assets_selection:
+      distinct_serial_ids_min: 4
+      distinct_serial_ids_target: 4
+      distinct_serial_ids_max: 10
+    outputs:
+      bob_outputs_count: 4
+      # must be >= distinct_serial_ids_target; default happy path uses 4 inputs for 4 Bob outputs
+      # if > distinct_serial_ids_target, some serial_id will be splits across outputs
+    mode: "fraction" # fraction | amount
+    fraction: 0.1 # 0 < fraction <= 1;
+    # amount: 100 # amount > 0;
+
+  rpc:
+    transport: "logged_local"
+    unlock_method: "wallet.session.unlock_wallet"
+    lock_method: "wallet.session.lock_wallet"
+    list_assets_method: "wallet.asset.list_assets"
+    import_asset_method: "wallet.asset.import_asset"
+    build_transaction_method: "wallet.tx.build_transaction"
+    list_limit: 50
+    list_filter:
+      asset_class: null
+      min_balance: null
+
+stage5_transfer:
+  recipient_output_index: 0
+  paths:
+    logs_dir: "logs"
+    transactions_dir: "transactions"
+    tx_file: "leaf_alice_to_bob.json"
+    snapshot_file: "stage_5_snapshot.json"
+    logger_file: "logger.json"
+
+stage6_bundle:
+  paths:
+    logs_dir: "logs"
+    transactions_dir: "transactions"
+    frag1_file: "leaf_alice_to_charlie_frag1.json"
+    frag2_file: "leaf_alice_to_charlie_frag2.json"
+    checkpoint_file: "checkpoint_bridge_s6.json"
+    report_file: "report.md"
+    logger_file: "logger.json"
+
+stage7_apply:
+  paths:
+    logs_dir: "logs"
+    transactions_dir: "transactions"
+    checkpoint_file: "checkpoint_s7.json"
+    logger_file: "logger.json"
+
+stage8_finalize:
+  paths:
+    logs_dir: "logs"
+    transactions_dir: "transactions"
+    checkpoint_file: "checkpoint_s8.json"
+    logger_file: "logger.json"
+
+stage13_hjmt_settlement_examples:
+  enabled: true
+  backend_modes: ["generalized", "adaptive"]
+  rights_manifest_file: "genesis/genesis_settlement_manifest.json"
+  output_dir: "hjmt"
+  examples_file: "hjmt/hjmt_settlement_examples.json"
+  tamper_report_file: "hjmt/hjmt_tamper_report.json"
+  proof_size_report_file: "hjmt/hjmt_proof_size_report.json"
+  cache_scheduler_metrics_file: "hjmt/hjmt_cache_scheduler_metrics.json"
+  replay_roots_file: "hjmt/hjmt_replay_roots.json"
+  expected_right_classes:
+    - machine_capability
+    - data_access
+    - service_entitlement
+    - validator_mandate
+    - one_time_use
+
+object_flow_matrix:
+  positive:
+    - id: "asset_alice_to_bob"
+      family: "asset"
+      action: "transfer"
+      policy_label: "implicit_asset_lane"
+      lane: "stage6_bundle"
+      actors: ["alice", "bob"]
+      expected_verdict: "accepted"
+      evidence_files: ["asset_flow.json", "tx_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "asset_bob_to_charlie"
+      family: "asset"
+      action: "transfer"
+      policy_label: "implicit_asset_lane"
+      lane: "stage11_apply"
+      actors: ["bob", "charlie"]
+      expected_verdict: "accepted"
+      evidence_files: ["asset_flow.json", "tx_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "voucher_issue_offer"
+      family: "voucher"
+      action: "issue_offer"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage6_bundle"
+      actors: ["alice", "bob"]
+      expected_verdict: "accepted"
+      evidence_files: ["voucher_flow.json", "tx_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "voucher_accept"
+      family: "voucher"
+      action: "accept"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage7_receive"
+      actors: ["bob"]
+      expected_verdict: "accepted"
+      evidence_files: ["voucher_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "voucher_transfer"
+      family: "voucher"
+      action: "transfer"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob", "charlie"]
+      expected_verdict: "accepted"
+      evidence_files: ["voucher_flow.json", "tx_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json"]
+    - id: "voucher_redeem_full"
+      family: "voucher"
+      action: "redeem_full"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["charlie"]
+      required_rights: ["service_entitlement"]
+      expected_verdict: "accepted"
+      evidence_files: ["voucher_flow.json", "proof_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json"]
+    - id: "voucher_redeem_partial"
+      family: "voucher"
+      action: "redeem_partial"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      required_rights: ["service_entitlement"]
+      expected_verdict: "accepted"
+      evidence_files: ["voucher_flow.json", "proof_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json"]
+    - id: "voucher_reject_refund"
+      family: "voucher"
+      action: "reject_refund"
+      policy_label: "voucher_non_transferable_policy_v1"
+      lane: "stage7_receive"
+      actors: ["charlie", "alice"]
+      expected_verdict: "accepted"
+      evidence_files: ["voucher_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "voucher_expiry"
+      family: "voucher"
+      action: "expire"
+      policy_label: "voucher_non_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      expected_verdict: "accepted"
+      evidence_files: ["voucher_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "right_grant"
+      family: "right"
+      action: "grant"
+      policy_label: "right_delegate_policy_v1"
+      lane: "stage4_claim_publish"
+      actors: ["alice", "bob"]
+      expected_verdict: "accepted"
+      evidence_files: ["right_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "right_delegate"
+      family: "right"
+      action: "delegate"
+      policy_label: "right_delegate_policy_v1"
+      lane: "stage11_apply"
+      actors: ["alice", "bob"]
+      expected_verdict: "accepted"
+      evidence_files: ["right_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "right_consume"
+      family: "right"
+      action: "consume"
+      policy_label: "right_one_time_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      expected_verdict: "accepted"
+      evidence_files: ["right_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "right_revoke"
+      family: "right"
+      action: "revoke"
+      policy_label: "right_delegate_policy_v1"
+      lane: "stage11_apply"
+      actors: ["alice", "bob"]
+      expected_verdict: "accepted"
+      evidence_files: ["right_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "right_expiry"
+      family: "right"
+      action: "expire"
+      policy_label: "right_delegate_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      expected_verdict: "accepted"
+      evidence_files: ["right_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "right_challenge"
+      family: "right"
+      action: "challenge"
+      policy_label: "right_delegate_policy_v1"
+      lane: "stage11_apply"
+      actors: ["charlie", "alice"]
+      expected_verdict: "accepted"
+      evidence_files: ["right_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json", "sim_summary.md"]
+    - id: "right_gated_voucher_action"
+      family: "cross_object"
+      action: "delegate_then_redeem"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["alice", "bob", "charlie"]
+      required_rights: ["service_entitlement", "validator_mandate"]
+      expected_verdict: "accepted"
+      evidence_files: ["voucher_flow.json", "right_flow.json", "val_flow.json", "watch_flow.json", "wallet_scan.json"]
+    - id: "validator_lock_unlock_after_expiry"
+      family: "asset"
+      action: "unlock_after_expiry"
+      policy_label: "validator_lock_policy_v1"
+      lane: "stage11_apply"
+      actors: ["alice"]
+      required_rights: ["validator_mandate"]
+      expected_verdict: "accepted"
+      evidence_files: ["asset_flow.json", "right_flow.json", "proof_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "fee_supported_transition"
+      family: "fee_support"
+      action: "attach_fee_envelope"
+      policy_label: "right_delegate_policy_v1"
+      lane: "stage13_hjmt"
+      actors: ["alice", "sequencer"]
+      expected_verdict: "accepted"
+      evidence_files: ["proof_flow.json", "val_flow.json", "watch_flow.json", "hjmt/hjmt_settlement_examples.json", "sim_summary.md"]
+  negative:
+    - id: "policy_unknown_reject"
+      family: "cross_object"
+      action: "unknown_policy"
+      policy_label: "unknown_policy"
+      lane: "stage11_apply"
+      actors: ["alice", "bob"]
+      expected_verdict: "rejected:OBJECT_UNKNOWN_POLICY"
+      evidence_files: ["voucher_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "voucher_invalid_backing"
+      family: "voucher"
+      action: "issue"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage6_bundle"
+      actors: ["alice", "bob"]
+      expected_verdict: "rejected:OBJECT_INVALID_BACKING"
+      evidence_files: ["voucher_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "voucher_non_transferable_transfer_reject"
+      family: "voucher"
+      action: "transfer"
+      policy_label: "voucher_non_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["charlie", "bob"]
+      expected_verdict: "rejected:OBJECT_UNKNOWN_POLICY"
+      evidence_files: ["voucher_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "voucher_forced_acceptance"
+      family: "voucher"
+      action: "redeem_without_acceptance"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      expected_verdict: "rejected:OBJECT_FORCED_ACCEPTANCE"
+      evidence_files: ["voucher_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "voucher_double_redeem"
+      family: "voucher"
+      action: "redeem_replay"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["charlie"]
+      expected_verdict: "rejected:OBJECT_DOUBLE_REDEEM"
+      evidence_files: ["voucher_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "voucher_as_cash_reject"
+      family: "voucher"
+      action: "cash_spend"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      expected_verdict: "rejected:OBJECT_VOUCHER_USED_AS_CASH"
+      evidence_files: ["voucher_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "voucher_expired_use_reject"
+      family: "voucher"
+      action: "redeem_after_expiry"
+      policy_label: "voucher_non_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      expected_verdict: "rejected:OBJECT_EXPIRED_VOUCHER_USE"
+      evidence_files: ["voucher_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "right_missing_for_voucher_action"
+      family: "cross_object"
+      action: "redeem_without_right"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      required_rights: ["service_entitlement"]
+      expected_verdict: "rejected:OBJECT_MISSING_RIGHT"
+      evidence_files: ["voucher_flow.json", "right_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "right_expired_for_voucher_action"
+      family: "cross_object"
+      action: "redeem_with_expired_right"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      required_rights: ["service_entitlement"]
+      expected_verdict: "rejected:OBJECT_RIGHT_EXPIRED"
+      evidence_files: ["voucher_flow.json", "right_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "right_revoked_for_voucher_action"
+      family: "cross_object"
+      action: "redeem_with_revoked_right"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      required_rights: ["service_entitlement"]
+      expected_verdict: "rejected:OBJECT_RIGHT_REVOKED"
+      evidence_files: ["voucher_flow.json", "right_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "right_replay_reject"
+      family: "right"
+      action: "consume_replay"
+      policy_label: "right_one_time_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      expected_verdict: "rejected:OBJECT_REPLAY"
+      evidence_files: ["right_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "validator_lock_unlock_without_right_delta_reject"
+      family: "asset"
+      action: "unlock_without_right_delta"
+      policy_label: "validator_lock_policy_v1"
+      lane: "stage11_apply"
+      actors: ["alice"]
+      required_rights: ["validator_mandate"]
+      expected_verdict: "rejected:OBJECT_MISSING_RIGHT"
+      evidence_files: ["asset_flow.json", "right_flow.json", "proof_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "validator_lock_unlock_replay_reject"
+      family: "asset"
+      action: "unlock_without_replay_nonce"
+      policy_label: "validator_lock_policy_v1"
+      lane: "stage11_apply"
+      actors: ["alice"]
+      required_rights: ["validator_mandate"]
+      expected_verdict: "rejected:OBJECT_REPLAY"
+      evidence_files: ["asset_flow.json", "right_flow.json", "proof_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "right_as_value_reject"
+      family: "right"
+      action: "spend_as_value"
+      policy_label: "right_delegate_policy_v1"
+      lane: "stage11_apply"
+      actors: ["bob"]
+      expected_verdict: "rejected:OBJECT_RIGHT_USED_AS_VALUE"
+      evidence_files: ["right_flow.json", "val_flow.json", "watch_flow.json", "sim_summary.md"]
+    - id: "wrong_family_proof_reject"
+      family: "cross_object"
+      action: "mismatched_leaf_family"
+      policy_label: "voucher_transferable_policy_v1"
+      lane: "stage13_hjmt"
+      actors: ["alice", "bob"]
+      expected_verdict: "rejected:OBJECT_WRONG_FAMILY_PROOF"
+      evidence_files: ["voucher_flow.json", "proof_flow.json", "val_flow.json", "hjmt/hjmt_tamper_report.json", "sim_summary.md"]
