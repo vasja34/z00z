@@ -188,6 +188,12 @@ This roadmap tracks the active GSD milestone and its executable phases.
   wallet-chain claim binding, explicit request or receiver-card hash-policy
   proofs, and a green broad `cargo test --release`; no active Phase 065 lane
   remains)
+- [ ] **Phase 066: Local Pentest Orchestration** (added 2026-07-02;
+  directory pre-existing `.planning/phases/066-Strix/`; reuse the existing
+  folder only; `066-TODO.md` is the normative human-readable authority for
+  registration and future planning; no numbered execution packet exists yet;
+  Phase 066 is registered in roadmap and state without creating a duplicate
+  directory)
 
 ### Phase 015: JMT Serialization And Visualization
 
@@ -2531,3 +2537,44 @@ no active lane remains.
 5. The additive verification-remediation packet `065-10` through `065-13`
    closes every still-live residual from verification reports `1-4` through
    one canonical Phase 065 path, without recreating a second authority layer.
+
+## Phase 066: Local Pentest Orchestration
+
+**Goal:** Register the existing `.planning/phases/066-Strix/` folder as the
+canonical Phase 066 planning root for local pentest orchestration, keeping one
+repository-local authority path for the future Strix-inspired skill, script,
+agent, prompt, and tooling work without creating a duplicate phase directory.
+**Requirements**: `066-TODO.md` remains the normative human-readable Phase 066
+authority and defines the live requirements envelope for local-only pentest
+orchestration, safety boundaries, tooling placement, report paths, and
+portable Docker flow constraints until numbered plan packets are created in
+the same folder.
+**Depends on:** Phase 065 closeout; Phase 046 remains paused separately and is
+not advanced by Phase 066 registration.
+**Plans:** 0 numbered plan packets yet. Run `/gsd-plan-phase 066` against the
+existing folder only.
+
+**Status**: Added 2026-07-02 on the existing `.planning/phases/066-Strix/`
+directory only. No new phase folder was created. `066-TODO.md` is now the
+normative human-readable Phase 066 authority for registration and planning,
+and no active numbered execution lane exists yet.
+**Added**: 2026-07-02
+**Directory**: `.planning/phases/066-Strix/`
+(pre-existing; do not create a duplicate phase folder)
+
+**Canonical refs:**
+
+- `.planning/phases/066-Strix/066-TODO.md`
+
+**Success Criteria**:
+
+1. Phase 066 is discoverable in the active milestone without creating a
+   second `066` directory.
+
+2. The existing `.planning/phases/066-Strix/` folder remains the only
+   canonical phase root, and Phase 066 registration does not create a
+   duplicate folder or a parallel authority layer.
+
+3. `066-TODO.md` remains the sole canonical human-readable Phase 066
+   authority until numbered plan packets are created in the same folder
+   through the normal GSD planning flow.

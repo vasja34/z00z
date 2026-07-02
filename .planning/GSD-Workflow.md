@@ -6,9 +6,9 @@
 
 ## ^H Find-Replace
 
-065-Attack-Surface
+066-Strix
 
-065
+066
 
 ---
 
@@ -21,59 +21,59 @@
 ## 🟥 1. gsd-add-phase
 
 ```
-/gsd-add-phase `065-Attack-Surface`
+/gsd-add-phase `066-Strix`
 etot folder uzhe suwestvuet; novij ne sozdavat; rabotat s nim
-регистрирую egoкак Phase 065 в ROADMAP и STATE, без создания нового каталога.
+регистрирую egoкак Phase 066 в ROADMAP и STATE, без создания нового каталога.
 ```
 
 ## 🟥 2. gsd-discuss-phase
 
 ```
-/gsd-discuss-phase 065
+/gsd-discuss-phase 066
 Goal:
 -----
-Understand the problems and issues described in 065-TODO.md and provide comprehensive answers and solutions.
+Understand the problems and issues described in 066-TODO.md and provide comprehensive answers and solutions.
 ----
-065-TODO.md is the canonical planning inventory for Phase 065.
-The planner must cover all canonical Phase 065 tasks.
+066-TODO.md is the canonical planning inventory for Phase 066.
+The planner must cover all canonical Phase 066 tasks.
 Planning must proceed sequentially, one canonical task after another.
 
-065-TODO.md describes the specific tasks that must be scheduled for execution. You are forbidden from changing the task titles or their wording. Create a simple 065-CONTEXT.md describing this situation.
+066-TODO.md describes the specific tasks that must be scheduled for execution. You are forbidden from changing the task titles or their wording. Create a simple 066-CONTEXT.md describing this situation.
 
 MANDATORY: Do not duplicate the existing codebase or its logic. Do not introduce a parallel layer. Prevent codebase concept drift.
 
-During the planning phase, you will need to schedule the specific execution of these 065-TODO.md tasks, one after the another.
+During the planning phase, you will need to schedule the specific execution of these 066-TODO.md tasks, one after the another.
 
 None of the tasks in the table can be excluded. Only in extreme cases where it is impossible to bypass a principle blocker will it be necessary to record this in the final report.
 ```
 
 ```
-/gsd-ai-integration-phase 065
+/gsd-ai-integration-phase 066
 ```
 
 ## 🟥 3. gsd-research-phase <mark>NOT IN USE</mark>
 
 ```
-/gsd-research-phase 065
-goal: ponjat problemi i voprosi opisannie v 065-TODO.md i dat' na nih polnocennij otvet i  reshenija
+/gsd-research-phase 066
+goal: ponjat problemi i voprosi opisannie v 066-TODO.md i dat' na nih polnocennij otvet i  reshenija
 ```
 
 ## 🟥 4. GSD-Review-Context <mark>x3 times</mark>
 
 ```
 /GSD-Review-Context
-current_context = 065-CONTEXT.md + 065-TODO.md
+current_context = 066-CONTEXT.md + 066-TODO.md
 review_goal = 
 -----
-Verify that everything mentioned in 065-TODO.md has been transferred to the context for implementing 065-CONTEXT.md.
+Verify that everything mentioned in 066-TODO.md has been transferred to the context for implementing 066-CONTEXT.md.
 -----
-Create a table in the 065-CONTEXT.md file confirming the transfer of each task from the 065-TODO.md that needs to be completed/checked/confirmed, etc.
+Create a table in the 066-CONTEXT.md file confirming the transfer of each task from the 066-TODO.md that needs to be completed/checked/confirmed, etc.
 
-Verify that all suggestions and issues of 065-TODO.md are included in context and in 065-CONTEXT.md. I need to verify everything 100% before implementation
+Verify that all suggestions and issues of 066-TODO.md are included in context and in 066-CONTEXT.md. I need to verify everything 100% before implementation
 
 MANDATORY: Do not duplicate the existing codebase or its logic. Do not introduce a parallel layer. Prevent codebase concept drift.
 
-Run the second `doublecheck` against 065-TODO.md to confirm that all issues are in 065-CONTEXT.md.
+Run the second `doublecheck` against 066-TODO.md to confirm that all issues are in 066-CONTEXT.md.
 ```
 
 ---------------------
@@ -81,12 +81,12 @@ Run the second `doublecheck` against 065-TODO.md to confirm that all issues are 
 ## 🟨 5. gsd-plan-phase
 
 ```markdown
-/gsd-plan-phase 065
+/gsd-plan-phase 066
 --skip-research
---prd 065-TODO.md, 065-CONTEXT.md
+--prd 066-TODO.md, 066-CONTEXT.md
 --text """
 
-Create a complete plan based on deep analysis 065-TODO.md i vseh ukazannih v nem dokumentov
+Create a complete plan based on deep analysis 066-TODO.md i vseh ukazannih v nem dokumentov
 
 In each <verify> section of every <task type=\"auto\">, run validation in this order for Rust/test-affecting changes:
 
@@ -105,28 +105,28 @@ In each <verify> section of every <task type=\"auto\">, run validation in this o
 ```
 
 ```markdown
-/gsd-plan-phase 065
+/gsd-plan-phase 066
 --skip-research
---prd 065-TODO.md
+--prd 066-TODO.md
 --text """
-Create complete executable GSD plans for Phase 065.
+Create complete executable GSD plans for Phase 066.
 
 MUST read first:
-1. 065-TODO.md
-2. 065-CONTEXT.md if it exists
-3. Every Markdown source linked from 065-TODO.md task rows.
-4. Relevant current code anchors listed in 065-TODO.md.
+1. 066-TODO.md
+2. 066-CONTEXT.md if it exists
+3. Every Markdown source linked from 066-TODO.md task rows.
+4. Relevant current code anchors listed in 066-TODO.md.
 
-MUST treat 065-TODO.md as normative, not advisory.
+MUST treat 066-TODO.md as normative, not advisory.
 MUST NOT drop, merge away, rename, renumber, or silently reinterpret any TASK-NNN.
 MUST NOT create future/deferred/best-effort work for local correctness.
 MUST close every local blocker by code/tests or by local deterministic simulation using real project primitives.
 
 Before writing plans, perform a coverage audit:
-- Count unique TASK-NNN from 065-TODO.md: 
+- Count unique TASK-NNN from 066-TODO.md: 
 - Count Required GSD Plan Groups: 
 - Build a task-to-plan coverage table.
-- Every TASK-NNN MUST map to exactly one grouped 065-NN-PLAN, unless explicitly split into 065-NN-PLAN fallback.
+- Every TASK-NNN MUST map to exactly one grouped 066-NN-PLAN, unless explicitly split into 066-NN-PLAN fallback.
 - Every plan MUST include every source ref from each included task row.
 - Any missing/duplicate task MUST fail planning.
 
@@ -207,15 +207,15 @@ Planning MUST fail if any TASK-NNN lacks inputs, outputs, artifacts, tests, resu
 
 ```
 /GSD-Review-Plan
-current_plan = {065-*-PLAN.md}, where `*-PLAN.md` - is a naming pattern
-review_goal = I need a 100% guarantee that every bullet from 065-TODO.md i references docs corpus is reflected in 065-CONTEXT.md and in 065-{01..N}-PLAN.md
+current_plan = {066-*-PLAN.md}, where `*-PLAN.md` - is a naming pattern
+review_goal = I need a 100% guarantee that every bullet from 066-TODO.md i references docs corpus is reflected in 066-CONTEXT.md and in 066-{01..N}-PLAN.md
 If there are issues that need to be corrected or supplemented, do it in YOLO mode
 
-Verify that all suggestions and issues of 065-TODO.md are included in context and in the plan. I need to verify everything 100% before implementation
+Verify that all suggestions and issues of 066-TODO.md are included in context and in the plan. I need to verify everything 100% before implementation
 
 MANDATORY: Do not duplicate the existing codebase or its logic. Do not introduce a parallel layer. Prevent codebase concept drift
 
-Run the second `doublecheck` against 065-TODO.md to confirm that all issues are in plans.
+Run the second `doublecheck` against 066-TODO.md to confirm that all issues are in plans.
 ```
 
 ---
@@ -223,10 +223,10 @@ Run the second `doublecheck` against 065-TODO.md to confirm that all issues are 
 ## 🟦 7.1 gsd-add-tests ==x3 times==
 
 ```
-/gsd-add-tests  065
-goal = based on files 065-Attack-Surface
+/gsd-add-tests  066
+goal = based on files 066-Strix
 define smart, complete, end-to-end integration tests and realistic examples that prove what the workflow does, how it behaves, which invariants it must preserve, and which failures it must reject.
-подготовить phase-local E2E/unit test specification document для 065 на основе 065-CONTEXT.md, 065-TODO.md и всех 065-*-PLAN.md как planning artifact.
+подготовить phase-local E2E/unit test specification document для 066 на основе 066-CONTEXT.md, 066-TODO.md и всех 066-*-PLAN.md как planning artifact.
 The result must be directly usable by another engineer or agent to implement E2E coverage without guessing scenario boundaries, success criteria, or test anchors. Derive the critical user journeys, state transitions, proof paths, and failure paths that must be verified end to end.
 
 The specification must explicitly address all of the following when relevant:
@@ -243,7 +243,7 @@ The specification must explicitly address all of the following when relevant:
 ## 🟦 7.2 create-tests ==x3 times==
 
 ```
-/create-tests 065
+/create-tests 066
 ```
 
 ---
@@ -252,13 +252,13 @@ The specification must explicitly address all of the following when relevant:
 
 ```
 /GSD-Review-Plan
-current_plan = {065-*-PLAN.md}, where `*-PLAN.md` - is a naming pattern + 065-TEST-SPEC.md + 065-TESTS-TASKS.md
-review_goal = I need a 100% guarantee that every bullet from 065-TODO.md is reflected in 065-CONTEXT.md and in 065-{01..N}-PLAN.md
+current_plan = {066-*-PLAN.md}, where `*-PLAN.md` - is a naming pattern + 066-TEST-SPEC.md + 066-TESTS-TASKS.md
+review_goal = I need a 100% guarantee that every bullet from 066-TODO.md is reflected in 066-CONTEXT.md and in 066-{01..N}-PLAN.md
 If there are issues that need to be corrected or supplemented, do it in YOLO mode
 
-Verify that all suggestions and issues of 065-TODO.md are included in context and in the plan. I need to verify everything 100% before implementation
+Verify that all suggestions and issues of 066-TODO.md are included in context and in the plan. I need to verify everything 100% before implementation
 
-Run the second `doublecheck` against 065-TODO.md to confirm that all issues are in plans.
+Run the second `doublecheck` against 066-TODO.md to confirm that all issues are in plans.
 ```
 
 ---------------------
@@ -266,11 +266,11 @@ Run the second `doublecheck` against 065-TODO.md to confirm that all issues are 
 ## 🟩 9. gsd-executor PLAN
 
 ```markdown
-/gsd-execute-phase 065 continue
+/gsd-execute-phase 066 continue
 
 Update STATE #sym:Status and ROADMAP
 
-все такие future-only design terms становятся live scope и referenced docs как phase authority. I continue to use design/whitepapers as a source of requirements, not as a "to-be-in-the-future" status. 065-TODO.md explicitly states target/future design statement is now a mandatory scope of the live code.
+все такие future-only design terms становятся live scope и referenced docs как phase authority. I continue to use design/whitepapers as a source of requirements, not as a "to-be-in-the-future" status. 066-TODO.md explicitly states target/future design statement is now a mandatory scope of the live code.
 
 Make sure there are no missing or missing strings, so there will be one canonical path
 for all module structures and functions
@@ -294,8 +294,8 @@ MUST pay special attention to following instructions:
 ## 🟩 10. gsd-executor  TESTS
 
 ```markdown
-/gsd-execute-phase 065
-implement 065-TEST-SPEC.md and 065-TESTS-TASKS.md
+/gsd-execute-phase 066
+implement 066-TEST-SPEC.md and 066-TESTS-TASKS.md
 
 MUST pay special attention to following instructions:
 1. Run `./.github/skills/smart-tests-bootstrap/scripts/bootstrap_tests.sh` first as a mandatory fail-fast gate.
@@ -316,26 +316,26 @@ MUST pay special attention to following instructions:
 ## 🟪 11. GSD-Finalization
 
 ```
-/gsd-secure-phase 065
+/gsd-secure-phase 066
 ```
 
 ```
-/gsd-validate-phase 065
+/gsd-validate-phase 066
 ```
 
 ```
-/gsd-verify-work 065
+/gsd-verify-work 066
 ```
 
 ```
-/gsd-eval-review 065
+/gsd-eval-review 066
 ```
 
 ## 🟪 13. GSD-Review-Tasks-Execution ==x3 times== PLAN
 
 ```
 /GSD-Review-Tasks-Execution 
-current_spec = {065-*-PLAN.md}
+current_spec = {066-*-PLAN.md}
 current_task = `*-PLAN.md` - is a naming pattern
 ```
 
@@ -343,8 +343,8 @@ current_task = `*-PLAN.md` - is a naming pattern
 
 ```m
 /GSD-Review-Tasks-Execution 
-current_spec = 065-TEST-SPEC.md + 065-TESTS-TASKS.md
-current_task = `*-PLAN.md` - is a naming pattern + 065-TEST-SPEC.md + 065-TESTS-TASKS.md
+current_spec = 066-TEST-SPEC.md + 066-TESTS-TASKS.md
+current_task = `*-PLAN.md` - is a naming pattern + 066-TEST-SPEC.md + 066-TESTS-TASKS.md
 ```
 
 ---------------------
@@ -353,7 +353,7 @@ current_task = `*-PLAN.md` - is a naming pattern + 065-TEST-SPEC.md + 065-TESTS-
 
 ```
 /doublecheck
-Verify that ALL task plans in 065-TODO.md are fully implemented. Check the code independently of the summaries and give your conclusion.
+Verify that ALL task plans in 066-TODO.md are fully implemented. Check the code independently of the summaries and give your conclusion.
 1. Quality of implementation
 2. Correctness of implementation
 3. Check for logical errors and incomplete implementation features
@@ -368,7 +368,7 @@ Fix all in YOLO mode
 
 ```markdown
 /GSD-Audit-4 
-phase_dir = 065-Attack-Surface
+phase_dir = 066-Strix
 ```
 
 ---
@@ -377,7 +377,7 @@ phase_dir = 065-Attack-Surface
 
 ```markdown
 /alert-concept-drift current codebase vs git branch `main` feat(v2.175.0)
-create 065-CONCEPT-DRIFT-REPORT.md
+create 066-CONCEPT-DRIFT-REPORT.md
 ```
 
 ---
@@ -386,14 +386,14 @@ create 065-CONCEPT-DRIFT-REPORT.md
 
 ```markdown
 /phase-exam-create
-phase_dir = 065-Attack-Surface-spec
+phase_dir = 066-Strix-spec
 ```
 
 ## ✔️ 19. phase-exam-solve
 
 ```markdown
 /phase-exam-solve
-phase_dir = 065-Attack-Surface-spec
+phase_dir = 066-Strix-spec
 ```
 
 ---
@@ -413,9 +413,9 @@ phase_dir = 065-Attack-Surface-spec
 
 ```markdown
 /attack-surfaces-create
-scope = 065-TODO.md
-report_path = 065-attack-surface-report.md
-db_path = 065-attack-surface-db.jsonl
+scope = 066-TODO.md
+report_path = 066-Strix-report.md
+db_path = 066-Strix-db.jsonl
 max_variants = 20
 ```
 
@@ -423,9 +423,9 @@ max_variants = 20
 
 ```markdown
 /attack-surfaces-resolve
-db_path = 065-attack-surface-db.jsonl
+db_path = 066-Strix-db.jsonl
 surface_id = [id1,id2,...]
-out_spec = 065-attack-surface-report.md
+out_spec = 066-Strix-report.md
 ```
 
 
@@ -468,7 +468,7 @@ Don't just compare, achieve this state.
 ## 🔷 crypto-architect
 
 ```
-/crypto-architect sozdaj glubokij otchet `.planning/phases/065-Attack-Surface/storage-audit-sonet46.md` konkretno po crate `z00z_wallets/` izuchi tolko *.rs implementaciju i ne trogaj drugie dokumenti (ne vkluchaj tari/ vendor)
+/crypto-architect sozdaj glubokij otchet `.planning/phases/066-Strix/storage-audit-sonet46.md` konkretno po crate `z00z_wallets/` izuchi tolko *.rs implementaciju i ne trogaj drugie dokumenti (ne vkluchaj tari/ vendor)
 ```
 
 -------------------------
@@ -476,7 +476,7 @@ Don't just compare, achieve this state.
 ## 🔷 smart-docs-fusion
 
 ```
-/smart-docs-fusion [ ] --> .planning/phases/065-Attack-Surface/FUSION.md
+/smart-docs-fusion [ ] --> .planning/phases/066-Strix/FUSION.md
 ```
 
 
