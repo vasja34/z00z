@@ -2,8 +2,8 @@ mod test_common;
 
 use serde::{Deserialize, Serialize};
 use z00z_aggregators::{
-    AggregatorId, PlanDigest, RejectClass, RouteErr, ShardExecState, ShardExecutor, ShardPlacement,
-    ShardPlacementTable, ShardRouteTable, StandbyState,
+    AggregatorId, PlanDigest, RejectClass, RouteErr, SecondaryState, ShardExecState, ShardExecutor,
+    ShardPlacement, ShardPlacementTable, ShardRouteTable,
 };
 use z00z_utils::codec::{Codec, JsonCodec};
 
@@ -14,8 +14,8 @@ use self::test_common::{
 const MANIFEST_JSON: &str = include_str!(
     "../../../z00z_storage/tests/fixtures/hjmt_upgrade/shard_route_table_v1/manifest.json"
 );
-const REGEN_CMD: &str = "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture";
-const EVIDENCE_PTR: &str = "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract";
+const REGEN_CMD: &str = "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture";
+const EVIDENCE_PTR: &str = "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct RouteManifest {
@@ -59,7 +59,12 @@ fn test_route_manifest_matches_contract() {
     let expected: RouteManifest = JsonCodec
         .deserialize(MANIFEST_JSON.as_bytes())
         .expect("manifest json");
-    assert_eq!(expected, live_manifest());
+    let live = live_manifest();
+    if std::env::var_os("Z00Z_REGEN_DUMP").is_some() {
+        let json = JsonCodec.serialize_pretty(&live).expect("manifest json");
+        println!("{}", String::from_utf8(json).expect("manifest utf8"));
+    }
+    assert_eq!(expected, live);
 }
 
 #[test]
@@ -153,7 +158,7 @@ fn test_rejects_route_generation() {
     matching.insert(ShardPlacement::new(
         planned.route,
         AggregatorId::new(7),
-        vec![StandbyState::ready(AggregatorId::new(8))],
+        vec![SecondaryState::ready(AggregatorId::new(8))],
         [0x51; 32],
     ));
     let ticket = ShardExecutor::new(matching)
@@ -168,22 +173,13 @@ fn test_rejects_route_generation() {
             routing_generation: planned.route.routing_generation + 1,
         },
         AggregatorId::new(7),
-        vec![StandbyState::ready(AggregatorId::new(8))],
+        vec![SecondaryState::ready(AggregatorId::new(8))],
         [0x61; 32],
     ));
     let err = ShardExecutor::new(drifted)
         .route(&planned)
         .expect_err("wrong generation must reject");
     assert_eq!(err.class, RejectClass::PolicyReject);
-}
-
-#[test]
-#[ignore]
-fn print_route_manifest_json() {
-    let json = JsonCodec
-        .serialize_pretty(&live_manifest())
-        .expect("manifest json");
-    println!("{}", String::from_utf8(json).expect("manifest utf8"));
 }
 
 fn live_manifest() -> RouteManifest {

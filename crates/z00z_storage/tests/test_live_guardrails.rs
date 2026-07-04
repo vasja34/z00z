@@ -1,6 +1,5 @@
 use std::sync::{Mutex, OnceLock};
 
-use z00z_storage::backend::{JournalBackend, ReadTxn, StorageBackend, WriteTxn};
 use z00z_storage::settlement::{
     AdaptiveBucket, BucketEpoch, BucketOccupancyEvidence, BucketOccupancyMetric, DefinitionId,
     FeeEnvelope, MergeProof, PolicyTransitionProof, RightClass, RightLeaf, RootGeneration,
@@ -34,7 +33,7 @@ const README_DOC: &str = include_str!("../src/settlement/README.md");
 const BENCHMARKS_DOC: &str = include_str!("../../../docs/tech-papers/benchmarks.md");
 const DESIGN_DOC: &str = include_str!("../../../docs/tech-papers/done/Z00Z-HJMT-Design.md");
 const PHASE0_SOURCE_DOC: &str =
-    include_str!("../../../.planning/phases/100-Wallet-Extensions/storage-explain.md");
+    include_str!("../../../.planning/phases/085-Wallet-Extensions/storage-explain.md");
 const PHASE_SOURCE_DOC: &str = include_str!("../../../.planning/phases/Z00Z-IMPL-PHASES.md");
 const PHASE_EXEC_TODO: &str =
     include_str!("../../../.planning/phases/000/062-Gaps-Closing-2/062-TODO.md");
@@ -140,95 +139,6 @@ fn set_env_var(key: &'static str, value: String) -> EnvVarReset {
     let prior = std::env::var(key).ok();
     std::env::set_var(key, value);
     EnvVarReset { key, prior }
-}
-
-#[test]
-fn test_backend_contract_traits_compile() {
-    struct TestRead;
-
-    impl ReadTxn for TestRead {
-        type Error = &'static str;
-
-        fn get(&self, _table: &'static str, _key: &[u8]) -> Result<Option<Vec<u8>>, Self::Error> {
-            Ok(None)
-        }
-
-        fn scan(&self, _table: &'static str) -> Result<Vec<(Vec<u8>, Vec<u8>)>, Self::Error> {
-            Ok(Vec::new())
-        }
-    }
-
-    struct TestWrite;
-
-    impl ReadTxn for TestWrite {
-        type Error = &'static str;
-
-        fn get(&self, _table: &'static str, _key: &[u8]) -> Result<Option<Vec<u8>>, Self::Error> {
-            Ok(None)
-        }
-
-        fn scan(&self, _table: &'static str) -> Result<Vec<(Vec<u8>, Vec<u8>)>, Self::Error> {
-            Ok(Vec::new())
-        }
-    }
-
-    impl WriteTxn for TestWrite {
-        fn put(
-            &mut self,
-            _table: &'static str,
-            _key: &[u8],
-            _value: &[u8],
-        ) -> Result<(), Self::Error> {
-            Ok(())
-        }
-
-        fn delete(&mut self, _table: &'static str, _key: &[u8]) -> Result<(), Self::Error> {
-            Ok(())
-        }
-
-        fn commit(&mut self) -> Result<(), Self::Error> {
-            Ok(())
-        }
-    }
-
-    struct TestStore;
-
-    impl StorageBackend for TestStore {
-        type Error = &'static str;
-        type Reader = TestRead;
-        type Writer = TestWrite;
-
-        fn read_txn(&self) -> Result<Self::Reader, Self::Error> {
-            Ok(TestRead)
-        }
-
-        fn write_txn(&self) -> Result<Self::Writer, Self::Error> {
-            Ok(TestWrite)
-        }
-    }
-
-    struct TestJournal;
-
-    impl JournalBackend for TestJournal {
-        type Error = &'static str;
-
-        fn recover_journal(&self) -> Result<(), Self::Error> {
-            Ok(())
-        }
-    }
-
-    let store = TestStore;
-    let read = store.read_txn().expect("reader");
-    let _ = read.get("meta", b"root").expect("read row");
-    let _ = read.scan("meta").expect("scan rows");
-
-    let mut write = store.write_txn().expect("writer");
-    write.put("meta", b"root", b"value").expect("put row");
-    write.delete("meta", b"root").expect("delete row");
-    write.commit().expect("commit row");
-
-    let journal = TestJournal;
-    journal.recover_journal().expect("recover journal");
 }
 
 #[test]

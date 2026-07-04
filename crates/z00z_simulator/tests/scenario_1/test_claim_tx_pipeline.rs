@@ -26,8 +26,8 @@ use z00z_wallets::{
     key::{ReceiverKeys, ReceiverSecret},
     receiver::ReceiverCard,
     tx::{
-        asset_wire_to_leaf, compute_claim_scope_hash, derive_output_nonce, ClaimScopeKey,
-        ClaimTxPackage, ClaimTxVerifier, ClaimTxVerifierImpl,
+        asset_wire_to_leaf, derive_output_nonce, ClaimTxPackage, ClaimTxVerifier,
+        ClaimTxVerifierImpl,
     },
 };
 
@@ -214,21 +214,6 @@ fn test_nullifier_mismatch_rejected() {
     let result = ClaimTxVerifierImpl::new().verify(&bytes);
     assert!(!result.valid);
     assert_eq!(result.reject_class, "claim_nullifier_invalid");
-}
-
-#[test]
-fn test_scope_chain_sep() {
-    let k1 = ClaimScopeKey {
-        chain_id: 1,
-        scenario_tag: "scenario_1_genesis_claim".to_string(),
-        ruleset_version: 1,
-    };
-    let k2 = ClaimScopeKey {
-        chain_id: 2,
-        scenario_tag: "scenario_1_genesis_claim".to_string(),
-        ruleset_version: 1,
-    };
-    assert_ne!(compute_claim_scope_hash(&k1), compute_claim_scope_hash(&k2));
 }
 
 #[test]

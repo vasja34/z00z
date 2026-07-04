@@ -7,8 +7,8 @@ use tempfile::tempdir;
 
 use z00z_aggregators::{
     AggregatorId, BatchId, BatchRoute, PlanDigest, RecoveryBoundary, RejectClass, RouteRangeRule,
-    ShardExecState, ShardExecTicket, ShardId, ShardPlacement, ShardPlacementTable,
-    ShardRecoveryRecord, ShardRouteTable, StandbyState,
+    SecondaryState, ShardExecState, ShardExecTicket, ShardId, ShardPlacement, ShardPlacementTable,
+    ShardRecoveryRecord, ShardRouteTable,
 };
 use z00z_core::assets::{AssetLeaf, AssetPackPlain};
 use z00z_crypto::ZkPackEncrypted;
@@ -22,9 +22,9 @@ use z00z_storage::{
     },
 };
 
-const REGEN_CMD: &str = "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_failover_same_lineage print_failover_manifest_json -- --ignored --nocapture";
-const TEST_CMD: &str = "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_failover_same_lineage test_failover_manifest_matches_live_contract -- --nocapture";
-const EVIDENCE_PTR: &str = "crates/z00z_runtime/aggregators/tests/test_hjmt_failover_same_lineage.rs::test_failover_manifest_matches_live_contract";
+const REGEN_CMD: &str = "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_failover_same_lineage test_manifest_matches_contract -- --exact --nocapture";
+const TEST_CMD: &str = "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_failover_same_lineage test_manifest_matches_contract -- --exact --nocapture";
+const EVIDENCE_PTR: &str = "crates/z00z_runtime/aggregators/tests/test_hjmt_failover_same_lineage.rs::test_manifest_matches_contract";
 const STORAGE_INJ_STAGE_ENV: &str = "Z00Z_STORAGE_HJMT_INJ_STAGE";
 
 fn storage_injection_lock() -> &'static Mutex<()> {
@@ -53,7 +53,7 @@ pub struct FailoverCase {
     pub routing_generation: u64,
     pub requester_aggregator_id: u16,
     pub primary_aggregator_id: u16,
-    pub standby_ids: Vec<u16>,
+    pub secondary_ids: Vec<u16>,
     pub journal_lineage_hex: String,
     pub state_root_hex: String,
     pub root_generation: u8,
@@ -99,14 +99,14 @@ pub fn route(shard_id: u16, routing_generation: u64) -> BatchRoute {
 pub fn placement_table(
     route: BatchRoute,
     primary: AggregatorId,
-    standby: Vec<StandbyState>,
+    secondary: Vec<SecondaryState>,
     journal_lineage: [u8; 32],
 ) -> ShardPlacementTable {
     let mut table = ShardPlacementTable::default();
     table.insert(ShardPlacement::new(
         route,
         primary,
-        standby,
+        secondary,
         journal_lineage,
     ));
     table
@@ -116,10 +116,10 @@ pub fn recovery_record(
     label: &str,
     route: BatchRoute,
     primary: AggregatorId,
-    standby: Vec<StandbyState>,
+    secondary: Vec<SecondaryState>,
     recovery: SettlementRecoveryState,
 ) -> ShardRecoveryRecord {
-    let placement = ShardPlacement::new(route, primary, standby, recovery.journal_lineage);
+    let placement = ShardPlacement::new(route, primary, secondary, recovery.journal_lineage);
     let ticket = ShardExecTicket {
         batch_id: batch_id(label),
         placement: placement.view(),
@@ -449,7 +449,7 @@ pub fn route_migration_publication_case(
     let old_route = route(5, 12);
     let new_route = route(5, 13);
     let primary = AggregatorId::new(21);
-    let standby = StandbyState::ready(AggregatorId::new(22));
+    let secondary = SecondaryState::ready(AggregatorId::new(22));
     let old_table = publication_route_table(12, 50, None);
     let new_table = publication_route_table(13, 61, Some(old_table.digest()));
     let old_digest = old_table.digest().into_bytes();
@@ -464,10 +464,15 @@ pub fn route_migration_publication_case(
         "route-migration-drift",
         old_route,
         primary,
-        vec![standby],
+        vec![secondary],
         recovery.clone(),
     );
-    let live_table = placement_table(new_route, primary, vec![standby], recovery.journal_lineage);
+    let live_table = placement_table(
+        new_route,
+        primary,
+        vec![secondary],
+        recovery.journal_lineage,
+    );
     let prior = publication(
         50,
         old_digest,
@@ -499,12 +504,12 @@ pub fn route_migration_publication_case(
 pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::Error>> {
     let accept_route = route(3, 9);
     let accept_primary = AggregatorId::new(7);
-    let accept_standby = StandbyState::ready(AggregatorId::new(8));
+    let accept_secondary = SecondaryState::ready(AggregatorId::new(8));
 
     let reject_route = route(5, 12);
     let reject_primary = AggregatorId::new(21);
-    let reject_standby = StandbyState::ready(AggregatorId::new(22));
-    let reject_requester = reject_standby.aggregator_id;
+    let reject_secondary = SecondaryState::ready(AggregatorId::new(22));
+    let reject_requester = reject_secondary.aggregator_id;
     let accept = route_bound_recovery_state(0x71, batch_id("FOV-001"), accept_route, [0x31; 32])?;
     let reject = route_bound_recovery_state(
         0x81,
@@ -531,8 +536,8 @@ pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::
                 None,
                 accept_route,
                 accept_primary,
-                accept_standby.aggregator_id,
-                vec![accept_standby.aggregator_id],
+                accept_secondary.aggregator_id,
+                vec![accept_secondary.aggregator_id],
                 &accept,
             ),
             manifest_case(
@@ -545,7 +550,7 @@ pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::
                 reject_route,
                 reject_primary,
                 reject_requester,
-                vec![reject_standby.aggregator_id],
+                vec![reject_secondary.aggregator_id],
                 &reject,
             ),
             manifest_case(
@@ -558,7 +563,7 @@ pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::
                 reject_route,
                 reject_primary,
                 reject_requester,
-                vec![reject_standby.aggregator_id],
+                vec![reject_secondary.aggregator_id],
                 &reject,
             ),
             manifest_case(
@@ -571,7 +576,7 @@ pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::
                 reject_route,
                 reject_primary,
                 reject_requester,
-                vec![reject_standby.aggregator_id],
+                vec![reject_secondary.aggregator_id],
                 &reject,
             ),
             manifest_case(
@@ -584,20 +589,20 @@ pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::
                 reject_route,
                 reject_primary,
                 reject_requester,
-                vec![reject_standby.aggregator_id],
+                vec![reject_secondary.aggregator_id],
                 &reject,
             ),
             manifest_case(
                 "FOV-T-002",
                 "Failover fixture",
-                "standby down",
+                "secondary aggregator down",
                 "recovery_reject",
                 Some(RejectClass::DeferredRetry),
-                Some("standby down"),
+                Some("secondary aggregator down"),
                 reject_route,
                 reject_primary,
                 reject_requester,
-                vec![reject_standby.aggregator_id],
+                vec![reject_secondary.aggregator_id],
                 &reject,
             ),
             manifest_case(
@@ -610,7 +615,7 @@ pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::
                 reject_route,
                 reject_primary,
                 reject_primary,
-                vec![reject_standby.aggregator_id],
+                vec![reject_secondary.aggregator_id],
                 &reject,
             ),
             manifest_case(
@@ -623,7 +628,7 @@ pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::
                 reject_route,
                 reject_primary,
                 reject_requester,
-                vec![reject_standby.aggregator_id],
+                vec![reject_secondary.aggregator_id],
                 &reject,
             ),
             manifest_case_with_publication(
@@ -635,8 +640,8 @@ pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::
                 None,
                 accept_route,
                 accept_primary,
-                accept_standby.aggregator_id,
-                vec![accept_standby.aggregator_id],
+                accept_secondary.aggregator_id,
+                vec![accept_secondary.aggregator_id],
                 &carry_forward.later_recovery,
                 vec![public_root_hex(&carry_forward.later)?],
                 Some(leaf_hex(&carry_forward.carried_forward_leaf)?),
@@ -650,8 +655,8 @@ pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::
                 None,
                 route(6, 14),
                 accept_primary,
-                accept_standby.aggregator_id,
-                vec![accept_standby.aggregator_id],
+                accept_secondary.aggregator_id,
+                vec![accept_secondary.aggregator_id],
                 &durable_commit.later_recovery,
                 vec![
                     public_root_hex(&durable_commit.prior)?,
@@ -669,7 +674,7 @@ pub fn live_failover_manifest() -> Result<FailoverManifest, Box<dyn std::error::
                 route(5, 12),
                 reject_primary,
                 reject_requester,
-                vec![reject_standby.aggregator_id],
+                vec![reject_secondary.aggregator_id],
                 &migration.recovery,
                 vec![public_root_hex(&migration.prior)?],
                 None,
@@ -688,7 +693,7 @@ fn manifest_case(
     route: BatchRoute,
     primary: AggregatorId,
     requester: AggregatorId,
-    standby_ids: Vec<AggregatorId>,
+    secondary_ids: Vec<AggregatorId>,
     recovery: &SettlementRecoveryState,
 ) -> FailoverCase {
     FailoverCase {
@@ -702,9 +707,9 @@ fn manifest_case(
         routing_generation: route.routing_generation,
         requester_aggregator_id: requester.as_u16(),
         primary_aggregator_id: primary.as_u16(),
-        standby_ids: standby_ids
+        secondary_ids: secondary_ids
             .into_iter()
-            .map(|standby| standby.as_u16())
+            .map(|secondary| secondary.as_u16())
             .collect(),
         journal_lineage_hex: hex::encode(recovery.journal_lineage),
         state_root_hex: hex::encode(recovery.state_root.into_bytes()),
@@ -724,7 +729,7 @@ fn manifest_case_with_publication(
     route: BatchRoute,
     primary: AggregatorId,
     requester: AggregatorId,
-    standby_ids: Vec<AggregatorId>,
+    secondary_ids: Vec<AggregatorId>,
     recovery: &SettlementRecoveryState,
     expected_public_root_hexes: Vec<String>,
     carried_forward_leaf_hex: Option<String>,
@@ -739,7 +744,7 @@ fn manifest_case_with_publication(
         route,
         primary,
         requester,
-        standby_ids,
+        secondary_ids,
         recovery,
     );
     case.expected_public_root_hexes = expected_public_root_hexes;

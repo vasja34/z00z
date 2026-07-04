@@ -1,4 +1,3 @@
-use blake3::Hasher;
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 #[cfg(feature = "test-params-fast")]
 use std::time::{Duration, Instant};
@@ -583,13 +582,12 @@ fn tx_state_from_r(
 }
 
 fn derive_seeded_output_rng(rng_bytes: [u8; 32], tx_digest: &[u8; 32], out_index: u32) -> StdRng {
-    let mut hasher = Hasher::new();
-    hasher.update(b"z00z.wallet.tx.output.range_proof_rng.v1");
-    hasher.update(&rng_bytes);
-    hasher.update(tx_digest);
-    hasher.update(&out_index.to_le_bytes());
+    let out_index_bytes = out_index.to_le_bytes();
     let mut seed = [0u8; 32];
-    seed.copy_from_slice(hasher.finalize().as_bytes());
+    seed.copy_from_slice(&z00z_crypto::blake2b_hash(
+        b"z00z.wallet.tx.output.range_proof_rng.v1",
+        &[&rng_bytes, tx_digest, &out_index_bytes],
+    ));
     StdRng::from_seed(seed)
 }
 

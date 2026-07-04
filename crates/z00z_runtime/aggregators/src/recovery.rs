@@ -16,7 +16,7 @@ pub struct RecoveryBoundary;
 #[serde(rename_all = "snake_case")]
 pub enum RecoveryIntent {
     RestartPrimary,
-    TakeoverStandby,
+    TakeoverSecondary,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -180,7 +180,7 @@ impl RecoveryBoundary {
                 }
                 live_placement.view()
             }
-            RecoveryIntent::TakeoverStandby => {
+            RecoveryIntent::TakeoverSecondary => {
                 if requester == live_placement.primary_id {
                     return Err(reject(
                         RejectClass::PolicyReject,
@@ -188,16 +188,16 @@ impl RecoveryBoundary {
                     ));
                 }
 
-                let Some(standby) = live_placement.standby(requester) else {
+                let Some(secondary) = live_placement.secondary(requester) else {
                     return Err(reject(
                         RejectClass::PolicyReject,
-                        "split-brain: takeover requester is not a lawful standby",
+                        "split-brain: takeover requester is not a lawful secondary aggregator",
                     ));
                 };
-                if !standby.is_ready {
+                if !secondary.is_ready {
                     return Err(reject(
                         RejectClass::DeferredRetry,
-                        "standby down: takeover requester is not ready",
+                        "secondary aggregator down: takeover requester is not ready",
                     ));
                 }
                 live_placement.view().activate(requester)

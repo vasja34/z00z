@@ -34,7 +34,7 @@ HEXSTRIKE_REFERENCE = (
     ROOT
     / ".github"
     / "skills"
-    / "pentest-tool-installer"
+    / "pentest-tools-installer"
     / "references"
     / "hexstrike"
     / "hexstrike_mcp_reference_only.py"
@@ -146,6 +146,35 @@ class ToolManifestTest(unittest.TestCase):
             self.assertEqual(tool_rows["semgrep"]["version"], "semgrep-fixture-broken")
             self.assertEqual(payload["summary"]["broken"], 1)
             self.assertGreater(payload["summary"]["missing_required"], 0)
+
+    def test_tree_sitter_without_configured_languages_is_reported_as_broken(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_root_name:
+            temp_root = Path(temp_root_name)
+            tools_root = temp_root / "tools" / "penetration"
+            make_executable(
+                tools_root / "cache" / "bin" / "tree-sitter",
+                (
+                    "#!/usr/bin/env sh\n"
+                    "if [ \"$1\" = \"--version\" ]; then\n"
+                    "  echo 'tree-sitter 0.26.10'\n"
+                    "  exit 0\n"
+                    "fi\n"
+                    "if [ \"$1\" = \"dump-languages\" ]; then\n"
+                    "  echo 'Warning: no parser directories configured' >&2\n"
+                    "  exit 0\n"
+                    "fi\n"
+                    "exit 1\n"
+                ),
+            )
+
+            process = self.run_checker(tools_root)
+            payload = json.loads(process.stdout)
+            tool_rows = {row["name"]: row for row in payload["tools"]}
+
+            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertEqual(tool_rows["tree-sitter"]["status"], "broken")
+            self.assertEqual(tool_rows["tree-sitter"]["source"], "local-payload")
+            self.assertEqual(payload["summary"]["broken"], 1)
 
     def test_missing_tools_are_recorded_and_strict_mode_fails(self) -> None:
         contract = load_contract()

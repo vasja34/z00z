@@ -42,9 +42,9 @@ fn test_remaining_owner_generation() {
     assert_eq!(primary_id(&old_cfg, 0, 1), AggregatorId::new(0));
     assert_eq!(new_row.primary_id, AggregatorId::new(1));
     assert!(new_row
-        .standby
+        .secondaries
         .iter()
-        .any(|standby| standby.aggregator_id == AggregatorId::new(0)));
+        .any(|secondary| secondary.aggregator_id == AggregatorId::new(0)));
     assert_eq!(old_table.activation_checkpoint, 11);
     assert_eq!(new_table.activation_checkpoint, 42);
 }
@@ -73,9 +73,9 @@ fn test_new_owner_generation() {
     assert_eq!(primary_id(&old_cfg, 0, 1), AggregatorId::new(0));
     assert_eq!(new_row.primary_id, AggregatorId::new(5));
     assert!(new_row
-        .standby
+        .secondaries
         .iter()
-        .any(|standby| standby.aggregator_id == AggregatorId::new(0)));
+        .any(|secondary| secondary.aggregator_id == AggregatorId::new(0)));
     assert_eq!(new_cfg.node_stat().expect("new stat").agg_count, 6);
 }
 
@@ -111,10 +111,10 @@ fn test_removes_owner_refs() {
         assert_ne!(new_row.primary_id, removed);
         assert!(
             old_row
-                .standby
+                .secondaries
                 .iter()
-                .any(|standby| standby.aggregator_id == new_row.primary_id),
-            "shard {shard_id} must transfer to a lawful prior standby"
+                .any(|secondary| secondary.aggregator_id == new_row.primary_id),
+            "shard {shard_id} must transfer to a lawful prior secondary"
         );
     }
 
@@ -125,10 +125,10 @@ fn test_removes_owner_refs() {
             "removed aggregator must not remain primary for shard {shard_id}"
         );
         assert!(
-            row.standby
+            row.secondaries
                 .iter()
-                .all(|standby| standby.aggregator_id != removed),
-            "removed aggregator must not remain standby for shard {shard_id}"
+                .all(|secondary| secondary.aggregator_id != removed),
+            "removed aggregator must not remain secondary for shard {shard_id}"
         );
     }
 
@@ -176,17 +176,17 @@ fn test_faildown_keeps_generation() {
         let row = placement_row(&mid_cfg, shard_id, 2);
         assert_ne!(row.primary_id, removed);
         assert!(row
-            .standby
+            .secondaries
             .iter()
-            .all(|standby| standby.aggregator_id != removed));
+            .all(|secondary| secondary.aggregator_id != removed));
     }
     for shard_id in shard_ids(&new_home) {
         let row = placement_row(&new_cfg, shard_id, 3);
         assert_ne!(row.primary_id, removed);
         assert!(row
-            .standby
+            .secondaries
             .iter()
-            .all(|standby| standby.aggregator_id != removed));
+            .all(|secondary| secondary.aggregator_id != removed));
     }
 
     assert_eq!(old_table.activation_checkpoint, 11);
@@ -209,13 +209,17 @@ fn test_rejects_route_migration() {
         "route-migration-drift",
         old_route,
         AggregatorId::new(0),
-        vec![z00z_aggregators::StandbyState::ready(AggregatorId::new(1))],
+        vec![z00z_aggregators::SecondaryState::ready(AggregatorId::new(
+            1,
+        ))],
         recovery.clone(),
     );
     let live_table = placement_table(
         new_route,
         AggregatorId::new(0),
-        vec![z00z_aggregators::StandbyState::ready(AggregatorId::new(1))],
+        vec![z00z_aggregators::SecondaryState::ready(AggregatorId::new(
+            1,
+        ))],
         recovery.journal_lineage,
     );
 
@@ -225,7 +229,7 @@ fn test_rejects_route_migration() {
             &live_table,
             &record,
             &recovery,
-            RecoveryIntent::TakeoverStandby,
+            RecoveryIntent::TakeoverSecondary,
         )
         .expect_err("route migration during crash must reject");
 
@@ -242,7 +246,7 @@ fn test_fov_g004_prior_root() -> Result<(), Box<dyn std::error::Error>> {
             &case.live_table,
             &case.record,
             &case.recovery,
-            RecoveryIntent::TakeoverStandby,
+            RecoveryIntent::TakeoverSecondary,
         )
         .expect_err("route migration during crash must reject before a new public root is visible");
 

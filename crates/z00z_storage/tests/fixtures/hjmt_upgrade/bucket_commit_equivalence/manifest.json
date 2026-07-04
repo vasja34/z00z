@@ -44,8 +44,8 @@
       ],
       "expected_row_count": 4,
       "reload_roundtrip": true,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_commit print_bucket_commit_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_commit.rs::test_bucket_commit_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_commit test_bucket_manifest_matches -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_commit.rs::test_bucket_manifest_matches"
     },
     {
       "id": "BCM-G-002",
@@ -102,8 +102,8 @@
       ],
       "expected_row_count": 4,
       "reload_roundtrip": true,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_commit print_bucket_commit_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_commit.rs::test_bucket_commit_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_commit test_bucket_manifest_matches -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_batch_commit.rs::test_bucket_manifest_matches"
     }
   ]
 }

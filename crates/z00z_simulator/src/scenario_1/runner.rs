@@ -257,9 +257,10 @@ fn install_storage_override(out_dir: &Path) -> Result<EnvVarGuard, Scenario1Err>
     prune_dead_process_scope_dirs(&storage_root_root, &process_prefix)?;
     let storage_scope_root = storage_root_root.join(process_scope_name());
     prepare_storage_scope(&storage_scope_root)?;
-    let lane_hash = blake3::hash(out_dir.to_string_lossy().as_bytes())
-        .to_hex()
-        .to_string();
+    let lane_hash = hex::encode(z00z_crypto::blake2b_hash(
+        b"z00z.scenario.storage.lane.v1",
+        &[out_dir.to_string_lossy().as_bytes()],
+    ));
     let lane = &lane_hash[..16];
     let storage_root_base = storage_scope_root.join(lane);
     if io::path_exists(&storage_root_base)? {
@@ -381,11 +382,13 @@ fn clear_stale_scenario_run_lock(lock_path: &Path) -> Result<bool, Scenario1Err>
 }
 
 fn run_lock_key(out_dir: &Path) -> String {
-    blake3::hash(out_dir.to_string_lossy().as_bytes())
-        .to_hex()
-        .chars()
-        .take(16)
-        .collect()
+    hex::encode(z00z_crypto::blake2b_hash(
+        b"z00z.scenario.run.lock.v1",
+        &[out_dir.to_string_lossy().as_bytes()],
+    ))
+    .chars()
+    .take(16)
+    .collect()
 }
 
 fn exe_scope() -> String {

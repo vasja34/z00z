@@ -12,6 +12,35 @@ pen_now_run_id() {
   date -u +"%Y%m%dT%H%M%SZ"
 }
 
+pen_report_run_id() {
+  local run_id="$1"
+  if [[ "$run_id" =~ ^(.*)([0-9]{8})T([0-9]{6})Z(.*)$ ]]; then
+    printf '%s%s-%s%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}"
+    return
+  fi
+  printf '%s\n' "$run_id"
+}
+
+pen_report_dir_name() {
+  local run_id="$1"
+  printf 'z00z-pentests-report-%s\n' "$(pen_report_run_id "$run_id")"
+}
+
+pen_run_id_from_report_dir_name() {
+  local dir_name="$1"
+  local suffix
+  if [[ "$dir_name" =~ ^z00z-pentests-report-(.+)$ ]]; then
+    suffix="${BASH_REMATCH[1]}"
+    if [[ "$suffix" =~ ^(.*)([0-9]{8})-([0-9]{6})(.*)$ ]]; then
+      printf '%s%sT%sZ%s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}"
+      return 0
+    fi
+    printf '%s\n' "$suffix"
+    return 0
+  fi
+  return 1
+}
+
 pen_rel_path() {
   local artifact_dir="$1"
   local path="$2"
@@ -94,7 +123,8 @@ if not scope_path.exists():
 payload = json.loads(scope_path.read_text(encoding="utf-8"))
 for raw_path in payload.get("normalized_paths", []):
     candidate = (repo_root / raw_path).resolve()
-    print(candidate.as_posix())
+    if candidate.exists():
+        print(candidate.as_posix())
 PY
 }
 
@@ -302,6 +332,11 @@ pen_capture_command() {
   set -e
 
   printf '%s\n' "$exit_code" >"$exit_path"
+
+  if [[ -n "$raw_path" && "$raw_path" != "$stdout_path" && ! -f "$raw_path" && -f "$stdout_path" ]]; then
+    mkdir -p "$(dirname "$raw_path")"
+    cp "$stdout_path" "$raw_path"
+  fi
 
   if [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
     tool_status="failed"

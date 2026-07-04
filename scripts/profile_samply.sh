@@ -8,7 +8,6 @@ readonly -a Z00Z_PACKAGES=(
   "z00z_aggregators"
   "z00z_core"
   "z00z_crypto"
-  "z00z_extensions"
   "z00z_networks_rpc"
   "z00z_rollup_node"
   "z00z_simulator"

@@ -16,8 +16,8 @@
       "final_root_hex": "c8a77c92bd2f5e686d08c836df4cfca865e1d2b6f2f76b474c8dcb7dbafa8f0f",
       "expected_row_count": 10,
       "reload_roundtrip": true,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence print_compat_equivalence_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_compat_equivalence_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence test_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_manifest_matches_contract"
     },
     {
       "id": "CEQ-G-002",
@@ -34,8 +34,8 @@
       "final_root_hex": "52387a3af9d80993fd07a20064c9670e4d2adced2aa2db90e0bd25cf586841bf",
       "expected_row_count": 10,
       "reload_roundtrip": true,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence print_compat_equivalence_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_compat_equivalence_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence test_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_manifest_matches_contract"
     },
     {
       "id": "CEQ-G-003",
@@ -52,8 +52,8 @@
       "final_root_hex": "066c042cfdb7ece6bdcae2dd347a30eb52c9676b3c4e1003643999b7949e23d7",
       "expected_row_count": 10,
       "reload_roundtrip": true,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence print_compat_equivalence_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_compat_equivalence_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence test_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_manifest_matches_contract"
     },
     {
       "id": "CEQ-G-004",
@@ -70,8 +70,8 @@
       "final_root_hex": "b44b8881bbeb9347b2189e0455a78c3c8a080cae877e6ac2d319ac5d13b65ed2",
       "expected_row_count": 10,
       "reload_roundtrip": true,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence print_compat_equivalence_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_compat_equivalence_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence test_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_manifest_matches_contract"
     },
     {
       "id": "CEQ-G-005",
@@ -88,8 +88,8 @@
       "final_root_hex": "60dac492b1bbe6a79068c2cd1e8aa2de6be00c10b892d097538472edd3194ebe",
       "expected_row_count": 10,
       "reload_roundtrip": true,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence print_compat_equivalence_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_compat_equivalence_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence test_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_manifest_matches_contract"
     },
     {
       "id": "CEQ-G-006",
@@ -106,8 +106,8 @@
       "final_root_hex": "00e69e5d7f3c6f5d97ab5ed18ff36eb10cf96a902f2c2e184db430efbf610b49",
       "expected_row_count": 10,
       "reload_roundtrip": true,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence print_compat_equivalence_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_compat_equivalence_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence test_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_manifest_matches_contract"
     },
     {
       "id": "CEQ-G-007",
@@ -124,8 +124,8 @@
       "final_root_hex": "a7c0810943d21a934d41f60e907475f8cdd2244aeae6d4bdce4f2edb0187f514",
       "expected_row_count": 10,
       "reload_roundtrip": true,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence print_compat_equivalence_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_compat_equivalence_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence test_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_manifest_matches_contract"
     },
     {
       "id": "CEQ-G-008",
@@ -142,8 +142,8 @@
       "final_root_hex": "b2db4491b67c8cb82cae765c327c2c75dfbbf1328b2a879980a47f63a10f3e66",
       "expected_row_count": 10,
       "reload_roundtrip": true,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence print_compat_equivalence_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_compat_equivalence_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence test_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_manifest_matches_contract"
     }
   ]
 }

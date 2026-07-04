@@ -97,6 +97,17 @@ SEMGREP_STDERR_PATH="$ARTIFACT_DIR/logs/semgrep.err"
 SEMGREP_EXIT_PATH="$ARTIFACT_DIR/logs/semgrep.exit"
 SAST_SUMMARY_PATH="$ARTIFACT_DIR/sast/summary.json"
 AST_TARGETS_PATH="$ARTIFACT_DIR/raw/ast/sg-targets.txt"
+SECRET_SCAN_EXCLUDES_PATH="$ARTIFACT_DIR/normalized/secret-scan-excludes.regex"
+
+cat >"$SECRET_SCAN_EXCLUDES_PATH" <<'EOF'
+(^|/)\.git(/|$)
+(^|/)target(/|$)
+(^|/)reports(/|$)
+(^|/)\.cache(/|$)
+(^|/)tools/formal_verification(/|$)
+(^|/)crates/z00z_crypto/tari(/|$)
+(^|/)\.planning/graphs(/|$)
+EOF
 
 write_passive_status() {
   local status_path="$1"
@@ -147,6 +158,7 @@ target_path = Path(sys.argv[4])
 code_suffixes = {
     ".bash",
     ".c",
+    ".cjs",
     ".cc",
     ".cpp",
     ".go",
@@ -154,18 +166,15 @@ code_suffixes = {
     ".hpp",
     ".java",
     ".js",
+    ".jsx",
     ".json",
-    ".kt",
-    ".md",
+    ".mjs",
     ".py",
     ".rb",
     ".rs",
     ".sh",
-    ".toml",
     ".ts",
     ".tsx",
-    ".yaml",
-    ".yml",
 }
 
 
@@ -176,8 +185,14 @@ def to_rel(candidate: Path) -> str | None:
         return None
 
 
+def is_ast_candidate(candidate: Path) -> bool:
+    return candidate.suffix in code_suffixes
+
+
 def add_candidate(seen: list[str], known: set[str], candidate: Path) -> None:
     if candidate.is_file():
+        if not is_ast_candidate(candidate):
+            return
         rel = to_rel(candidate)
         if rel and rel not in known:
             known.add(rel)
@@ -189,7 +204,7 @@ def add_candidate(seen: list[str], known: set[str], candidate: Path) -> None:
     for child in sorted(candidate.rglob("*")):
         if not child.is_file():
             continue
-        if child.suffix and child.suffix not in code_suffixes:
+        if not is_ast_candidate(child):
             continue
         rel = to_rel(child)
         if rel and rel not in known:
@@ -297,6 +312,44 @@ run_manual_status() {
   append_status "$status_path" "$status_name"
 }
 
+run_sg_structural_scan() {
+  local sg_path="$1"
+  local status_path="$2"
+  local sg_pattern='$F($$$ARGS)'
+
+  run_manual_status \
+    "sg" \
+    "$status_path" \
+    "$ARTIFACT_DIR/raw/ast/sg.jsonl" \
+    "$ARTIFACT_DIR/logs/sg.err" \
+    "$ARTIFACT_DIR/logs/sg.exit" \
+    "$ARTIFACT_DIR/raw/ast/sg.jsonl" \
+    "AST structural scan completed" \
+    bash -lc 'xargs -r -d "\n" -n 200 "$0" run --pattern "$2" --json=stream < "$1"' "$sg_path" "$AST_TARGETS_PATH" "$sg_pattern"
+}
+
+run_tree_sitter_structural_scan() {
+  local tree_sitter_path="$1"
+  local status_path="$2"
+
+  run_manual_status \
+    "tree-sitter" \
+    "$status_path" \
+    "$ARTIFACT_DIR/raw/ast/tree-sitter.txt" \
+    "$ARTIFACT_DIR/logs/tree-sitter.err" \
+    "$ARTIFACT_DIR/logs/tree-sitter.exit" \
+    "$ARTIFACT_DIR/raw/ast/tree-sitter.txt" \
+    "tree-sitter structural parse completed" \
+    bash -lc '
+set -euo pipefail
+: >"$2"
+while IFS= read -r target; do
+  [[ -n "$target" ]] || continue
+  "$0" parse -q "$target" >>"$2"
+done < "$1"
+' "$tree_sitter_path" "$AST_TARGETS_PATH" "$ARTIFACT_DIR/raw/ast/tree-sitter.txt"
+}
+
 semgrep_path="$(pen_tool_field "$TOOL_STATUS" semgrep resolved_path)"
 semgrep_status="$(pen_tool_field "$TOOL_STATUS" semgrep status)"
 status_files=()
@@ -361,36 +414,26 @@ if [[ ! -s "$AST_TARGETS_PATH" ]]; then
   append_status "$sg_status_path" "skipped"
   write_passive_status "$tree_sitter_status_path" "tree-sitter" "skipped" 0 "no deterministic AST targets were derived from scope"
   append_status "$tree_sitter_status_path" "skipped"
+elif [[ "$MODE" == "deep" ]]; then
+  if [[ -n "$sg_path" && "$sg_state" == "present" ]]; then
+    run_sg_structural_scan "$sg_path" "$sg_status_path"
+  else
+    write_passive_status "$sg_status_path" "sg" "missing" 127 "sg is not available in tools/penetration or PATH"
+    append_status "$sg_status_path" "missing"
+  fi
+
+  if [[ -n "$tree_sitter_path" && "$tree_sitter_state" == "present" ]]; then
+    run_tree_sitter_structural_scan "$tree_sitter_path" "$tree_sitter_status_path"
+  else
+    write_passive_status "$tree_sitter_status_path" "tree-sitter" "missing" 127 "tree-sitter is not available in tools/penetration or PATH"
+    append_status "$tree_sitter_status_path" "missing"
+  fi
 elif [[ -n "$sg_path" && "$sg_state" == "present" ]]; then
-  sg_pattern='$F($$$ARGS)'
-  run_manual_status \
-    "sg" \
-    "$sg_status_path" \
-    "$ARTIFACT_DIR/raw/ast/sg.jsonl" \
-    "$ARTIFACT_DIR/logs/sg.err" \
-    "$ARTIFACT_DIR/logs/sg.exit" \
-    "$ARTIFACT_DIR/raw/ast/sg.jsonl" \
-    "AST structural scan completed" \
-    bash -lc 'xargs -r -d "\n" -n 200 "$0" run --pattern "$2" --json=stream < "$1"' "$sg_path" "$AST_TARGETS_PATH" "$sg_pattern"
+  run_sg_structural_scan "$sg_path" "$sg_status_path"
   write_passive_status "$tree_sitter_status_path" "tree-sitter" "skipped" 0 "tree-sitter was not needed because sg satisfied the AST structural lane"
   append_status "$tree_sitter_status_path" "skipped"
 elif [[ -n "$tree_sitter_path" && "$tree_sitter_state" == "present" ]]; then
-  run_manual_status \
-    "tree-sitter" \
-    "$tree_sitter_status_path" \
-    "$ARTIFACT_DIR/raw/ast/tree-sitter.txt" \
-    "$ARTIFACT_DIR/logs/tree-sitter.err" \
-    "$ARTIFACT_DIR/logs/tree-sitter.exit" \
-    "$ARTIFACT_DIR/raw/ast/tree-sitter.txt" \
-    "tree-sitter structural parse completed" \
-    bash -lc '
-set -euo pipefail
-: >"$2"
-while IFS= read -r target; do
-  [[ -n "$target" ]] || continue
-  "$0" parse -q "$target" >>"$2"
-done < "$1"
-' "$tree_sitter_path" "$AST_TARGETS_PATH" "$ARTIFACT_DIR/raw/ast/tree-sitter.txt"
+  run_tree_sitter_structural_scan "$tree_sitter_path" "$tree_sitter_status_path"
   write_passive_status "$sg_status_path" "sg" "skipped" 0 "sg was not needed because tree-sitter satisfied the AST structural lane"
   append_status "$sg_status_path" "skipped"
 else
@@ -438,7 +481,7 @@ for secret_tool in gitleaks trufflehog trivy; do
         "$ARTIFACT_DIR/logs/sast.trufflehog.err" \
         "$ARTIFACT_DIR/logs/sast.trufflehog.exit" \
         "$status_path" \
-        "$tool_path" filesystem --no-update --json --no-verification "$ROOT")"
+        "$tool_path" filesystem --no-update --json --no-verification --exclude-paths "$SECRET_SCAN_EXCLUDES_PATH" --force-skip-binaries --force-skip-archives "$ROOT")"
       ;;
     trivy)
       raw_path="$ARTIFACT_DIR/raw/secrets/sast.trivy.json"
@@ -452,7 +495,7 @@ for secret_tool in gitleaks trufflehog trivy; do
         "$ARTIFACT_DIR/logs/sast.trivy.err" \
         "$ARTIFACT_DIR/logs/sast.trivy.exit" \
         "$status_path" \
-        "$tool_path" fs --quiet --format json --output "$raw_path" "$ROOT")"
+        "$tool_path" fs --quiet --format json --output "$raw_path" --skip-dirs "$ROOT/.git" --skip-dirs "$ROOT/.cache" --skip-dirs "$ROOT/target" --skip-dirs "$ROOT/reports" --skip-dirs "$ROOT/tools/formal_verification" --skip-dirs "$ROOT/crates/z00z_crypto/tari" --skip-dirs "$ROOT/.planning/graphs" "$ROOT")"
       ;;
   esac
 

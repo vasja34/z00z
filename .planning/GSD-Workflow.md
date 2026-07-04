@@ -6,9 +6,9 @@
 
 ## ^H Find-Replace
 
-066-Strix
+067-Sharded-Concensus
 
-066
+067
 
 ---
 
@@ -21,9 +21,9 @@
 ## 🟥 1. gsd-add-phase
 
 ```
-/gsd-add-phase `066-Strix`
+/gsd-add-phase `067-Sharded-Concensus`
 etot folder uzhe suwestvuet; novij ne sozdavat; rabotat s nim
-регистрирую egoкак Phase 066 в ROADMAP и STATE, без создания нового каталога.
+регистрирую egoкак Phase 067 в ROADMAP и STATE, без создания нового каталога.
 ```
 
 ## 🟥 2. gsd-discuss-phase
@@ -81,52 +81,28 @@ Run the second `doublecheck` against 066-TODO.md to confirm that all issues are 
 ## 🟨 5. gsd-plan-phase
 
 ```markdown
-/gsd-plan-phase 066
+/gsd-plan-phase 067
 --skip-research
---prd 066-TODO.md, 066-CONTEXT.md
+--prd 067-TODO.md
 --text """
-
-Create a complete plan based on deep analysis 066-TODO.md i vseh ukazannih v nem dokumentov
-
-In each <verify> section of every <task type=\"auto\">, run validation in this order for Rust/test-affecting changes:
-
-1. Run `./.github/skills/smart-tests-bootstrap/scripts/bootstrap_tests.sh` first as a mandatory fail-fast gate.
-- If it fails, stop, fix the issues, and rerun it before any broader validation.
-- Treat `bootstrap_tests.sh` as the early regression detector, not as a replacement for the broader cargo test command.
-
-2. Then, when relevant, run: `cargo test --release`
-
-3. In each <verify> section, include a requirement to run /.github/prompts/gsd-review-tasks-execution.prompt.md (`/GSD-Review-Tasks-Execution`) at least 3 times in YOLO mode and fix all issues and warnings. Stop running gsd-review-tasks-execution only after at least 2 consecutive runs show no significant issues in the code.
-
-4. When you need to commit changes in GIT, use skill `/z00z-git-versioning`
-
-5. All necessary nested skills, prompts, and instructions are in `.github/`, use them as needed.
-"""
-```
-
-```markdown
-/gsd-plan-phase 066
---skip-research
---prd 066-TODO.md
---text """
-Create complete executable GSD plans for Phase 066.
+Create complete executable GSD plans for Phase 067.
 
 MUST read first:
-1. 066-TODO.md
-2. 066-CONTEXT.md if it exists
-3. Every Markdown source linked from 066-TODO.md task rows.
-4. Relevant current code anchors listed in 066-TODO.md.
+1. 067-TODO.md
+2. 067-CONTEXT.md if it exists
+3. Every Markdown source linked from 067-TODO.md task rows.
+4. Relevant current code anchors listed in 067-TODO.md.
 
-MUST treat 066-TODO.md as normative, not advisory.
+MUST treat 067-TODO.md as normative, not advisory.
 MUST NOT drop, merge away, rename, renumber, or silently reinterpret any TASK-NNN.
 MUST NOT create future/deferred/best-effort work for local correctness.
 MUST close every local blocker by code/tests or by local deterministic simulation using real project primitives.
 
 Before writing plans, perform a coverage audit:
-- Count unique TASK-NNN from 066-TODO.md: 
+- Count unique TASK-NNN from 067-TODO.md: 
 - Count Required GSD Plan Groups: 
 - Build a task-to-plan coverage table.
-- Every TASK-NNN MUST map to exactly one grouped 066-NN-PLAN, unless explicitly split into 066-NN-PLAN fallback.
+- Every TASK-NNN MUST map to exactly one grouped 067-NN-PLAN, unless explicitly split into 067-NN-PLAN fallback.
 - Every plan MUST include every source ref from each included task row.
 - Any missing/duplicate task MUST fail planning.
 
@@ -207,15 +183,15 @@ Planning MUST fail if any TASK-NNN lacks inputs, outputs, artifacts, tests, resu
 
 ```
 /GSD-Review-Plan
-current_plan = {066-*-PLAN.md}, where `*-PLAN.md` - is a naming pattern
-review_goal = I need a 100% guarantee that every bullet from 066-TODO.md i references docs corpus is reflected in 066-CONTEXT.md and in 066-{01..N}-PLAN.md
+current_plan = {067-*-PLAN.md}, where `*-PLAN.md` - is a naming pattern
+review_goal = I need a 100% guarantee that every bullet from 067-TODO.md i references docs corpus is reflected in 067-CONTEXT.md and in 067-{01..N}-PLAN.md
 If there are issues that need to be corrected or supplemented, do it in YOLO mode
 
-Verify that all suggestions and issues of 066-TODO.md are included in context and in the plan. I need to verify everything 100% before implementation
+Verify that all suggestions and issues of 067-TODO.md are included in context and in the plan. I need to verify everything 100% before implementation
 
 MANDATORY: Do not duplicate the existing codebase or its logic. Do not introduce a parallel layer. Prevent codebase concept drift
 
-Run the second `doublecheck` against 066-TODO.md to confirm that all issues are in plans.
+Run the second `doublecheck` against 067-TODO.md to confirm that all issues are in plans.
 ```
 
 ---
@@ -223,10 +199,10 @@ Run the second `doublecheck` against 066-TODO.md to confirm that all issues are 
 ## 🟦 7.1 gsd-add-tests ==x3 times==
 
 ```
-/gsd-add-tests  066
-goal = based on files 066-Strix
+/gsd-add-tests  067
+goal = based on files 067-Sharded-Concensus
 define smart, complete, end-to-end integration tests and realistic examples that prove what the workflow does, how it behaves, which invariants it must preserve, and which failures it must reject.
-подготовить phase-local E2E/unit test specification document для 066 на основе 066-CONTEXT.md, 066-TODO.md и всех 066-*-PLAN.md как planning artifact.
+подготовить phase-local E2E/unit test specification document для 067 на основе 067-CONTEXT.md, 067-TODO.md и всех 067-*-PLAN.md как planning artifact.
 The result must be directly usable by another engineer or agent to implement E2E coverage without guessing scenario boundaries, success criteria, or test anchors. Derive the critical user journeys, state transitions, proof paths, and failure paths that must be verified end to end.
 
 The specification must explicitly address all of the following when relevant:
@@ -252,13 +228,13 @@ The specification must explicitly address all of the following when relevant:
 
 ```
 /GSD-Review-Plan
-current_plan = {066-*-PLAN.md}, where `*-PLAN.md` - is a naming pattern + 066-TEST-SPEC.md + 066-TESTS-TASKS.md
-review_goal = I need a 100% guarantee that every bullet from 066-TODO.md is reflected in 066-CONTEXT.md and in 066-{01..N}-PLAN.md
+current_plan = {067-*-PLAN.md}, where `*-PLAN.md` - is a naming pattern + 067-TEST-SPEC.md + 067-TESTS-TASKS.md
+review_goal = I need a 100% guarantee that every bullet from 067-TODO.md is reflected in 067-CONTEXT.md and in 067-{01..N}-PLAN.md
 If there are issues that need to be corrected or supplemented, do it in YOLO mode
 
-Verify that all suggestions and issues of 066-TODO.md are included in context and in the plan. I need to verify everything 100% before implementation
+Verify that all suggestions and issues of 067-TODO.md are included in context and in the plan. I need to verify everything 100% before implementation
 
-Run the second `doublecheck` against 066-TODO.md to confirm that all issues are in plans.
+Run the second `doublecheck` against 067-TODO.md to confirm that all issues are in plans.
 ```
 
 ---------------------
@@ -266,11 +242,11 @@ Run the second `doublecheck` against 066-TODO.md to confirm that all issues are 
 ## 🟩 9. gsd-executor PLAN
 
 ```markdown
-/gsd-execute-phase 066 continue
+/gsd-execute-phase 067 continue
 
 Update STATE #sym:Status and ROADMAP
 
-все такие future-only design terms становятся live scope и referenced docs как phase authority. I continue to use design/whitepapers as a source of requirements, not as a "to-be-in-the-future" status. 066-TODO.md explicitly states target/future design statement is now a mandatory scope of the live code.
+все такие future-only design terms становятся live scope и referenced docs как phase authority. I continue to use design/whitepapers as a source of requirements, not as a "to-be-in-the-future" status. 067-TODO.md explicitly states target/future design statement is now a mandatory scope of the live code.
 
 Make sure there are no missing or missing strings, so there will be one canonical path
 for all module structures and functions
@@ -294,8 +270,8 @@ MUST pay special attention to following instructions:
 ## 🟩 10. gsd-executor  TESTS
 
 ```markdown
-/gsd-execute-phase 066
-implement 066-TEST-SPEC.md and 066-TESTS-TASKS.md
+/gsd-execute-phase 067
+implement 067-TEST-SPEC.md and 067-TESTS-TASKS.md
 
 MUST pay special attention to following instructions:
 1. Run `./.github/skills/smart-tests-bootstrap/scripts/bootstrap_tests.sh` first as a mandatory fail-fast gate.
@@ -320,22 +296,22 @@ MUST pay special attention to following instructions:
 ```
 
 ```
-/gsd-validate-phase 066
+/gsd-validate-phase 067
 ```
 
 ```
-/gsd-verify-work 066
+/gsd-verify-work 067
 ```
 
 ```
-/gsd-eval-review 066
+/gsd-eval-review 067
 ```
 
 ## 🟪 13. GSD-Review-Tasks-Execution ==x3 times== PLAN
 
 ```
 /GSD-Review-Tasks-Execution 
-current_spec = {066-*-PLAN.md}
+current_spec = {067-*-PLAN.md}
 current_task = `*-PLAN.md` - is a naming pattern
 ```
 
@@ -343,8 +319,8 @@ current_task = `*-PLAN.md` - is a naming pattern
 
 ```m
 /GSD-Review-Tasks-Execution 
-current_spec = 066-TEST-SPEC.md + 066-TESTS-TASKS.md
-current_task = `*-PLAN.md` - is a naming pattern + 066-TEST-SPEC.md + 066-TESTS-TASKS.md
+current_spec = 067-TEST-SPEC.md + 067-TESTS-TASKS.md
+current_task = `*-PLAN.md` - is a naming pattern + 067-TEST-SPEC.md + 067-TESTS-TASKS.md
 ```
 
 ---------------------
@@ -353,7 +329,7 @@ current_task = `*-PLAN.md` - is a naming pattern + 066-TEST-SPEC.md + 066-TESTS-
 
 ```
 /doublecheck
-Verify that ALL task plans in 066-TODO.md are fully implemented. Check the code independently of the summaries and give your conclusion.
+Verify that ALL task plans in 067-TODO.md are fully implemented. Check the code independently of the summaries and give your conclusion.
 1. Quality of implementation
 2. Correctness of implementation
 3. Check for logical errors and incomplete implementation features
@@ -368,7 +344,7 @@ Fix all in YOLO mode
 
 ```markdown
 /GSD-Audit-4 
-phase_dir = 066-Strix
+phase_dir = 067-Sharded-Concensus
 ```
 
 ---

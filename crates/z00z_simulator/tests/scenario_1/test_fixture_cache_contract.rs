@@ -132,12 +132,17 @@ fn test_cache_fingerprint_scope() {
 fn test_cache_fingerprint_modes() {
     let _guard = contract_lock();
     for needle in [
-        "hasher.update(b\"scope=local\\n\");",
-        "hasher.update(b\"scope=shared\\n\");",
-        "hasher.update(b\"scope=shared-precise\\n\");",
-        "hash_file(&mut hasher, \"current_exe\", &exe_path);",
+        "b\"scope=local\".to_vec(),",
+        "b\"scope=shared\".to_vec(),",
+        "b\"scope=shared-precise\".to_vec(),",
+        "parts.push(file_fingerprint(\"current_exe\", &exe_path).to_vec());",
         "const CONTENT_FINGERPRINT_FILE: &str = \".content-fingerprint\";",
         "const CONTENT_FINGERPRINT_SCHEMA: &str = \"fixture-cache-content-v1\";",
+        "z00z.fixture_cache.local_scope.v1",
+        "z00z.fixture_cache.shared_scope.v1",
+        "z00z.fixture_cache.shared_precise_scope.v1",
+        "fn file_fingerprint(label: &str, path: &Path) -> [u8; 32] {",
+        "z00z_crypto::blake2b_hash(",
         "cache_content_fingerprint(cache_dir)",
     ] {
         assert!(

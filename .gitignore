@@ -52,7 +52,7 @@ z00z-*.tar.gz
 
 # Documentation
 /docs/**/*.pdf
-.planning/GSD-Notes.txt
+# .planning/GSD-Notes.txt
 /tools/
 /reports/
 

@@ -92,7 +92,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        placement::{AggregatorId, ShardPlacement, StandbyState},
+        placement::{AggregatorId, SecondaryState, ShardPlacement},
         types::{BatchId, BatchPlanned, BatchRoute, PlanDigest, ShardId},
     };
 
@@ -106,7 +106,7 @@ mod tests {
         table.insert(ShardPlacement::new(
             route,
             AggregatorId::new(7),
-            vec![StandbyState::pending(AggregatorId::new(8))],
+            vec![SecondaryState::pending(AggregatorId::new(8))],
             [0x31; 32],
         ));
         let executor = ShardExecutor::new(table);

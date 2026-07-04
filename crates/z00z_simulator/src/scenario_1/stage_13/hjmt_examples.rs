@@ -49,7 +49,7 @@ const EXAMPLE_POLICY: &str = "E7_policy_transition";
 const EXAMPLE_METRICS: &str = "E8_cache_scheduler";
 const COMPARISON_COUNTS: [usize; 3] = [2, 8, 32];
 
-#[cfg(feature = "test-params-fast")]
+#[cfg(all(feature = "test-params-fast", debug_assertions))]
 fn relax_stage13_sched(store: &SettlementStore) {
     // Stage 13 comparison fixtures probe many deterministic HJMT branches in one
     // evidence run. Keep the worker lane stable while lifting the queue ceiling
@@ -57,7 +57,7 @@ fn relax_stage13_sched(store: &SettlementStore) {
     store.set_sched_limits_for_test(1, 1024);
 }
 
-#[cfg(not(feature = "test-params-fast"))]
+#[cfg(not(all(feature = "test-params-fast", debug_assertions)))]
 fn relax_stage13_sched(_store: &SettlementStore) {}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

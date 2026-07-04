@@ -164,7 +164,7 @@ if command -v cargo-audit >/dev/null 2>&1 || cargo audit --version >/dev/null 2>
     --summary-out "$SUPPLY_CHAIN_SUMMARY_PATH" \
     --project-report "$SUPPLY_CHAIN_PROJECT_REPORT" \
     --vendor-report "$SUPPLY_CHAIN_VENDOR_REPORT"; then
-    echo "ERROR: cargo audit review pass failed. If this is a RustSec database parse error, update cargo-audit with scripts/install-verification-tools.sh --install --profile all --upgrade" >&2
+    echo "ERROR: cargo audit review pass failed. If this is a RustSec database parse error, update cargo-audit with scripts/verification-tools/install-verification-tools.sh --install --profile all --upgrade" >&2
     FAILED=1
   else
     summary="$(

@@ -84,6 +84,33 @@ tool_timeout_seconds() {
 
 TOOL_TIMEOUT_SECONDS="$(tool_timeout_seconds)"
 
+cargo_geiger_manifest_path() {
+  if [[ -f "$ROOT/crates/z00z_telemetry/Cargo.toml" ]]; then
+    printf '%s\n' "$ROOT/crates/z00z_telemetry/Cargo.toml"
+    return 0
+  fi
+
+  cargo metadata --no-deps --format-version 1 | python3 - <<'PY'
+import json
+import sys
+from pathlib import Path
+
+payload = json.load(sys.stdin)
+packages = sorted(payload.get("packages", []), key=lambda item: item.get("name", ""))
+
+fallback = None
+for package in packages:
+    manifest = Path(package["manifest_path"]).resolve()
+    if fallback is None:
+        fallback = manifest
+    print(manifest.as_posix())
+    raise SystemExit(0)
+
+if fallback is not None:
+    print(fallback.as_posix())
+PY
+}
+
 run_rust_tool() {
   local tool_name="$1"
   local raw_name="$2"
@@ -133,11 +160,12 @@ run_rust_tool() {
     "$tool_path" "$@" >/dev/null
 }
 
-run_rust_tool cargo-audit cargo-audit.json audit --json
-run_rust_tool cargo-deny cargo-deny.txt check advisories bans sources licenses
+run_rust_tool cargo-audit cargo-audit.json audit -q --json
+run_rust_tool cargo-deny cargo-deny.txt -L error check advisories bans sources licenses
 
 if [[ "$MODE" != "quick" ]]; then
-  run_rust_tool cargo-geiger cargo-geiger.txt -q
+  cargo_geiger_manifest="$(cargo_geiger_manifest_path)"
+  run_rust_tool cargo-geiger cargo-geiger.txt -q --forbid-only --manifest-path "$cargo_geiger_manifest"
 else
   pen_write_status_json \
     "$ARTIFACT_DIR/normalized/rust.cargo-geiger.status.json" \

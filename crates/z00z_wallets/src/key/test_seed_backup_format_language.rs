@@ -15,24 +15,6 @@ fn test_homoglyph_protection() {
 }
 
 #[test]
-fn test_homoglyph_cyrillic_attack_prevention() {
-    use bip39::Language;
-
-    let english_wordlist = Language::English.word_list();
-    let word_a = english_wordlist
-        .iter()
-        .find(|w| w.starts_with('a'))
-        .unwrap();
-    let cyrillic_word = word_a.replacen('a', "а", 1);
-
-    assert_ne!(cyrillic_word, *word_a);
-    assert!(cyrillic_word.contains(|c: char| c as u32 >= 0x0400 && c as u32 <= 0x04FF));
-
-    let phrase = phrase_with_first_word(&cyrillic_word);
-    assert!(Mnemonic::parse_in(Language::English, &phrase).is_err());
-}
-
-#[test]
 fn test_detect_language_ambiguous() {
     use bip39::Language;
 

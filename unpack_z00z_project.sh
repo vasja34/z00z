@@ -63,7 +63,8 @@
 #     is missing, the script attempts to install it first on supported hosts.
 #
 #   --docker-image <image>
-#     Base image used for --docker-sandbox. Default: ubuntu:24.04
+#     Base image used for --docker-sandbox. Default: debian:12-slim
+#     (Debian 12 / bookworm)
 #
 #   --sandbox-export-dir <path>
 #     Host directory that receives exported verification report folders from
@@ -81,7 +82,7 @@
 #   ./unpack_z00z_project.sh --archive /tmp/z00z-<pack-date>.tar.gz --yes
 #   ./unpack_z00z_project.sh --archive ./z00z-<pack-date>.tar.gz --dest ~/work/z00z --yes
 #   ./unpack_z00z_project.sh --archive ./z00z-<pack-date>.tar.gz --docker-sandbox
-#   ./unpack_z00z_project.sh --archive ./z00z-<pack-date>.tar.gz --docker-sandbox --docker-image ubuntu:24.04
+#   ./unpack_z00z_project.sh --archive ./z00z-<pack-date>.tar.gz --docker-sandbox --docker-image debian:12-slim
 #   ./unpack_z00z_project.sh --archive ./z00z-<pack-date>.tar.gz --docker-sandbox --sandbox-export-dir /tmp/z00z-sandbox-reports
 #
 # Docker sandbox cleanup commands:
@@ -104,7 +105,7 @@
 #
 #   Optionally remove the sandbox base image used by this script when it is no
 #   longer needed by other workloads:
-#     docker image rm ubuntu:24.04
+#     docker image rm debian:12-slim
 #
 #   Optionally clear only dangling build cache layers:
 #     docker builder prune -f
@@ -129,7 +130,7 @@
 #   - Run repository cleanup and the full verification/report chain
 #
 # Main verification/install chain executed after extraction:
-#   scripts/install-verification-tools.sh --install --profile research --strict
+#   scripts/verification-tools/install-verification-tools.sh --install --profile research --strict
 #   scripts/install_py_venv.sh
 #   scripts/install_deep_wiki.sh
 #   scripts/install_nvk_llm_wiki.sh
@@ -170,13 +171,20 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERIFICATION_VERSIONS_FILE="$SCRIPT_DIR/scripts/verification-tools/versions.env"
 DEFAULT_ARCHIVE_DATE="$(date +%F)"
 DEFAULT_ARCHIVE_NAME="z00z-${DEFAULT_ARCHIVE_DATE}.tar.gz"
-DEFAULT_DOCKER_IMAGE="ubuntu:24.04"
+DEFAULT_DOCKER_IMAGE="debian:12-slim"
 DEFAULT_SANDBOX_EXPORT_DIR="$SCRIPT_DIR/reports"
 PORTABLE_ROOT_REL=".portable-transfer"
 RUN_STARTED_AT="$(date +%s)"
-readonly SCRIPT_DIR DEFAULT_ARCHIVE_DATE DEFAULT_ARCHIVE_NAME DEFAULT_DOCKER_IMAGE DEFAULT_SANDBOX_EXPORT_DIR
+if [[ -f "$VERIFICATION_VERSIONS_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$VERIFICATION_VERSIONS_FILE"
+fi
+: "${Z00Z_VERUS_TOOLCHAIN:=1.96.1-x86_64-unknown-linux-gnu}"
+export Z00Z_VERUS_TOOLCHAIN
+readonly SCRIPT_DIR VERIFICATION_VERSIONS_FILE DEFAULT_ARCHIVE_DATE DEFAULT_ARCHIVE_NAME DEFAULT_DOCKER_IMAGE DEFAULT_SANDBOX_EXPORT_DIR
 readonly PORTABLE_ROOT_REL RUN_STARTED_AT
 
 ARCHIVE_PATH=""
@@ -217,7 +225,8 @@ Options:
   --docker-sandbox  Run the full restore inside a disposable Docker container.
                     In this mode, --dest is interpreted inside the container.
                     If docker is missing, try to install it on the host first.
-  --docker-image    Base image for --docker-sandbox. Default: ubuntu:24.04
+  --docker-image    Base image for --docker-sandbox. Default: debian:12-slim
+                    (Debian 12 / bookworm)
   --sandbox-export-dir
                     Host directory that receives exported
                     reports/z00z-verification-orchestrator-* directories from
@@ -548,6 +557,7 @@ run_docker_sandbox() {
     -e Z00Z_SANDBOX_EXPORT_ROOT="$inner_export_root" \
     -e Z00Z_SANDBOX_SCRIPT="$inner_script_path" \
     -e Z00Z_PORTABLE_SAW_SUITE_SRC="$inner_saw_suite_path" \
+    -e Z00Z_VERUS_TOOLCHAIN="$Z00Z_VERUS_TOOLCHAIN" \
     --mount "type=bind,src=$ARCHIVE_PATH,dst=$inner_archive_path,readonly" \
     --mount "type=bind,src=$SANDBOX_EXPORT_DIR,dst=$inner_export_root" \
     --mount "type=bind,src=$SCRIPT_DIR/unpack_z00z_project.sh,dst=$inner_script_path,readonly" \
@@ -612,7 +622,7 @@ run_docker_sandbox() {
       chown -R z00z:z00z /workspace
 
       echo "[unpack-z00z][sandbox-bootstrap] Base image bootstrap finished; starting inner restore as non-root user z00z"
-      sudo -H -u z00z env Z00Z_SANDBOX_MODE=1 Z00Z_PORTABLE_SAW_SUITE_SRC="$Z00Z_PORTABLE_SAW_SUITE_SRC" PATH=/home/z00z/.local/bin:/home/z00z/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+      sudo -H -u z00z env Z00Z_SANDBOX_MODE=1 Z00Z_PORTABLE_SAW_SUITE_SRC="$Z00Z_PORTABLE_SAW_SUITE_SRC" Z00Z_VERUS_TOOLCHAIN="$Z00Z_VERUS_TOOLCHAIN" PATH=/home/z00z/.local/bin:/home/z00z/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
         bash "$Z00Z_SANDBOX_SCRIPT" \
         --archive "$Z00Z_SANDBOX_ARCHIVE" \
         --dest "$Z00Z_SANDBOX_DEST" \
@@ -1628,7 +1638,7 @@ run_install_chain() {
 
   run_repo_script \
     "Installing verification toolchain" \
-    ./scripts/install-verification-tools.sh --install --profile research --strict
+    ./scripts/verification-tools/install-verification-tools.sh --install --profile research --strict
 
   source_verify_env
 

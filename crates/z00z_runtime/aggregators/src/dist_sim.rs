@@ -5,11 +5,11 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use z00z_storage::settlement::SettlementRecoveryState;
 
 use crate::{
-    consensus_adapter::JournalCandidate,
     placement::{AggregatorId, ShardPlacementTable},
     recovery::{RecoveryBoundary, RecoveryIntent, ShardRecoveryRecord},
     shard_exec::ShardExecTicket,
     types::{BatchRoute, RejectClass, RejectRecord},
+    JournalCandidate,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -277,19 +277,19 @@ impl DistSim {
         let Some(node) = self.nodes.get(&aggregator_id) else {
             return Err(reject(
                 RejectClass::PolicyReject,
-                "standby is not part of the distributed simulator",
+                "secondary is not part of the distributed simulator",
             ));
         };
         let Some(record) = &node.record else {
             return Err(reject(
                 RejectClass::DeferredRetry,
-                "standby unavailable: missing replicated journal state",
+                "secondary unavailable: missing replicated journal state",
             ));
         };
         let Some(current) = &node.current else {
             return Err(reject(
                 RejectClass::DeferredRetry,
-                "standby unavailable: missing replicated recovery state",
+                "secondary unavailable: missing replicated recovery state",
             ));
         };
         if record.batch_id != latest.batch_id {
@@ -350,7 +350,7 @@ impl DistSim {
             .ok_or_else(|| {
                 reject(
                     RejectClass::DeferredRetry,
-                    "standby unavailable: missing replicated recovery state",
+                    "secondary unavailable: missing replicated recovery state",
                 )
             })?;
         RecoveryBoundary.resume(requester, placement_table, latest, current, intent)

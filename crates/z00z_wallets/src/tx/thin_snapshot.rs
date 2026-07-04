@@ -97,7 +97,10 @@ fn proof_digest_hex(tx_proof: &TxProofWire) -> Result<String, ThinIndexError> {
     let bytes = JsonCodec.serialize(tx_proof).map_err(|error| {
         ThinIndexError::PackageVerificationFailed(format!("tx proof serialization failed: {error}"))
     })?;
-    Ok(hex::encode(blake3::hash(&bytes).as_bytes()))
+    Ok(hex::encode(z00z_crypto::blake2b_hash(
+        b"z00z.wallet.thin.proof_digest.v1",
+        &[bytes.as_slice()],
+    )))
 }
 
 fn derive_entry_id_hex(
@@ -114,7 +117,10 @@ fn derive_entry_id_hex(
         preimage.extend_from_slice(input.asset_id_hex.as_bytes());
         preimage.extend_from_slice(&input.serial_id.to_le_bytes());
     }
-    hex::encode(blake3::hash(&preimage).as_bytes())
+    hex::encode(z00z_crypto::blake2b_hash(
+        b"z00z.wallet.thin.entry_id.v1",
+        &[preimage.as_slice()],
+    ))
 }
 
 fn verify_tx_bytes(tx_bytes: &[u8]) -> Result<(Vec<u8>, TxPackage), ThinIndexError> {
@@ -276,9 +282,11 @@ impl ThinSnapshot {
 
     /// Compute the digest over the unsigned snapshot body.
     pub fn compute_digest_hex(&self) -> Result<String, ThinIndexError> {
-        Ok(hex::encode(
-            blake3::hash(&self.unsigned_bytes()?).as_bytes(),
-        ))
+        let bytes = self.unsigned_bytes()?;
+        Ok(hex::encode(z00z_crypto::blake2b_hash(
+            b"z00z.wallet.thin.snapshot.digest.v1",
+            &[bytes.as_slice()],
+        )))
     }
 
     pub(crate) fn check_shape(&self) -> Result<(), ThinIndexError> {
@@ -436,9 +444,11 @@ impl ThinWalletTxPackage {
 
     /// Compute the metadata hash over the unsigned wrapper body.
     pub fn compute_metadata_hash_hex(&self) -> Result<String, ThinIndexError> {
-        Ok(hex::encode(
-            blake3::hash(&self.unsigned_bytes()?).as_bytes(),
-        ))
+        let bytes = self.unsigned_bytes()?;
+        Ok(hex::encode(z00z_crypto::blake2b_hash(
+            b"z00z.wallet.thin.metadata_hash.v1",
+            &[bytes.as_slice()],
+        )))
     }
 
     /// Refresh the stored wrapper metadata hash after an intentional field edit.

@@ -15,7 +15,7 @@ use z00z_simulator::scenario_1::support::stage_runner_support;
 
 const STAGE2_SRC: &str = include_str!("../../src/scenario_1/stage_2/mod.rs");
 const STAGE3_FINALIZE_SRC: &str = include_str!("../../src/scenario_1/stage_3/finalize.rs");
-const CONFIG_ACCESSORS_SRC: &str = include_str!("../../src/config/config_accessors.rs");
+const CONFIG_ACCESSORS_SRC: &str = include_str!("../../src/config_accessors.rs");
 const SIM_README_SRC: &str = include_str!("../../README.md");
 const WALLET_INTEGRATION_TESTS_SRC: &str = include_str!("test_wallet_integration.rs");
 

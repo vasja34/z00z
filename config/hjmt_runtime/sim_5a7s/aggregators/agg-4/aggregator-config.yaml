@@ -5,10 +5,10 @@ execution:
   shard_mapping: "aggregator_owned"
 shards:
   - shard_id: 4
-    standby_ids: [2, 3]
+    secondary_ids: [2, 3]
     expected_journal_lineage: "0000000000000000000000000000000000000000000000000000000000000000"
   - shard_id: 6
-    standby_ids: [0, 2]
+    secondary_ids: [0, 2]
     expected_journal_lineage: "0000000000000000000000000000000000000000000000000000000000000000"
 network:
   listen_addr: "127.0.0.1:7104"

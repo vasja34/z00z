@@ -42,14 +42,15 @@ ACTIVE_PENTEST_SKILLS = [
     "pentest-rust-security",
     "pentest-secrets-supply-chain",
     "pentest-source-aware-sast",
-    "pentest-tool-installer",
+    "pentest-tools-installer",
+    "pentest-tools-runner",
 ]
 
 PROMPT_FILES = {
     "pentest-local.prompt.md": (
         "Generic Repo Mode",
         "Z00Z Profile Mode",
-        "./z00z_penetration_tests.sh",
+        "./scripts/run_pentest_tools.sh",
         "run_local_pentest.sh",
     ),
     "pentest-parallel-review.prompt.md": (
@@ -69,7 +70,7 @@ PROMPT_FILES = {
         "attack-surfaces-create",
         "z00z-crypto-auditor",
         "gsd-audit-4.prompt.md",
-        "./z00z_penetration_tests.sh",
+        "./scripts/run_pentest_tools.sh",
     ),
 }
 

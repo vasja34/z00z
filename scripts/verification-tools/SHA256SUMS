@@ -1,4 +1,4 @@
-# Populated and maintained by scripts/install-verification-tools.sh.
+# Populated and maintained by scripts/verification-tools/install-verification-tools.sh.
 # The installer stages a copy into tools/formal_verification/SHA256SUMS and
 # verifies any matching downloaded release asset against this file.
 6b8c1cb5bc93bedfc7c61435c4e1ab6e688a242dc702a394628d9a9801edb78d  org.alloytools.alloy.dist.jar

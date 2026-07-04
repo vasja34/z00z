@@ -340,12 +340,6 @@ fn test_dos_defer_expensive_ops() {
 }
 
 #[test]
-fn test_tag16_computation() {
-    let tag = compute_tag16(&[1u8; 32], &[2u8; 32]);
-    assert!((0..=u16::MAX).contains(&tag));
-}
-
-#[test]
 fn test_tag16_false_positive_rate() {
     let provider = SystemRngProvider;
     let mut rng = provider.rng();

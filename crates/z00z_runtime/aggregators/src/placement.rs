@@ -22,12 +22,12 @@ impl AggregatorId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct StandbyState {
+pub struct SecondaryState {
     pub aggregator_id: AggregatorId,
     pub is_ready: bool,
 }
 
-impl StandbyState {
+impl SecondaryState {
     #[must_use]
     pub const fn ready(aggregator_id: AggregatorId) -> Self {
         Self {
@@ -50,7 +50,7 @@ impl StandbyState {
 pub struct ShardPlacement {
     pub route: BatchRoute,
     pub primary_id: AggregatorId,
-    pub standby: Vec<StandbyState>,
+    pub secondaries: Vec<SecondaryState>,
     pub expected_journal_lineage: [u8; 32],
 }
 
@@ -59,13 +59,13 @@ impl ShardPlacement {
     pub fn new(
         route: BatchRoute,
         primary_id: AggregatorId,
-        standby: Vec<StandbyState>,
+        secondaries: Vec<SecondaryState>,
         expected_journal_lineage: [u8; 32],
     ) -> Self {
         Self {
             route,
             primary_id,
-            standby,
+            secondaries,
             expected_journal_lineage,
         }
     }
@@ -75,16 +75,16 @@ impl ShardPlacement {
         ShardPlacementView {
             route: self.route,
             primary_id: self.primary_id,
-            standby: self.standby.clone(),
+            secondaries: self.secondaries.clone(),
             expected_journal_lineage: self.expected_journal_lineage,
         }
     }
 
     #[must_use]
-    pub fn standby(&self, aggregator_id: AggregatorId) -> Option<&StandbyState> {
-        self.standby
+    pub fn secondary(&self, aggregator_id: AggregatorId) -> Option<&SecondaryState> {
+        self.secondaries
             .iter()
-            .find(|standby| standby.aggregator_id == aggregator_id)
+            .find(|secondary| secondary.aggregator_id == aggregator_id)
     }
 }
 
@@ -93,7 +93,7 @@ impl ShardPlacement {
 pub struct ShardPlacementView {
     pub route: BatchRoute,
     pub primary_id: AggregatorId,
-    pub standby: Vec<StandbyState>,
+    pub secondaries: Vec<SecondaryState>,
     pub expected_journal_lineage: [u8; 32],
 }
 
@@ -175,7 +175,7 @@ mod tests {
         let placement = ShardPlacement::new(
             route,
             AggregatorId::new(11),
-            vec![StandbyState::ready(AggregatorId::new(12))],
+            vec![SecondaryState::ready(AggregatorId::new(12))],
             [0x11; 32],
         );
         let mut table = ShardPlacementTable::default();
@@ -186,8 +186,8 @@ mod tests {
 
         assert_eq!(view.route, route);
         assert_eq!(view.primary_id, AggregatorId::new(11));
-        assert_eq!(view.standby.len(), 1);
-        assert!(view.standby[0].is_ready);
+        assert_eq!(view.secondaries.len(), 1);
+        assert!(view.secondaries[0].is_ready);
         assert_eq!(view.expected_journal_lineage, [0x11; 32]);
     }
 

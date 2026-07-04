@@ -10,8 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "penetration" / "validate_scope.py"
-DENYLIST = ROOT / ".security" / "denied-tools.txt"
-SCOPE = ROOT / ".security" / "scope.yaml"
+DENYLIST = ROOT / "scripts" / "penetration" / "denied-tools.txt"
+SCOPE = ROOT / "scripts" / "penetration" / "scope.yaml"
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "scope"
 SAFETY_POLICY = (
     ROOT
@@ -67,7 +67,10 @@ class ScopeValidationTest(unittest.TestCase):
         self.assertEqual(process.returncode, 0, process.stderr)
         self.assertEqual(payload["status"], "OK")
         self.assertEqual(payload["normalized_hosts"], ["127.0.0.1", "localhost"])
-        self.assertEqual(payload["normalized_urls"], [])
+        self.assertEqual(
+            payload["normalized_urls"],
+            ["http://127.0.0.1:18080", "http://localhost:3000/health"],
+        )
 
     def test_localhost_urls_are_accepted(self) -> None:
         process = self.run_validator(FIXTURES_DIR / "local_url_scope.yaml")
@@ -162,7 +165,7 @@ class ScopeValidationTest(unittest.TestCase):
         active_text = "\n".join(
             path.read_text(encoding="utf-8")
             for path in (
-                ROOT / "z00z_penetration_tests.sh",
+                ROOT / "scripts/run_pentest_tools.sh",
                 ROOT / "scripts" / "penetration" / "run_local_pentest.sh",
                 ROOT / "scripts" / "penetration" / "run_local_dast.sh",
                 ROOT / "scripts" / "penetration" / "check_pentest_tools.sh",

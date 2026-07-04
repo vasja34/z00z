@@ -15,8 +15,9 @@ from urllib.parse import SplitResult, urlsplit, urlunsplit
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DENYLIST_PATH = ROOT / ".security" / "denied-tools.txt"
-DEFAULT_ALLOWED_TARGETS_PATH = ROOT / ".security" / "allowed-targets.txt"
+DEFAULT_SCOPE_PATH = ROOT / "scripts" / "penetration" / "scope.yaml"
+DEFAULT_DENYLIST_PATH = ROOT / "scripts" / "penetration" / "denied-tools.txt"
+DEFAULT_ALLOWED_TARGETS_PATH = ROOT / "scripts" / "penetration" / "allowed-targets.txt"
 REQUIRED_KEYS = {
     "mode",
     "allowed_paths",
@@ -226,7 +227,7 @@ def normalize_url(raw_url: str) -> str:
 def maybe_validate_allowed_targets_mirror(scope_path: Path, normalized_hosts: list[str], errors: list[str]) -> None:
     """Keep the human-readable mirror aligned with the authoritative scope file."""
 
-    if scope_path.resolve() != (ROOT / ".security" / "scope.yaml").resolve():
+    if scope_path.resolve() != DEFAULT_SCOPE_PATH.resolve():
         return
     if not DEFAULT_ALLOWED_TARGETS_PATH.exists():
         errors.append(f"allowed target mirror is missing: {DEFAULT_ALLOWED_TARGETS_PATH}")

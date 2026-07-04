@@ -43,7 +43,7 @@ if ! nightly_has_miri; then
 fi
 
 if [[ ! -d "$MIRI_SYSROOT_PATH/lib/rustlib" ]]; then
-  unknown_or_fail "prebuilt Miri sysroot is missing at ${MIRI_SYSROOT_PATH#"$ROOT_DIR"/}; run scripts/install-verification-tools.sh --install --profile all"
+  unknown_or_fail "prebuilt Miri sysroot is missing at ${MIRI_SYSROOT_PATH#"$ROOT_DIR"/}; run scripts/verification-tools/install-verification-tools.sh --install --profile all"
   exit 0
 fi
 

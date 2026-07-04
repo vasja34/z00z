@@ -35,7 +35,7 @@ the existing `.planning/phases/065-Attack-Surface/` folder only.
 - `.planning/phases/069-New-Scenarios/066-TODO.md`
 - `crates/z00z_core/tests/test_live_guardrails.rs`
 - `crates/z00z_storage/src/settlement/root_types.md`
-- `scripts/audit_phase065_narrowed_wording.sh`
+- `scripts/audit/audit_narrowed_wording.sh`
 - `wiki/01-getting-started/workspace-map.md`
 
 ## 🔧 Landed Changes
@@ -61,7 +61,7 @@ the existing `.planning/phases/065-Attack-Surface/` folder only.
     retired asset-path fixture; it now points at
     `crates/z00z_core/configs/devnet_rights_config.yaml`.
 - Executable wording gate
-  - `scripts/audit_phase065_narrowed_wording.sh` now fails on the retired
+  - `scripts/audit/audit_narrowed_wording.sh` now fails on the retired
     `src/assets/assets_config.yaml` path, the stale regeneration wording, and
     the old profiling claim.
   - the same script also pins explicit allowlists for the few Phase 065 docs
@@ -75,7 +75,7 @@ the existing `.planning/phases/065-Attack-Surface/` folder only.
 Commands green during the final `065-09` closeout:
 
 - `./.github/skills/smart-tests-bootstrap/scripts/bootstrap_tests.sh`
-- `bash scripts/audit_phase065_narrowed_wording.sh`
+- `bash scripts/audit/audit_narrowed_wording.sh`
 - `cargo test --release -p z00z_core --test test_live_guardrails -- --nocapture`
 - `cargo test --release`
 
@@ -109,7 +109,7 @@ scope.
     then added one repo-owned wording audit script plus one compact live
     guardrail test instead of creating a parallel audit layer.
 - Pass 2
-  - Ran `bash scripts/audit_phase065_narrowed_wording.sh` and
+  - Ran `bash scripts/audit/audit_narrowed_wording.sh` and
     `cargo test --release -p z00z_core --test test_live_guardrails -- --nocapture`,
     then re-read the resulting failures against the touched docs and test
     guard.
@@ -118,7 +118,7 @@ scope.
     genesis manifest path, and one guardrail assertion expected an unsplit
     string from `root_types.md`. Fixed both and reran the same checks clean.
 - Pass 3
-  - Re-ran `bash scripts/audit_phase065_narrowed_wording.sh`, re-scanned the
+  - Re-ran `bash scripts/audit/audit_narrowed_wording.sh`, re-scanned the
     live repo for the retired `src/assets/assets_config.yaml` path and the old
     regeneration wording, and then ran the broad `cargo test --release` gate.
   - Result: clean. The wording audit passed, the only remaining exact-string
@@ -126,14 +126,14 @@ scope.
     guardrail test, and the full release workspace gate passed.
 - Pass 4
   - Re-read the newly written `065-09-SUMMARY.md`, then re-ran
-    `bash scripts/audit_phase065_narrowed_wording.sh` and
+    `bash scripts/audit/audit_narrowed_wording.sh` and
     `cargo test --release -p z00z_core --test test_live_guardrails -- --nocapture`.
   - Result: found one closeout-only regression where the first summary draft
     echoed the retired exact `src/assets/...` path literal. Removed that
     literal, reran the wording audit, and reran the targeted guardrail test
     clean.
 - Pass 5
-  - Re-ran `bash scripts/audit_phase065_narrowed_wording.sh` and a final
+  - Re-ran `bash scripts/audit/audit_narrowed_wording.sh` and a final
     residue grep for the retired exact path across live roots.
   - Result: clean. The wording audit passed, and the only remaining exact-path
     hits were the intentional denylist anchors inside the audit script and the

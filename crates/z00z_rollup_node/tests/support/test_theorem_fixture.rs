@@ -11,7 +11,7 @@ use z00z_storage::{
         CheckpointExecInput, CheckpointExecOut, CheckpointExecTx, CheckpointExecVersion,
         CheckpointInRef, CheckpointLink, CheckpointLinkVersion, CheckpointVersion,
     },
-    settlement::{CheckRoot, ClaimNullifier, DefinitionId, SerialId},
+    settlement::{CheckRoot, ClaimNullifier, DefinitionId, PublicationRouteSnapshotV1, SerialId},
     snapshot::PrepSnapshotId,
 };
 use z00z_utils::codec::{Codec, JsonCodec};
@@ -230,13 +230,25 @@ fn exec_input_from_package(package: &TxPackage, prev_root: CheckRoot) -> Checkpo
 }
 
 pub fn publication_request(batch_bytes: [u8; 32], replay_id: &str) -> PublicationRequest {
+    publication_request_with_route(
+        batch_bytes,
+        replay_id,
+        PublicationRouteSnapshotV1::new(1, [0x51; 32], 11, vec![1]),
+    )
+}
+
+pub fn publication_request_with_route(
+    batch_bytes: [u8; 32],
+    replay_id: &str,
+    publication_route: PublicationRouteSnapshotV1,
+) -> PublicationRequest {
     let (tx_package, prev_root) = package_fixture();
     let exec_input = exec_input_from_package(&tx_package, prev_root);
     let exec_bytes = encode_exec_bin(&exec_input).expect("exec encode");
     let exec_id = derive_exec_id(&exec_bytes);
     let draft = CheckpointDraft::new(
         CheckpointVersion::CURRENT,
-        11,
+        publication_route.activation_checkpoint.max(11),
         exec_input.prev_root(),
         CheckRoot::new([0x88; 32]),
         Vec::new(),
@@ -256,6 +268,7 @@ pub fn publication_request(batch_bytes: [u8; 32], replay_id: &str) -> Publicatio
     .expect("checkpoint link");
     PublicationRequest {
         batch_id: BatchId::from_bytes(batch_bytes),
+        publication_route,
         draft,
         tx_package,
         exec_input,

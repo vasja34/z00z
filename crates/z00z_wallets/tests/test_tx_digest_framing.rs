@@ -1,4 +1,4 @@
-use blake3::Hasher;
+use blake2::{Blake2b512, Digest};
 use z00z_core::{assets::AssetPkgWire, genesis::asset_std::asset_from_dev_class};
 use z00z_utils::codec::{Codec, JsonCodec};
 use z00z_wallets::tx::{
@@ -44,16 +44,17 @@ fn test_boundary_collision_digest_reference(
     tx: &TxWire,
 ) -> String {
     let tx_json = JsonCodec.serialize(tx).unwrap();
-    let mut hasher = Hasher::new();
+    let mut hasher = Blake2b512::new();
     hasher.update(b"z00z.tx.pkg.digest.v1");
     hasher.update(kind.as_bytes());
     hasher.update(package_type.as_bytes());
-    hasher.update(&[version]);
-    hasher.update(&chain_id.to_le_bytes());
+    hasher.update([version]);
+    hasher.update(chain_id.to_le_bytes());
     hasher.update(chain_type.as_bytes());
     hasher.update(chain_name.as_bytes());
     hasher.update(&tx_json);
-    hex::encode(*hasher.finalize().as_bytes())
+    let digest = hasher.finalize();
+    hex::encode(&digest[..32])
 }
 
 #[test]

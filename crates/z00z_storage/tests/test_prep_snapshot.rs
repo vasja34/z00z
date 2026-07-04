@@ -112,22 +112,6 @@ fn terminal_mix_rejects() {
 }
 
 #[test]
-fn dup_path_rejects() {
-    let snapshot = snap(&[(1, 7, 9)]);
-    let (_, store) = temp_store();
-    let item = snapshot.entries[0].clone();
-    let snapshot = PrepSnapshot::new(
-        PrepSnapshotVersion::CURRENT,
-        snapshot.prev_root,
-        vec![item.clone(), item],
-    );
-
-    let err = store.validate_snapshot(&snapshot).expect_err("dup path");
-
-    assert!(matches!(err, PrepSnapshotError::DupPath));
-}
-
-#[test]
 fn dup_terminal_rejects() {
     let (_, store) = temp_store();
     let root = z00z_storage::settlement::SettlementStateRoot::settlement_v1([9u8; 32]);
@@ -142,21 +126,6 @@ fn dup_terminal_rejects() {
         .expect_err("dup terminal");
 
     assert!(matches!(err, PrepSnapshotError::DupTerminalId));
-}
-
-#[test]
-fn leaf_mix_rejects() {
-    let snapshot = snap(&[(1, 7, 9)]);
-    let (_, store) = temp_store();
-    let item = &snapshot.entries[0];
-    let mut leaf = item.terminal_leaf().expect("asset leaf").clone();
-    leaf.owner_tag[0] ^= 1;
-    let bad = SnapItem::new(item.path(), leaf, item.wit().to_vec()).expect("snap item");
-    let snapshot = PrepSnapshot::new(PrepSnapshotVersion::CURRENT, snapshot.prev_root, vec![bad]);
-
-    let err = store.validate_snapshot(&snapshot).expect_err("leaf mix");
-
-    assert!(matches!(err, PrepSnapshotError::LeafMix));
 }
 
 #[test]

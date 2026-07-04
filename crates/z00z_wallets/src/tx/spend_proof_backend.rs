@@ -93,15 +93,15 @@ impl SpendProofStmt {
     }
 
     fn statement_hash(&self) -> [u8; 32] {
-        *blake3::hash(&self.statement).as_bytes()
+        z00z_crypto::blake2b_hash(
+            b"z00z.spend.statement.hash.v1",
+            &[self.statement.as_slice()],
+        )
     }
 
     fn public_hash(&self) -> [u8; 32] {
         let stmt_hash = self.statement_hash();
-        let mut bytes = Vec::with_capacity(SPEND_PROOF_PUB_HASH_CTX.len() + stmt_hash.len());
-        bytes.extend_from_slice(SPEND_PROOF_PUB_HASH_CTX);
-        bytes.extend_from_slice(&stmt_hash);
-        *blake3::hash(&bytes).as_bytes()
+        z00z_crypto::blake2b_hash(SPEND_PROOF_PUB_HASH_CTX, &[&stmt_hash])
     }
 }
 
@@ -482,11 +482,10 @@ impl CanonicalSpendProofBackend {
         let mut proof_bytes = Vec::with_capacity(
             SPEND_PROOF_THEOREM_CTX.len() + SPEND_PROOF_SUITE.len() + (SPEND_PROOF_HASH_LEN * 2),
         );
-        proof_bytes.extend_from_slice(SPEND_PROOF_THEOREM_CTX);
         proof_bytes.extend_from_slice(SPEND_PROOF_SUITE.as_bytes());
         proof_bytes.extend_from_slice(&statement_hash);
         proof_bytes.extend_from_slice(&public_hash);
-        blake3::hash(&proof_bytes).as_bytes().to_vec()
+        z00z_crypto::blake2b_hash(SPEND_PROOF_THEOREM_CTX, &[proof_bytes.as_slice()]).to_vec()
     }
 
     fn encode_artifact(&self, stmt: &SpendProofStmt) -> SpendProofArtifact {

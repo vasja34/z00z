@@ -145,6 +145,11 @@ impl WorkItem {
     }
 
     #[must_use]
+    pub(crate) const fn admission_digest_bytes(&self) -> [u8; 32] {
+        self.admission_digest.bytes()
+    }
+
+    #[must_use]
     pub fn payload(&self) -> &WorkPayload {
         &self.payload
     }
@@ -255,6 +260,7 @@ impl OrderedBatch {
 #[derive(Debug, Clone, PartialEq)]
 pub struct PublicationRequest {
     pub batch_id: BatchId,
+    pub publication_route: PublicationRouteSnapshotV1,
     pub draft: CheckpointDraft,
     pub tx_package: TxPackage,
     pub exec_input: CheckpointExecInput,

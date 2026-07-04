@@ -56,7 +56,7 @@ class SourceSastRunnerTest(unittest.TestCase):
                     "status": "OK",
                     "normalized_paths": [
                         "scripts/penetration",
-                        "z00z_penetration_tests.sh",
+                        "scripts/run_pentest_tools.sh",
                     ],
                 },
                 indent=2,
@@ -84,8 +84,10 @@ class SourceSastRunnerTest(unittest.TestCase):
             payload = {
                 "paths": {
                     "scanned": [
+                        ".github/.gsd-profile",
+                        "scripts/penetration/scope.yaml",
                         "scripts/penetration/run_local_pentest.sh",
-                        "z00z_penetration_tests.sh"
+                        "scripts/run_pentest_tools.sh"
                     ]
                 },
                 "results": [
@@ -191,8 +193,10 @@ class SourceSastRunnerTest(unittest.TestCase):
             )
 
             self.assertIn("scripts/penetration/run_local_pentest.sh", targets_text)
-            self.assertIn("z00z_penetration_tests.sh", targets_text)
+            self.assertIn("scripts/run_pentest_tools.sh", targets_text)
             self.assertIn("scripts/penetration/run_source_sast.sh", targets_text)
+            self.assertNotIn(".github/.gsd-profile", targets_text)
+            self.assertNotIn("scripts/penetration/scope.yaml", targets_text)
             self.assertEqual(summary["status"], "completed")
             self.assertEqual(sg_status["status"], "passed")
             self.assertEqual(tree_status["status"], "skipped")
@@ -226,6 +230,62 @@ class SourceSastRunnerTest(unittest.TestCase):
 
             self.assertEqual(summary["status"], "completed-with-missing-tools")
             self.assertEqual(sg_status["status"], "missing")
+            self.assertEqual(tree_status["status"], "missing")
+
+    def test_deep_mode_runs_sg_and_tree_sitter_when_both_are_available(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir_name:
+            temp_dir = Path(temp_dir_name)
+            artifact_dir = temp_dir / "artifacts"
+            scope_json = self.make_scope_json(temp_dir)
+            tool_paths = {
+                tool_name: self.make_fake_tool(temp_dir, tool_name)
+                for tool_name in ("semgrep", "sg", "tree-sitter", "gitleaks", "trufflehog", "trivy")
+            }
+            tool_status = self.make_tool_status(temp_dir, tool_paths)
+
+            process = self.run_runner(artifact_dir, scope_json, tool_status, mode="deep")
+
+            self.assertEqual(process.returncode, 0, process.stderr)
+
+            summary = json.loads((artifact_dir / "sast" / "summary.json").read_text(encoding="utf-8"))
+            sg_status = json.loads(
+                (artifact_dir / "normalized" / "sast.sg.status.json").read_text(encoding="utf-8")
+            )
+            tree_status = json.loads(
+                (artifact_dir / "normalized" / "sast.tree-sitter.status.json").read_text(encoding="utf-8")
+            )
+            tree_output = (artifact_dir / "raw" / "ast" / "tree-sitter.txt").read_text(encoding="utf-8")
+
+            self.assertEqual(summary["status"], "completed")
+            self.assertEqual(sg_status["status"], "passed")
+            self.assertEqual(tree_status["status"], "passed")
+            self.assertIn("fixture tree-sitter parse", tree_output)
+
+    def test_deep_mode_marks_missing_tree_sitter_instead_of_skipping_it(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir_name:
+            temp_dir = Path(temp_dir_name)
+            artifact_dir = temp_dir / "artifacts"
+            scope_json = self.make_scope_json(temp_dir)
+            tool_paths = {
+                tool_name: self.make_fake_tool(temp_dir, tool_name)
+                for tool_name in ("semgrep", "sg", "gitleaks", "trufflehog", "trivy")
+            }
+            tool_status = self.make_tool_status(temp_dir, tool_paths)
+
+            process = self.run_runner(artifact_dir, scope_json, tool_status, mode="deep")
+
+            self.assertEqual(process.returncode, 0, process.stderr)
+
+            summary = json.loads((artifact_dir / "sast" / "summary.json").read_text(encoding="utf-8"))
+            sg_status = json.loads(
+                (artifact_dir / "normalized" / "sast.sg.status.json").read_text(encoding="utf-8")
+            )
+            tree_status = json.loads(
+                (artifact_dir / "normalized" / "sast.tree-sitter.status.json").read_text(encoding="utf-8")
+            )
+
+            self.assertEqual(summary["status"], "completed-with-missing-tools")
+            self.assertEqual(sg_status["status"], "passed")
             self.assertEqual(tree_status["status"], "missing")
 
 

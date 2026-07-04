@@ -398,7 +398,7 @@ def rewrite_shard_process_home(home: Path) -> None:
             '  shard_mapping: "shard_process"\n'
             "shards:\n"
             f'  - shard_id: {shard_id}\n'
-            f'    standby_ids: [{", ".join(str(value) for value in row["standby_ids"])}]\n'
+            f'    secondary_ids: [{", ".join(str(value) for value in row["secondary_ids"])}]\n'
             f'    expected_journal_lineage: "{row["expected_journal_lineage_hex"]}"\n'
             "network:\n"
             f'  listen_addr: "127.0.0.1:{listen_port}"\n'

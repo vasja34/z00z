@@ -300,7 +300,7 @@ fn placement_view(shard_id: u16, generation: u64, aggregator_id: u16) -> ShardPl
             routing_generation: generation,
         },
         primary_id: AggregatorId::new(aggregator_id),
-        standby: Vec::new(),
+        secondaries: Vec::new(),
         expected_journal_lineage: [0x61; 32],
     }
 }

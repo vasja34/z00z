@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -21,6 +22,18 @@ def make_run_id(label: str) -> str:
     """Create a unique run id that remains easy to correlate in assertions."""
 
     return f"20260703T000000Z-{label}-{uuid.uuid4().hex[:8]}"
+
+
+def report_run_id(run_id: str) -> str:
+    """Convert the timestamp portion of a run id to the host report format."""
+
+    return re.sub(r"(\d{8})T(\d{6})Z", r"\1-\2", run_id, count=1)
+
+
+def report_dir_name(run_id: str) -> str:
+    """Return the canonical host report directory name for a run id."""
+
+    return f"z00z-pentests-report-{report_run_id(run_id)}"
 
 
 class LocalRunnerIntegrationTest(unittest.TestCase):
@@ -97,8 +110,8 @@ class LocalRunnerIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_root_name:
             temp_root = Path(temp_root_name)
             run_id = make_run_id("static-only")
-            artifact_dir = temp_root / run_id
-            report_dir = ROOT / "reports" / f"z00z-pentests_report-{run_id}"
+            artifact_dir = temp_root / report_dir_name(run_id)
+            report_dir = artifact_dir
             try:
                 process = self.run_local_runner(
                     artifact_dir,
@@ -139,9 +152,9 @@ class LocalRunnerIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_root_name:
             temp_root = Path(temp_root_name)
             run_id = make_run_id("no-dast")
-            artifact_dir = temp_root / run_id
+            artifact_dir = temp_root / report_dir_name(run_id)
             scope_path = FIXTURES_DIR / "local_url_scope.yaml"
-            report_dir = ROOT / "reports" / f"z00z-pentests_report-{run_id}"
+            report_dir = artifact_dir
             try:
                 process = self.run_local_runner(
                     artifact_dir,
@@ -173,8 +186,8 @@ class LocalRunnerIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_root_name:
             temp_root = Path(temp_root_name)
             run_id = make_run_id("check-only")
-            artifact_dir = temp_root / run_id
-            report_dir = ROOT / "reports" / f"z00z-pentests_report-{run_id}"
+            artifact_dir = temp_root / report_dir_name(run_id)
+            report_dir = artifact_dir
             try:
                 process = self.run_local_runner(
                     artifact_dir,

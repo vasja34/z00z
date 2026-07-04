@@ -1,0 +1,37 @@
+mode: local-only
+allowed_paths:
+  - crates
+  - scripts
+  - .github
+  - .planning/phases/000/066-Strix
+  - tools
+  - Cargo.toml
+  - pack_z00z_project.sh
+  - unpack_z00z_project.sh
+excluded_paths:
+  - .git
+  - target
+  - crates/z00z_crypto/tari
+  - tools/formal_verification
+  - .planning/graphs
+allowed_hosts:
+  - 127.0.0.1
+  - localhost
+# Keep at least one owned loopback HTTP target here when you want
+# httpx, nuclei, katana, and ffuf to execute in standard/deep mode.
+# Replace these examples with the local endpoints you actually operate.
+allowed_urls:
+  - http://127.0.0.1:18080
+  - http://localhost:3000/health
+forbidden:
+  - public-targets
+  - public-recon
+  - credential-attacks
+  - exploit-frameworks
+  - automated-exploitation
+  - arbitrary-command-execution
+rate_limits:
+  requests_per_second: 2
+  max_concurrency: 2
+  timeout_seconds: 30
+evidence_required: true

@@ -39,7 +39,7 @@ class PackagingPortabilityTest(unittest.TestCase):
                 top_dir = next(iter(top_dirs))
 
                 expected_members = {
-                    f"{top_dir}/z00z_penetration_tests.sh",
+                    f"{top_dir}/scripts/run_pentest_tools.sh",
                     f"{top_dir}/tools/penetration/docker/run_pentest_container.sh",
                     f"{top_dir}/scripts/penetration/validate_pentest_docker_scope.py",
                     f"{top_dir}/tools/penetration/manifests/tool-versions.lock",
@@ -72,7 +72,7 @@ class PackagingPortabilityTest(unittest.TestCase):
                 self.assertIn("tools/penetration/python/uv-tools", manifest["excluded_paths"]["exact_dirs"])
 
     def test_entrypoint_and_unpack_help_expose_portable_contract(self) -> None:
-        entry_help = run_command("bash", str(ROOT / "z00z_penetration_tests.sh"), "--help").stdout
+        entry_help = run_command("bash", str(ROOT / "scripts/run_pentest_tools.sh"), "--help").stdout
         self.assertIn("--docker-sandbox", entry_help)
         self.assertIn("--archive <path>", entry_help)
         self.assertIn("--pack", entry_help)

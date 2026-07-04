@@ -13,7 +13,7 @@ use z00z_storage::{
         derive_checkpoint_id, derive_exec_id, encode_exec_bin, CheckpointArtifact, CheckpointDraft,
         CheckpointExecInput,
     },
-    settlement::{ClaimNullifier, PublicationRouteSnapshotV1},
+    settlement::ClaimNullifier,
 };
 use z00z_utils::codec::{Codec, JsonCodec};
 use z00z_validators::{ResolvedBatch, SettlementTheoremBundle};
@@ -140,13 +140,13 @@ impl LocalDaAdapter {
         )
         .map_err(|_| DaError::PublishFailed)?;
         let checkpoint_id = derive_checkpoint_id(&artifact).map_err(|_| DaError::PublishFailed)?;
-        let route_table_digest = hash_parts(
-            b"z00z.rollup.local-da.route.v1",
-            &[&request.batch_id.into_bytes(), &payload_digest],
-        );
-        let publication_checkpoint = request.draft.height().max(1);
-        let publication_route =
-            PublicationRouteSnapshotV1::new(1, route_table_digest, publication_checkpoint, vec![1]);
+        let publication_route = request.publication_route.clone();
+        let route_table_digest = publication_route.route_table_digest;
+        let publication_checkpoint = request
+            .draft
+            .height()
+            .max(publication_route.activation_checkpoint)
+            .max(1);
         let pub_in = artifact.pub_in();
         let binding =
             bind_publication_contract(request.batch_id, checkpoint_id, route_table_digest, &pub_in);
@@ -290,6 +290,9 @@ fn request_payload_digest(request: &PublicationRequest) -> Result<[u8; 32], DaEr
     let pub_in_bytes = JsonCodec
         .serialize(&pub_in)
         .map_err(|_| DaError::PublishFailed)?;
+    let publication_route_bytes = JsonCodec
+        .serialize(&request.publication_route)
+        .map_err(|_| DaError::PublishFailed)?;
     let nullifier_bytes = nullifier_bytes(&request.nullifiers);
     let tx_package_bytes = JsonCodec
         .serialize(&request.tx_package)
@@ -304,6 +307,7 @@ fn request_payload_digest(request: &PublicationRequest) -> Result<[u8; 32], DaEr
         &[
             &request.batch_id.into_bytes(),
             request.idempotency_key.as_bytes(),
+            &publication_route_bytes,
             &pub_in_bytes,
             &tx_package_bytes,
             &exec_input_bytes,

@@ -102,7 +102,7 @@ fn capture_rejects_mismatched_publication_batch() {
     let placement = z00z_aggregators::ShardPlacement::new(
         route,
         z00z_aggregators::AggregatorId::new(19),
-        vec![z00z_aggregators::StandbyState::ready(
+        vec![z00z_aggregators::SecondaryState::ready(
             z00z_aggregators::AggregatorId::new(20),
         )],
         [0x44; 32],

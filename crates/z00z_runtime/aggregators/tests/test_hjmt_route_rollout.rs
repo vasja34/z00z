@@ -106,9 +106,9 @@ fn member_ids(table: &ShardPlacementTable) -> Vec<AggregatorId> {
             let mut out = vec![placement.primary_id];
             out.extend(
                 placement
-                    .standby
+                    .secondaries
                     .iter()
-                    .map(|standby| standby.aggregator_id),
+                    .map(|secondary| secondary.aggregator_id),
             );
             out
         })

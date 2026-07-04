@@ -59,8 +59,8 @@ Use these statuses consistently:
 
 ## 📌 Rollout Order
 
-1. Install tools with `scripts/install-verification-tools.sh --profile all`.
-2. Run `scripts/install-verification-tools.sh --self-test`.
+1. Install tools with `scripts/verification-tools/install-verification-tools.sh --profile all`.
+2. Run `scripts/verification-tools/install-verification-tools.sh --self-test`.
 3. Use L0/L3/L4 as the default pre-commit/pre-PR path.
 4. Add `specs/invariants/*.yaml` and require `ZINV:` references for security-critical code in strict mode.
 5. Add first L1 models for checkpoint/settlement and rights/voucher/policy.
@@ -75,7 +75,7 @@ Use these statuses consistently:
 - `.github/skills/z00z-l2-crypto-protocol-gate/`
 - `.github/skills/z00z-l3-rust-implementation-gate/`
 - `.github/skills/z00z-l4-security-engineering-gate/`
-- `scripts/install-verification-tools.sh`
+- `scripts/verification-tools/install-verification-tools.sh`
 
 ## 🔍 External Tool Facts Checked
 

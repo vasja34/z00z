@@ -9,8 +9,8 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 use z00z_aggregators::{
-    AggregatorId, BatchRoute, ShardId, ShardPlacement, ShardPlacementTable, ShardRouteTable,
-    StandbyState,
+    AggregatorId, BatchRoute, SecondaryState, ShardId, ShardPlacement, ShardPlacementTable,
+    ShardRouteTable,
 };
 use z00z_storage::{
     checkpoint::CheckpointId,
@@ -126,7 +126,7 @@ pub struct AggProc {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShardOwn {
     pub shard_id: ShardId,
-    pub standby_ids: Vec<AggregatorId>,
+    pub secondary_ids: Vec<AggregatorId>,
     pub expected_journal_lineage: [u8; 32],
 }
 
@@ -337,7 +337,7 @@ struct AggFile {
 #[serde(deny_unknown_fields)]
 struct ShardFile {
     shard_id: u16,
-    standby_ids: Vec<u16>,
+    secondary_ids: Vec<u16>,
     expected_journal_lineage: String,
 }
 
@@ -592,16 +592,16 @@ impl HjmtCfg {
                     shard_id: shard.shard_id,
                     routing_generation: agg.routing_generation,
                 };
-                let standby = shard
-                    .standby_ids
+                let secondary = shard
+                    .secondary_ids
                     .iter()
                     .copied()
-                    .map(StandbyState::ready)
+                    .map(SecondaryState::ready)
                     .collect();
                 table.insert(ShardPlacement::new(
                     route,
                     agg.aggregator_id,
-                    standby,
+                    secondary,
                     shard.expected_journal_lineage,
                 ));
             }
@@ -705,8 +705,8 @@ fn load_aggs(root: &Path) -> Result<Vec<AggProc>, NodeCfgErr> {
         for item in raw.shards {
             shards.push(ShardOwn {
                 shard_id: ShardId::new(item.shard_id),
-                standby_ids: item
-                    .standby_ids
+                secondary_ids: item
+                    .secondary_ids
                     .into_iter()
                     .map(AggregatorId::new)
                     .collect(),
@@ -948,32 +948,32 @@ fn validate_hjmt(cfg: &HjmtCfg) -> Result<(), NodeCfgErr> {
                     ),
                 );
             }
-            if shard.standby_ids.is_empty() {
+            if shard.secondary_ids.is_empty() {
                 return invalid(
                     path.clone(),
                     format!(
-                        "shard {} must have at least one standby",
+                        "shard {} must have at least one secondary",
                         shard.shard_id.as_u16()
                     ),
                 );
             }
-            let mut standby_ids = BTreeSet::new();
-            for standby in &shard.standby_ids {
-                if !standby_ids.insert(*standby) {
+            let mut secondary_ids = BTreeSet::new();
+            for secondary in &shard.secondary_ids {
+                if !secondary_ids.insert(*secondary) {
                     return invalid(
                         path.clone(),
                         format!(
-                            "shard {} standby set must stay unique",
+                            "shard {} secondary set must stay unique",
                             shard.shard_id.as_u16()
                         ),
                     );
                 }
             }
-            if shard.standby_ids.contains(&agg.aggregator_id) {
+            if shard.secondary_ids.contains(&agg.aggregator_id) {
                 return invalid(
                     path.clone(),
                     format!(
-                        "shard {} standby set must not include primary {}",
+                        "shard {} secondary set must not include primary {}",
                         shard.shard_id.as_u16(),
                         agg.aggregator_id.as_u16()
                     ),
@@ -1005,14 +1005,14 @@ fn validate_hjmt(cfg: &HjmtCfg) -> Result<(), NodeCfgErr> {
     }
     for agg in &cfg.aggs {
         for shard in &agg.shards {
-            for standby in &shard.standby_ids {
-                if !agg_ids.contains(standby) {
+            for secondary in &shard.secondary_ids {
+                if !agg_ids.contains(secondary) {
                     return invalid(
                         path.clone(),
                         format!(
-                            "shard {} standby {} is not a declared aggregator",
+                            "shard {} secondary {} is not a declared aggregator",
                             shard.shard_id.as_u16(),
-                            standby.as_u16()
+                            secondary.as_u16()
                         ),
                     );
                 }
@@ -1139,21 +1139,21 @@ fn check_preflight_placement(
                 ),
             );
         }
-        for standby in &row.standby {
-            if !agg_ids.contains(&standby.aggregator_id) {
+        for secondary in &row.secondaries {
+            if !agg_ids.contains(&secondary.aggregator_id) {
                 return invalid(
                     cfg.home.clone(),
                     format!(
-                        "shard {} standby references unknown aggregator",
+                        "shard {} secondary references unknown aggregator",
                         shard_id.as_u16()
                     ),
                 );
             }
-            if standby.aggregator_id == row.primary_id {
+            if secondary.aggregator_id == row.primary_id {
                 return invalid(
                     cfg.home.clone(),
                     format!(
-                        "shard {} standby must not equal the primary owner",
+                        "shard {} secondary must not equal the primary owner",
                         shard_id.as_u16()
                     ),
                 );

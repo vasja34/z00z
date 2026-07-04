@@ -10,9 +10,9 @@ use z00z_storage::fixture_support::settlement_corpus::{
 use z00z_storage::settlement::{SettlementPath, SettlementStore, StoreItem, StoreOp, TerminalLeaf};
 use z00z_utils::codec::{Codec, JsonCodec};
 
-const BUCKET_COMMIT_REGEN_CMD: &str = "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_commit print_bucket_commit_manifest_json -- --ignored --nocapture";
+const BUCKET_COMMIT_REGEN_CMD: &str = "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_commit test_bucket_manifest_matches -- --exact --nocapture";
 const BUCKET_COMMIT_EVIDENCE_PTR: &str =
-    "crates/z00z_storage/tests/test_hjmt_batch_commit.rs::test_bucket_commit_manifest_matches_live_contract";
+    "crates/z00z_storage/tests/test_hjmt_batch_commit.rs::test_bucket_manifest_matches";
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -71,7 +71,14 @@ fn item(path: SettlementPath, mark: u8) -> StoreItem {
 #[test]
 fn test_bucket_manifest_matches() {
     let manifest = load_bucket_commit_manifest();
-    assert_eq!(manifest, build_bucket_commit_manifest());
+    let live = build_bucket_commit_manifest();
+    if std::env::var_os("Z00Z_REGEN_DUMP").is_some() {
+        let rendered = JsonCodec
+            .serialize_pretty(&live)
+            .expect("encode bucket commit manifest");
+        println!("{}", String::from_utf8(rendered).expect("utf8 manifest"));
+    }
+    assert_eq!(manifest, live);
 }
 
 #[test]
@@ -104,16 +111,6 @@ fn test_batch_commit_matches_oracle() -> Result<(), Box<dyn std::error::Error>> 
     assert_store_matches_oracle(&reloaded, &oracle);
 
     Ok(())
-}
-
-#[test]
-#[ignore]
-fn print_bucket_commit_manifest_json() {
-    let manifest = build_bucket_commit_manifest();
-    let rendered = JsonCodec
-        .serialize_pretty(&manifest)
-        .expect("encode bucket commit manifest");
-    println!("{}", String::from_utf8(rendered).expect("utf8 manifest"));
 }
 
 fn load_bucket_commit_manifest() -> BucketCommitManifest {

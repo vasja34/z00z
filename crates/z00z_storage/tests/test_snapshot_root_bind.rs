@@ -5,16 +5,6 @@ use z00z_storage::{
 };
 
 #[test]
-fn test_root_ok() {
-    let snapshot = snap(&[(1, 7, 9)]);
-    let (_, store) = temp_store();
-
-    store
-        .validate_snapshot(&snapshot)
-        .expect("validate snapshot");
-}
-
-#[test]
 fn test_root_mix() {
     let mut snapshot = snap(&[(1, 7, 9)]);
     let (_, store) = temp_store();

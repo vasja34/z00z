@@ -1,7 +1,9 @@
 mod test_recovery_common;
 
 use tempfile::tempdir;
-use z00z_aggregators::{AggregatorId, RecoveryBoundary, RecoveryIntent, RejectClass, StandbyState};
+use z00z_aggregators::{
+    AggregatorId, RecoveryBoundary, RecoveryIntent, RejectClass, SecondaryState,
+};
 use z00z_storage::settlement::{SettlementRecoveryState, SettlementRouteCtx, SettlementStateRoot};
 
 use self::test_recovery_common::{
@@ -36,8 +38,8 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
     let live_route = route(5, 12);
     let recovery = route_bound_recovery_state(0x81, batch_id(FOV_T_001), live_route, [0x41; 32])?;
     let primary = AggregatorId::new(21);
-    let standby = AggregatorId::new(22);
-    let ready = StandbyState::ready(standby);
+    let secondary = AggregatorId::new(22);
+    let ready = SecondaryState::ready(secondary);
     let record = recovery_record(
         FOV_T_001,
         live_route,
@@ -54,7 +56,7 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
     let pending_table = placement_table(
         live_route,
         primary,
-        vec![StandbyState::pending(standby)],
+        vec![SecondaryState::pending(secondary)],
         recovery.journal_lineage,
     );
 
@@ -101,8 +103,8 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
         RejectCase {
             id: FOV_T_001,
             kind: "wrong lineage",
-            requester: standby,
-            intent: RecoveryIntent::TakeoverStandby,
+            requester: secondary,
+            intent: RecoveryIntent::TakeoverSecondary,
             want_class: RejectClass::PolicyReject,
             want_detail: "wrong lineage",
             table: placement_table(live_route, primary, vec![ready], recovery.journal_lineage),
@@ -111,8 +113,8 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
         RejectCase {
             id: FOV_T_001,
             kind: "wrong generation",
-            requester: standby,
-            intent: RecoveryIntent::TakeoverStandby,
+            requester: secondary,
+            intent: RecoveryIntent::TakeoverSecondary,
             want_class: RejectClass::PolicyReject,
             want_detail: "wrong generation",
             table: wrong_generation_table.clone(),
@@ -121,8 +123,8 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
         RejectCase {
             id: FOV_T_001,
             kind: "wrong route digest",
-            requester: standby,
-            intent: RecoveryIntent::TakeoverStandby,
+            requester: secondary,
+            intent: RecoveryIntent::TakeoverSecondary,
             want_class: RejectClass::PolicyReject,
             want_detail: "wrong route digest",
             table: placement_table(live_route, primary, vec![ready], recovery.journal_lineage),
@@ -131,8 +133,8 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
         RejectCase {
             id: FOV_T_001,
             kind: "wrong shard",
-            requester: standby,
-            intent: RecoveryIntent::TakeoverStandby,
+            requester: secondary,
+            intent: RecoveryIntent::TakeoverSecondary,
             want_class: RejectClass::PolicyReject,
             want_detail: "wrong shard",
             table: placement_table(live_route, primary, vec![ready], recovery.journal_lineage),
@@ -141,8 +143,8 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
         RejectCase {
             id: FOV_T_001,
             kind: "stale local root",
-            requester: standby,
-            intent: RecoveryIntent::TakeoverStandby,
+            requester: secondary,
+            intent: RecoveryIntent::TakeoverSecondary,
             want_class: RejectClass::PolicyReject,
             want_detail: "stale local root",
             table: placement_table(live_route, primary, vec![ready], recovery.journal_lineage),
@@ -151,8 +153,8 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
         RejectCase {
             id: FOV_T_001,
             kind: "stale restart",
-            requester: standby,
-            intent: RecoveryIntent::TakeoverStandby,
+            requester: secondary,
+            intent: RecoveryIntent::TakeoverSecondary,
             want_class: RejectClass::PolicyReject,
             want_detail: "stale restart",
             table: placement_table(live_route, primary, vec![ready], recovery.journal_lineage),
@@ -160,11 +162,11 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
         },
         RejectCase {
             id: FOV_T_002,
-            kind: "standby down",
-            requester: standby,
-            intent: RecoveryIntent::TakeoverStandby,
+            kind: "secondary aggregator down",
+            requester: secondary,
+            intent: RecoveryIntent::TakeoverSecondary,
             want_class: RejectClass::DeferredRetry,
-            want_detail: "standby down",
+            want_detail: "secondary aggregator down",
             table: pending_table,
             current: recovery.clone(),
         },
@@ -172,7 +174,7 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
             id: FOV_T_002,
             kind: "split-brain",
             requester: primary,
-            intent: RecoveryIntent::TakeoverStandby,
+            intent: RecoveryIntent::TakeoverSecondary,
             want_class: RejectClass::PolicyReject,
             want_detail: "split-brain",
             table: placement_table(live_route, primary, vec![ready], recovery.journal_lineage),
@@ -181,8 +183,8 @@ fn test_failover_reject_matrix() -> Result<(), Box<dyn std::error::Error>> {
         RejectCase {
             id: FOV_T_002,
             kind: "route migration during crash",
-            requester: standby,
-            intent: RecoveryIntent::TakeoverStandby,
+            requester: secondary,
+            intent: RecoveryIntent::TakeoverSecondary,
             want_class: RejectClass::PolicyReject,
             want_detail: "wrong generation",
             table: wrong_generation_table,
@@ -255,7 +257,7 @@ fn test_blocks_failover_reentry() -> Result<(), Box<dyn std::error::Error>> {
         "decommissioned-aggregator",
         row.route,
         row.primary_id,
-        row.standby.clone(),
+        row.secondaries.clone(),
         recovery.clone(),
     );
 
@@ -265,12 +267,12 @@ fn test_blocks_failover_reentry() -> Result<(), Box<dyn std::error::Error>> {
             &new_cfg.placement_table().expect("placement table"),
             &record,
             &recovery,
-            RecoveryIntent::TakeoverStandby,
+            RecoveryIntent::TakeoverSecondary,
         )
         .expect_err("removed aggregator must not re-enter failover");
 
     assert_eq!(err.class, RejectClass::PolicyReject);
-    assert!(err.detail.contains("not a lawful standby"));
+    assert!(err.detail.contains("not a lawful secondary aggregator"));
 
     Ok(())
 }

@@ -69,16 +69,6 @@ crates:
     mode: release
     run_tests: true
     run_benches: true
-  z00z_extensions:
-    path: crates/z00z_extensions
-    name: z00z_extensions
-    version: 0.1.0
-    description: z00z_extensions crate
-    build: true
-    clean: true
-    mode: release
-    run_tests: true
-    run_benches: true
   z00z_rollup_node:
     path: crates/z00z_rollup_node
     name: z00z_rollup_node

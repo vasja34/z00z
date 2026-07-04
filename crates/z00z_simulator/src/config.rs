@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use z00z_utils::codec::CodecError;
 
+#[path = "config_accessors.rs"]
 mod config_accessors;
+#[path = "config_defaults.rs"]
 mod config_defaults;
 
 /// Scenario metadata block.
@@ -127,7 +129,7 @@ pub struct PublicationTopologyStageCfg {
     pub shard_count: usize,
     pub route_generation: u64,
     pub owner_aggregator_id: u16,
-    pub standby_aggregator_ids: Vec<u16>,
+    pub secondary_aggregator_ids: Vec<u16>,
 }
 
 /// Config-driven positive topology example that the publication lane must
@@ -146,7 +148,7 @@ pub struct PublicationTopologyCfg {
     pub route_generation_from: u64,
     pub route_generation_to: u64,
     pub owner_aggregator_id: u16,
-    pub standby_aggregator_ids: Vec<u16>,
+    pub secondary_aggregator_ids: Vec<u16>,
     pub join_mode: String,
     pub transfer_target: String,
     pub activation_checkpoint: u64,
@@ -157,7 +159,7 @@ pub struct PublicationTopologyCfg {
     #[serde(default)]
     pub removed_aggregator_absent_from_owner_tables: bool,
     #[serde(default)]
-    pub removed_aggregator_absent_from_standby_tables: bool,
+    pub removed_aggregator_absent_from_secondary_tables: bool,
     #[serde(default)]
     pub all_shards_owned_across_stages: bool,
     #[serde(default)]

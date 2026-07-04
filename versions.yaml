@@ -1,6 +1,6 @@
 total_version:
-  version: 1.3.0
-  last_git_tag: v1.3.0
+  version: 1.4.0
+  last_git_tag: v1.4.0
 crates:
   aggregators:
     path: crates/z00z_runtime/aggregators
@@ -30,10 +30,6 @@ crates:
     path: crates/z00z_crypto
     name: z00z_crypto
     version: 0.22.1
-  z00z_extensions:
-    path: crates/z00z_extensions
-    name: z00z_extensions
-    version: 0.1.0
   z00z_rollup_node:
     path: crates/z00z_rollup_node
     name: z00z_rollup_node

@@ -1,0 +1,1358 @@
+use std::{
+    collections::BTreeSet,
+    path::{Component, Path, PathBuf},
+};
+
+use serde::{Deserialize, Serialize};
+use z00z_utils::io::load_yaml_bounded;
+
+use crate::CheckpointError;
+
+pub const CHECKPOINT_CONTRACT_CONFIG_PATH: &str =
+    "crates/z00z_storage/src/checkpoint/checkpoint_contract.yaml";
+const CHECKPOINT_CONTRACT_CONFIG_MAX_BYTES: u64 = 256 * 1024;
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CheckpointContractConfigV1 {
+    pub version: u32,
+    pub profile: String,
+    pub architecture_mode: String,
+    pub statement: StatementCfg,
+    pub branches: BranchesCfg,
+    pub authority_promotion: AuthorityPromotionCfg,
+    pub gates: GatesCfg,
+    pub da: DaCfg,
+    pub archive_retention: ArchiveRetentionCfg,
+    pub post_quantum: PostQuantumCfg,
+    pub snapshots: SnapshotsCfg,
+    pub pruning: PruningCfg,
+    pub retention: RetentionCfg,
+    pub paths: CheckpointContractPaths,
+    pub limits: CheckpointContractLimits,
+    pub documentation: DocumentationCfg,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct StatementCfg {
+    pub version: u32,
+    pub domain: String,
+    pub required_fields: Vec<String>,
+    pub optional_fields: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct BranchesCfg {
+    pub canonical: CanonicalBranchCfg,
+    pub recursive: RecursiveBranchCfg,
+    pub nova: NovaBranchCfg,
+    pub plonky3_epoch: Plonky3EpochBranchCfg,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CanonicalBranchCfg {
+    pub is_enabled: bool,
+    pub is_authoritative: bool,
+    pub proof_system: String,
+    pub has_exact_tx_proof_bytes: bool,
+    pub has_checkpoint_link: bool,
+    pub has_replay_ids: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RecursiveBranchCfg {
+    pub is_enabled: bool,
+    pub is_authoritative: bool,
+    pub mode: String,
+    pub proof_system: String,
+    pub has_prior_output_binding: bool,
+    pub min_chain_steps: u32,
+    pub target_chain_steps: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct NovaBranchCfg {
+    pub is_enabled: bool,
+    pub cadence_blocks: u64,
+    pub is_authoritative: bool,
+    pub is_pq_authoritative: bool,
+    pub mode: String,
+    pub proof_system: String,
+    pub has_prior_output_binding: bool,
+    pub must_bind_statement_digest: bool,
+    pub must_bind_checkpoint_link: bool,
+    pub retain_until_pq_epoch: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Plonky3EpochBranchCfg {
+    pub is_enabled: bool,
+    pub cadence_blocks: u64,
+    pub is_authoritative: bool,
+    pub is_pq_authoritative: bool,
+    pub mode: String,
+    pub proof_system: String,
+    pub must_prove_canonical_transition_range: bool,
+    pub may_bind_nova_chain_root: bool,
+    pub must_not_depend_only_on_nova: bool,
+    pub field: String,
+    pub hash: String,
+    pub security_bits: u16,
+    pub recursion_library: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct AuthorityPromotionCfg {
+    pub stage: String,
+    pub recursive_authority_allowed: bool,
+    pub verified_backend_allowed: bool,
+    pub allowed_next_stages: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct GatesCfg {
+    pub inputs: InputGatesCfg,
+    pub outputs: OutputGatesCfg,
+    pub artifacts: ArtifactGatesCfg,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct InputGatesCfg {
+    pub has_statement_fields: bool,
+    pub has_exec_input_id: bool,
+    pub has_prep_snapshot_id: bool,
+    pub has_da_ref: bool,
+    pub has_exact_tx_proof_bytes: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct OutputGatesCfg {
+    pub has_checkpoint_artifact: bool,
+    pub has_checkpoint_link: bool,
+    pub has_da_export: bool,
+    pub has_archive_manifest: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ArtifactGatesCfg {
+    pub has_recursive_sidecar_non_authoritative: bool,
+    pub has_pq_anchor_on_cadence: bool,
+    pub has_mixed_era_fail_closed: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct DaCfg {
+    pub provider_sdk_boundary: String,
+    pub publication_readiness_gate: String,
+    pub challenge_window_start: String,
+    pub allowed_sync_modes: Vec<String>,
+    pub provider_families: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ArchiveRetentionCfg {
+    pub celestia_is_da_only: bool,
+    pub long_term_retrieval_required: bool,
+    pub content_addressing_required: bool,
+    pub ipfs_pinning_required: bool,
+    pub provider_receipts_required: bool,
+    pub retrieval_audit_required: bool,
+    pub retrievability_is_not_validity: bool,
+    pub min_archive_replicas: u32,
+    pub retrieval_audit_interval_blocks: u64,
+    pub allowed_backends: Vec<String>,
+    pub required_artifacts: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct PostQuantumCfg {
+    pub is_enabled: bool,
+    pub cadence_blocks: u64,
+    pub mode: String,
+    pub enforcement_stage: String,
+    pub enforce_live_cadence: bool,
+    pub required_artifacts: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct SnapshotsCfg {
+    pub is_enabled: bool,
+    pub cadence_epochs: u64,
+    pub cadence_blocks: u64,
+    pub object_type: String,
+    pub bootstrap_allowed_from_snapshot: bool,
+    pub requires_retrieval_audit: bool,
+    pub must_bind_state_root: bool,
+    pub must_bind_settlement_root: bool,
+    pub must_bind_last_plonky3_epoch_proof: bool,
+    pub must_bind_last_epoch_manifest_root: bool,
+    pub must_bind_archive_manifest_root: bool,
+    pub must_bind_snapshot_chunk_root: bool,
+    pub must_bind_pq_anchor_root: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct PruningCfg {
+    pub full_node_pruning_allowed: bool,
+    pub archive_node_pruning_allowed: bool,
+    pub prune_scope: String,
+    pub min_retain_recent_epochs: u64,
+    pub requires_dispute_window_elapsed: bool,
+    pub requires_plonky3_epoch_finalized: bool,
+    pub requires_epoch_manifest_finalized: bool,
+    pub requires_archive_replication_threshold_met: bool,
+    pub requires_retrieval_audit_passed: bool,
+    pub must_keep_compact_metadata: bool,
+    pub must_keep_epoch_manifest: bool,
+    pub must_keep_state_snapshot: bool,
+    pub must_not_prune_archive_replicas: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RetentionCfg {
+    pub dispute_window_blocks: u64,
+    pub challenge_window_start: String,
+    pub raw_tx_packages: String,
+    pub witness_data: String,
+    pub tx_proof_bytes: String,
+    pub nova_block_proofs: String,
+    pub plonky3_epoch_proofs: String,
+    pub epoch_manifests: String,
+    pub compact_metadata: String,
+    pub da_blobs: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CheckpointContractPaths {
+    pub checkpoint_artifacts: PathBuf,
+    pub checkpoint_links: PathBuf,
+    pub exec_inputs: PathBuf,
+    pub prep_snapshots: PathBuf,
+    pub delta_journals: PathBuf,
+    pub witness_archives: PathBuf,
+    pub recursive_sidecars: PathBuf,
+    pub nova_block_proofs: PathBuf,
+    pub pq_checkpoints: PathBuf,
+    pub plonky3_epoch_proofs: PathBuf,
+    pub epoch_manifests: PathBuf,
+    pub archive_manifests: PathBuf,
+    pub state_snapshots: PathBuf,
+    pub retrieval_audits: PathBuf,
+    pub archive_receipts: PathBuf,
+    pub da_exports: PathBuf,
+    pub documentation_packets: PathBuf,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CheckpointContractLimits {
+    pub max_batch_ops: usize,
+    pub max_batch_bytes: usize,
+    pub max_witness_bytes: usize,
+    pub max_recursive_proof_bytes: usize,
+    pub max_recursive_sidecar_bytes: usize,
+    pub max_nova_block_proof_bytes: usize,
+    pub max_epoch_nova_archive_bytes: usize,
+    pub max_plonky3_epoch_proof_bytes: usize,
+    pub max_plonky3_epoch_sidecar_bytes: usize,
+    pub max_pq_anchor_bytes: usize,
+    pub max_archive_manifest_bytes: usize,
+    pub max_state_snapshot_manifest_bytes: usize,
+    pub max_retrieval_audit_bytes: usize,
+    pub max_documentation_packet_bytes: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct DocumentationCfg {
+    pub recursive_packet_required: bool,
+    pub include_source_disposition: bool,
+    pub include_object_schemas: bool,
+    pub include_golden_vectors: bool,
+    pub include_chain_evidence_ids: bool,
+    pub include_measurements: bool,
+    pub include_pq_cadence_evidence: bool,
+    pub include_backend_manifest: bool,
+    pub include_rejected_claim_register: bool,
+}
+
+impl CheckpointContractConfigV1 {
+    pub fn load(path: impl AsRef<Path>) -> Result<Self, CheckpointError> {
+        let cfg: Self = load_yaml_bounded(path.as_ref(), CHECKPOINT_CONTRACT_CONFIG_MAX_BYTES)
+            .map_err(|err| CheckpointError::ContractConfig(err.to_string()))?;
+        cfg.validate()?;
+        Ok(cfg)
+    }
+
+    pub fn load_repo_default() -> Result<Self, CheckpointError> {
+        Self::load(CHECKPOINT_CONTRACT_CONFIG_PATH)
+    }
+
+    pub fn validate(&self) -> Result<(), CheckpointError> {
+        require_eq_u32("version", self.version, 1)?;
+        require_eq(
+            "profile",
+            &self.profile,
+            "checkpoint-contract-recursive-ready-v1",
+        )?;
+        require_eq(
+            "architecture_mode",
+            &self.architecture_mode,
+            "checkpoint_contract_first",
+        )?;
+        self.validate_statement()?;
+        self.validate_branches()?;
+        self.validate_authority_promotion()?;
+        self.validate_gates()?;
+        self.validate_da()?;
+        self.validate_archive_retention()?;
+        self.validate_post_quantum()?;
+        self.validate_snapshots()?;
+        self.validate_pruning()?;
+        self.validate_retention()?;
+        self.validate_paths()?;
+        self.validate_limits()?;
+        self.validate_documentation()?;
+        Ok(())
+    }
+
+    pub fn is_pq_cadence_height(&self, height: u64) -> bool {
+        height > 0 && height.is_multiple_of(self.post_quantum.cadence_blocks)
+    }
+
+    fn validate_statement(&self) -> Result<(), CheckpointError> {
+        require_eq_u32("statement.version", self.statement.version, 1)?;
+        require_eq(
+            "statement.domain",
+            &self.statement.domain,
+            "z00z.checkpoint.transition.v1",
+        )?;
+        require_exact_list(
+            "statement.required_fields",
+            &self.statement.required_fields,
+            &[
+                "height",
+                "prev_root",
+                "new_root",
+                "prev_settlement_root",
+                "new_settlement_root",
+                "checkpoint_exec_input_id",
+                "prep_snapshot_id",
+                "tx_data_root",
+                "delta_root",
+                "witness_root",
+                "journal_digest",
+                "da_ref",
+            ],
+        )?;
+        require_exact_list(
+            "statement.optional_fields",
+            &self.statement.optional_fields,
+            &[
+                "claim_root",
+                "prior_recursive_output_root",
+                "pq_anchor_root",
+            ],
+        )
+    }
+
+    fn validate_branches(&self) -> Result<(), CheckpointError> {
+        let canonical = &self.branches.canonical;
+        require_true("branches.canonical.is_enabled", canonical.is_enabled)?;
+        require_true(
+            "branches.canonical.is_authoritative",
+            canonical.is_authoritative,
+        )?;
+        require_eq(
+            "branches.canonical.proof_system",
+            &canonical.proof_system,
+            "opaque_attest",
+        )?;
+        require_true(
+            "branches.canonical.has_exact_tx_proof_bytes",
+            canonical.has_exact_tx_proof_bytes,
+        )?;
+        require_true(
+            "branches.canonical.has_checkpoint_link",
+            canonical.has_checkpoint_link,
+        )?;
+        require_true(
+            "branches.canonical.has_replay_ids",
+            canonical.has_replay_ids,
+        )?;
+
+        let recursive = &self.branches.recursive;
+        require_true("branches.recursive.is_enabled", recursive.is_enabled)?;
+        require_false(
+            "branches.recursive.is_authoritative",
+            recursive.is_authoritative,
+        )?;
+        require_eq(
+            "branches.recursive.mode",
+            &recursive.mode,
+            "hybrid_nova_plonky3",
+        )?;
+        require_eq(
+            "branches.recursive.proof_system",
+            &recursive.proof_system,
+            "recursive_hybrid_v1",
+        )?;
+        require_true(
+            "branches.recursive.has_prior_output_binding",
+            recursive.has_prior_output_binding,
+        )?;
+        if recursive.min_chain_steps < 3 {
+            return invalid("branches.recursive.min_chain_steps must be >= 3");
+        }
+        if recursive.target_chain_steps < recursive.min_chain_steps {
+            return invalid("branches.recursive.target_chain_steps must be >= min_chain_steps");
+        }
+        if recursive.target_chain_steps > 5 {
+            return invalid("branches.recursive.target_chain_steps must be <= 5");
+        }
+
+        let nova = &self.branches.nova;
+        require_true("branches.nova.is_enabled", nova.is_enabled)?;
+        require_eq_u64("branches.nova.cadence_blocks", nova.cadence_blocks, 1)?;
+        require_false("branches.nova.is_authoritative", nova.is_authoritative)?;
+        require_false(
+            "branches.nova.is_pq_authoritative",
+            nova.is_pq_authoritative,
+        )?;
+        require_eq(
+            "branches.nova.mode",
+            &nova.mode,
+            "fast_classical_compressed",
+        )?;
+        require_eq(
+            "branches.nova.proof_system",
+            &nova.proof_system,
+            "nova_compressed_v1",
+        )?;
+        require_true(
+            "branches.nova.has_prior_output_binding",
+            nova.has_prior_output_binding,
+        )?;
+        require_true(
+            "branches.nova.must_bind_statement_digest",
+            nova.must_bind_statement_digest,
+        )?;
+        require_true(
+            "branches.nova.must_bind_checkpoint_link",
+            nova.must_bind_checkpoint_link,
+        )?;
+        require_true(
+            "branches.nova.retain_until_pq_epoch",
+            nova.retain_until_pq_epoch,
+        )?;
+
+        let plonky3 = &self.branches.plonky3_epoch;
+        require_true("branches.plonky3_epoch.is_enabled", plonky3.is_enabled)?;
+        if plonky3.cadence_blocks != self.post_quantum.cadence_blocks {
+            return invalid(
+                "branches.plonky3_epoch.cadence_blocks must equal post_quantum.cadence_blocks",
+            );
+        }
+        require_false(
+            "branches.plonky3_epoch.is_authoritative",
+            plonky3.is_authoritative,
+        )?;
+        require_true(
+            "branches.plonky3_epoch.is_pq_authoritative",
+            plonky3.is_pq_authoritative,
+        )?;
+        require_eq(
+            "branches.plonky3_epoch.mode",
+            &plonky3.mode,
+            "pq_epoch_finality",
+        )?;
+        require_eq(
+            "branches.plonky3_epoch.proof_system",
+            &plonky3.proof_system,
+            "plonky3_stark_epoch_v1",
+        )?;
+        require_true(
+            "branches.plonky3_epoch.must_prove_canonical_transition_range",
+            plonky3.must_prove_canonical_transition_range,
+        )?;
+        require_true(
+            "branches.plonky3_epoch.may_bind_nova_chain_root",
+            plonky3.may_bind_nova_chain_root,
+        )?;
+        require_true(
+            "branches.plonky3_epoch.must_not_depend_only_on_nova",
+            plonky3.must_not_depend_only_on_nova,
+        )?;
+        require_eq("branches.plonky3_epoch.field", &plonky3.field, "koala_bear")?;
+        require_eq("branches.plonky3_epoch.hash", &plonky3.hash, "poseidon2")?;
+        if plonky3.security_bits < 124 {
+            return invalid("branches.plonky3_epoch.security_bits must be >= 124");
+        }
+        require_eq(
+            "branches.plonky3_epoch.recursion_library",
+            &plonky3.recursion_library,
+            "p3_recursion",
+        )?;
+        Ok(())
+    }
+
+    fn validate_authority_promotion(&self) -> Result<(), CheckpointError> {
+        require_false(
+            "authority_promotion.recursive_authority_allowed",
+            self.authority_promotion.recursive_authority_allowed,
+        )?;
+        require_false(
+            "authority_promotion.verified_backend_allowed",
+            self.authority_promotion.verified_backend_allowed,
+        )?;
+        let next = match self.authority_promotion.stage.as_str() {
+            "spec_only" => "config_gate",
+            "config_gate" => "canonical_extended_statement",
+            "canonical_extended_statement" => "recursive_shadow_sidecar",
+            "recursive_shadow_sidecar" => "pq_anchor_writer",
+            "pq_anchor_writer" => "verified_backend_candidate",
+            "verified_backend_candidate" => "verified_backend_enabled",
+            "verified_backend_enabled" => {
+                return invalid("verified_backend_enabled is not allowed by Phase 069 gate")
+            }
+            other => return invalid(format!("unsupported authority_promotion.stage {other}")),
+        };
+        require_exact_list(
+            "authority_promotion.allowed_next_stages",
+            &self.authority_promotion.allowed_next_stages,
+            &[next],
+        )
+    }
+
+    fn validate_gates(&self) -> Result<(), CheckpointError> {
+        require_true(
+            "gates.inputs.has_statement_fields",
+            self.gates.inputs.has_statement_fields,
+        )?;
+        require_true(
+            "gates.inputs.has_exec_input_id",
+            self.gates.inputs.has_exec_input_id,
+        )?;
+        require_true(
+            "gates.inputs.has_prep_snapshot_id",
+            self.gates.inputs.has_prep_snapshot_id,
+        )?;
+        require_true("gates.inputs.has_da_ref", self.gates.inputs.has_da_ref)?;
+        require_true(
+            "gates.inputs.has_exact_tx_proof_bytes",
+            self.gates.inputs.has_exact_tx_proof_bytes,
+        )?;
+        require_true(
+            "gates.outputs.has_checkpoint_artifact",
+            self.gates.outputs.has_checkpoint_artifact,
+        )?;
+        require_true(
+            "gates.outputs.has_checkpoint_link",
+            self.gates.outputs.has_checkpoint_link,
+        )?;
+        require_true(
+            "gates.outputs.has_da_export",
+            self.gates.outputs.has_da_export,
+        )?;
+        require_true(
+            "gates.outputs.has_archive_manifest",
+            self.gates.outputs.has_archive_manifest,
+        )?;
+        require_true(
+            "gates.artifacts.has_recursive_sidecar_non_authoritative",
+            self.gates.artifacts.has_recursive_sidecar_non_authoritative,
+        )?;
+        require_true(
+            "gates.artifacts.has_pq_anchor_on_cadence",
+            self.gates.artifacts.has_pq_anchor_on_cadence,
+        )?;
+        require_true(
+            "gates.artifacts.has_mixed_era_fail_closed",
+            self.gates.artifacts.has_mixed_era_fail_closed,
+        )
+    }
+
+    fn validate_da(&self) -> Result<(), CheckpointError> {
+        require_eq(
+            "da.provider_sdk_boundary",
+            &self.da.provider_sdk_boundary,
+            "adapter_only",
+        )?;
+        require_eq(
+            "da.publication_readiness_gate",
+            &self.da.publication_readiness_gate,
+            "required",
+        )?;
+        require_eq(
+            "da.challenge_window_start",
+            &self.da.challenge_window_start,
+            "da_publication_ready",
+        )?;
+        require_exact_list(
+            "da.allowed_sync_modes",
+            &self.da.allowed_sync_modes,
+            &["da_only", "hybrid_p2p_da_verified"],
+        )?;
+        require_exact_list(
+            "da.provider_families",
+            &self.da.provider_families,
+            &["local_archive", "sovereign_sdk_adapter", "celestia_adapter"],
+        )
+    }
+
+    fn validate_archive_retention(&self) -> Result<(), CheckpointError> {
+        let archive = &self.archive_retention;
+        require_true(
+            "archive_retention.celestia_is_da_only",
+            archive.celestia_is_da_only,
+        )?;
+        require_true(
+            "archive_retention.long_term_retrieval_required",
+            archive.long_term_retrieval_required,
+        )?;
+        require_true(
+            "archive_retention.content_addressing_required",
+            archive.content_addressing_required,
+        )?;
+        require_true(
+            "archive_retention.ipfs_pinning_required",
+            archive.ipfs_pinning_required,
+        )?;
+        require_true(
+            "archive_retention.provider_receipts_required",
+            archive.provider_receipts_required,
+        )?;
+        require_true(
+            "archive_retention.retrieval_audit_required",
+            archive.retrieval_audit_required,
+        )?;
+        require_true(
+            "archive_retention.retrievability_is_not_validity",
+            archive.retrievability_is_not_validity,
+        )?;
+        if archive.min_archive_replicas < 3 {
+            return invalid("archive_retention.min_archive_replicas must be >= 3");
+        }
+        if archive.retrieval_audit_interval_blocks != self.post_quantum.cadence_blocks {
+            return invalid(
+                "archive_retention.retrieval_audit_interval_blocks must equal post_quantum.cadence_blocks",
+            );
+        }
+        require_exact_list(
+            "archive_retention.allowed_backends",
+            &archive.allowed_backends,
+            &[
+                "z00z_archive_node",
+                "ipfs_pinned",
+                "paid_archival_provider",
+                "filecoin_or_equivalent",
+                "cold_object_store",
+            ],
+        )?;
+        require_exact_list(
+            "archive_retention.required_artifacts",
+            &archive.required_artifacts,
+            &[
+                "archive_manifest_root",
+                "raw_tx_package_root",
+                "exact_tx_proof_bytes_root",
+                "witness_archive_root",
+                "delta_journal_root",
+                "da_payload_commitment",
+                "retrieval_audit_root",
+                "archive_provider_receipt_root",
+            ],
+        )
+    }
+
+    fn validate_post_quantum(&self) -> Result<(), CheckpointError> {
+        let pq = &self.post_quantum;
+        require_true("post_quantum.is_enabled", pq.is_enabled)?;
+        if pq.cadence_blocks == 0 {
+            return invalid("post_quantum.cadence_blocks must be > 0");
+        }
+        require_eq("post_quantum.mode", &pq.mode, "plonky3_epoch_proof")?;
+        require_eq(
+            "post_quantum.enforcement_stage",
+            &pq.enforcement_stage,
+            "pq_anchor_writer",
+        )?;
+        if is_pq_anchor_ready(&self.authority_promotion.stage)? {
+            require_true("post_quantum.enforce_live_cadence", pq.enforce_live_cadence)?;
+        } else {
+            require_false("post_quantum.enforce_live_cadence", pq.enforce_live_cadence)?;
+        }
+        require_exact_list(
+            "post_quantum.required_artifacts",
+            &pq.required_artifacts,
+            &[
+                "pq_statement_digest",
+                "pq_delta_root",
+                "pq_witness_root",
+                "pq_archive_manifest_root",
+                "plonky3_epoch_statement_digest",
+                "plonky3_epoch_proof_digest",
+                "plonky3_public_inputs_digest",
+                "nova_chain_root",
+                "pq_signature_or_commitment",
+            ],
+        )
+    }
+
+    fn validate_snapshots(&self) -> Result<(), CheckpointError> {
+        let snapshots = &self.snapshots;
+        require_true("snapshots.is_enabled", snapshots.is_enabled)?;
+        if snapshots.cadence_epochs == 0 {
+            return invalid("snapshots.cadence_epochs must be > 0");
+        }
+        let expected_cadence = snapshots
+            .cadence_epochs
+            .checked_mul(self.post_quantum.cadence_blocks)
+            .ok_or_else(|| {
+                CheckpointError::ContractConfig(
+                    "snapshots.cadence_epochs overflows cadence_blocks".to_string(),
+                )
+            })?;
+        if snapshots.cadence_blocks != expected_cadence {
+            return invalid(
+                "snapshots.cadence_blocks must equal cadence_epochs * post_quantum.cadence_blocks",
+            );
+        }
+        require_eq(
+            "snapshots.object_type",
+            &snapshots.object_type,
+            "state_snapshot_v1",
+        )?;
+        require_true(
+            "snapshots.bootstrap_allowed_from_snapshot",
+            snapshots.bootstrap_allowed_from_snapshot,
+        )?;
+        require_true(
+            "snapshots.requires_retrieval_audit",
+            snapshots.requires_retrieval_audit,
+        )?;
+        require_true(
+            "snapshots.must_bind_state_root",
+            snapshots.must_bind_state_root,
+        )?;
+        require_true(
+            "snapshots.must_bind_settlement_root",
+            snapshots.must_bind_settlement_root,
+        )?;
+        require_true(
+            "snapshots.must_bind_last_plonky3_epoch_proof",
+            snapshots.must_bind_last_plonky3_epoch_proof,
+        )?;
+        require_true(
+            "snapshots.must_bind_last_epoch_manifest_root",
+            snapshots.must_bind_last_epoch_manifest_root,
+        )?;
+        require_true(
+            "snapshots.must_bind_archive_manifest_root",
+            snapshots.must_bind_archive_manifest_root,
+        )?;
+        require_true(
+            "snapshots.must_bind_snapshot_chunk_root",
+            snapshots.must_bind_snapshot_chunk_root,
+        )?;
+        require_true(
+            "snapshots.must_bind_pq_anchor_root",
+            snapshots.must_bind_pq_anchor_root,
+        )
+    }
+
+    fn validate_pruning(&self) -> Result<(), CheckpointError> {
+        let pruning = &self.pruning;
+        require_true(
+            "pruning.full_node_pruning_allowed",
+            pruning.full_node_pruning_allowed,
+        )?;
+        require_false(
+            "pruning.archive_node_pruning_allowed",
+            pruning.archive_node_pruning_allowed,
+        )?;
+        require_eq(
+            "pruning.prune_scope",
+            &pruning.prune_scope,
+            "local_full_node_only",
+        )?;
+        if pruning.min_retain_recent_epochs == 0 {
+            return invalid("pruning.min_retain_recent_epochs must be > 0");
+        }
+        require_true(
+            "pruning.requires_dispute_window_elapsed",
+            pruning.requires_dispute_window_elapsed,
+        )?;
+        require_true(
+            "pruning.requires_plonky3_epoch_finalized",
+            pruning.requires_plonky3_epoch_finalized,
+        )?;
+        require_true(
+            "pruning.requires_epoch_manifest_finalized",
+            pruning.requires_epoch_manifest_finalized,
+        )?;
+        require_true(
+            "pruning.requires_archive_replication_threshold_met",
+            pruning.requires_archive_replication_threshold_met,
+        )?;
+        require_true(
+            "pruning.requires_retrieval_audit_passed",
+            pruning.requires_retrieval_audit_passed,
+        )?;
+        require_true(
+            "pruning.must_keep_compact_metadata",
+            pruning.must_keep_compact_metadata,
+        )?;
+        require_true(
+            "pruning.must_keep_epoch_manifest",
+            pruning.must_keep_epoch_manifest,
+        )?;
+        require_true(
+            "pruning.must_keep_state_snapshot",
+            pruning.must_keep_state_snapshot,
+        )?;
+        require_true(
+            "pruning.must_not_prune_archive_replicas",
+            pruning.must_not_prune_archive_replicas,
+        )
+    }
+
+    fn validate_retention(&self) -> Result<(), CheckpointError> {
+        if self.retention.dispute_window_blocks == 0 {
+            return invalid("retention.dispute_window_blocks must be > 0");
+        }
+        require_eq(
+            "retention.challenge_window_start",
+            &self.retention.challenge_window_start,
+            "da_publication_ready",
+        )?;
+        require_eq(
+            "retention.raw_tx_packages",
+            &self.retention.raw_tx_packages,
+            "archive_required",
+        )?;
+        require_eq(
+            "retention.witness_data",
+            &self.retention.witness_data,
+            "archive_required",
+        )?;
+        require_eq(
+            "retention.tx_proof_bytes",
+            &self.retention.tx_proof_bytes,
+            "canonical_until_verified_backend",
+        )?;
+        require_eq(
+            "retention.nova_block_proofs",
+            &self.retention.nova_block_proofs,
+            "archive_until_pq_epoch",
+        )?;
+        require_eq(
+            "retention.plonky3_epoch_proofs",
+            &self.retention.plonky3_epoch_proofs,
+            "permanent_metadata",
+        )?;
+        require_eq(
+            "retention.epoch_manifests",
+            &self.retention.epoch_manifests,
+            "permanent_metadata",
+        )?;
+        require_eq(
+            "retention.compact_metadata",
+            &self.retention.compact_metadata,
+            "permanent_metadata",
+        )?;
+        require_eq(
+            "retention.da_blobs",
+            &self.retention.da_blobs,
+            "da_required_until_archive_replicated",
+        )
+    }
+
+    fn validate_paths(&self) -> Result<(), CheckpointError> {
+        let paths = [
+            (
+                "paths.checkpoint_artifacts",
+                &self.paths.checkpoint_artifacts,
+            ),
+            ("paths.checkpoint_links", &self.paths.checkpoint_links),
+            ("paths.exec_inputs", &self.paths.exec_inputs),
+            ("paths.prep_snapshots", &self.paths.prep_snapshots),
+            ("paths.delta_journals", &self.paths.delta_journals),
+            ("paths.witness_archives", &self.paths.witness_archives),
+            ("paths.recursive_sidecars", &self.paths.recursive_sidecars),
+            ("paths.nova_block_proofs", &self.paths.nova_block_proofs),
+            ("paths.pq_checkpoints", &self.paths.pq_checkpoints),
+            (
+                "paths.plonky3_epoch_proofs",
+                &self.paths.plonky3_epoch_proofs,
+            ),
+            ("paths.epoch_manifests", &self.paths.epoch_manifests),
+            ("paths.da_exports", &self.paths.da_exports),
+            (
+                "paths.documentation_packets",
+                &self.paths.documentation_packets,
+            ),
+            ("paths.archive_manifests", &self.paths.archive_manifests),
+            ("paths.state_snapshots", &self.paths.state_snapshots),
+            ("paths.retrieval_audits", &self.paths.retrieval_audits),
+            ("paths.archive_receipts", &self.paths.archive_receipts),
+        ];
+        let mut seen = BTreeSet::new();
+        for (label, path) in paths {
+            let norm = validate_relative_path(label, path)?;
+            if !seen.insert(norm.clone()) {
+                return invalid(format!("{label} collides after normalization"));
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_limits(&self) -> Result<(), CheckpointError> {
+        require_positive_usize("limits.max_batch_ops", self.limits.max_batch_ops)?;
+        require_positive_usize("limits.max_batch_bytes", self.limits.max_batch_bytes)?;
+        require_positive_usize("limits.max_witness_bytes", self.limits.max_witness_bytes)?;
+        require_positive_usize(
+            "limits.max_recursive_proof_bytes",
+            self.limits.max_recursive_proof_bytes,
+        )?;
+        require_positive_usize(
+            "limits.max_recursive_sidecar_bytes",
+            self.limits.max_recursive_sidecar_bytes,
+        )?;
+        require_positive_usize(
+            "limits.max_nova_block_proof_bytes",
+            self.limits.max_nova_block_proof_bytes,
+        )?;
+        require_positive_usize(
+            "limits.max_epoch_nova_archive_bytes",
+            self.limits.max_epoch_nova_archive_bytes,
+        )?;
+        require_positive_usize(
+            "limits.max_plonky3_epoch_proof_bytes",
+            self.limits.max_plonky3_epoch_proof_bytes,
+        )?;
+        require_positive_usize(
+            "limits.max_plonky3_epoch_sidecar_bytes",
+            self.limits.max_plonky3_epoch_sidecar_bytes,
+        )?;
+        require_positive_usize(
+            "limits.max_pq_anchor_bytes",
+            self.limits.max_pq_anchor_bytes,
+        )?;
+        require_positive_usize(
+            "limits.max_archive_manifest_bytes",
+            self.limits.max_archive_manifest_bytes,
+        )?;
+        require_positive_usize(
+            "limits.max_state_snapshot_manifest_bytes",
+            self.limits.max_state_snapshot_manifest_bytes,
+        )?;
+        require_positive_usize(
+            "limits.max_retrieval_audit_bytes",
+            self.limits.max_retrieval_audit_bytes,
+        )?;
+        require_positive_usize(
+            "limits.max_documentation_packet_bytes",
+            self.limits.max_documentation_packet_bytes,
+        )?;
+        if self.limits.max_witness_bytes < self.limits.max_batch_bytes {
+            return invalid("limits.max_witness_bytes must be >= max_batch_bytes");
+        }
+        if self.limits.max_nova_block_proof_bytes < 8192 {
+            return invalid("limits.max_nova_block_proof_bytes must be >= 8192");
+        }
+        if self.limits.max_epoch_nova_archive_bytes < self.limits.max_nova_block_proof_bytes {
+            return invalid(
+                "limits.max_epoch_nova_archive_bytes must be >= max_nova_block_proof_bytes",
+            );
+        }
+        if self.limits.max_plonky3_epoch_proof_bytes < 8 * 1024 * 1024 {
+            return invalid("limits.max_plonky3_epoch_proof_bytes must be >= 8 MiB");
+        }
+        if self.limits.max_plonky3_epoch_sidecar_bytes < self.limits.max_plonky3_epoch_proof_bytes {
+            return invalid(
+                "limits.max_plonky3_epoch_sidecar_bytes must be >= max_plonky3_epoch_proof_bytes",
+            );
+        }
+        if self.limits.max_pq_anchor_bytes < self.limits.max_plonky3_epoch_proof_bytes {
+            return invalid("limits.max_pq_anchor_bytes must be >= max_plonky3_epoch_proof_bytes");
+        }
+        Ok(())
+    }
+
+    fn validate_documentation(&self) -> Result<(), CheckpointError> {
+        require_true(
+            "documentation.recursive_packet_required",
+            self.documentation.recursive_packet_required,
+        )?;
+        require_true(
+            "documentation.include_source_disposition",
+            self.documentation.include_source_disposition,
+        )?;
+        require_true(
+            "documentation.include_object_schemas",
+            self.documentation.include_object_schemas,
+        )?;
+        require_true(
+            "documentation.include_golden_vectors",
+            self.documentation.include_golden_vectors,
+        )?;
+        require_true(
+            "documentation.include_chain_evidence_ids",
+            self.documentation.include_chain_evidence_ids,
+        )?;
+        require_true(
+            "documentation.include_measurements",
+            self.documentation.include_measurements,
+        )?;
+        require_true(
+            "documentation.include_pq_cadence_evidence",
+            self.documentation.include_pq_cadence_evidence,
+        )?;
+        require_true(
+            "documentation.include_backend_manifest",
+            self.documentation.include_backend_manifest,
+        )?;
+        require_true(
+            "documentation.include_rejected_claim_register",
+            self.documentation.include_rejected_claim_register,
+        )
+    }
+}
+
+fn require_eq(label: &str, got: &str, want: &str) -> Result<(), CheckpointError> {
+    if got == want {
+        return Ok(());
+    }
+    invalid(format!("{label} must be {want}, got {got}"))
+}
+
+fn require_eq_u32(label: &str, got: u32, want: u32) -> Result<(), CheckpointError> {
+    if got == want {
+        return Ok(());
+    }
+    invalid(format!("{label} must be {want}, got {got}"))
+}
+
+fn require_eq_u64(label: &str, got: u64, want: u64) -> Result<(), CheckpointError> {
+    if got == want {
+        return Ok(());
+    }
+    invalid(format!("{label} must be {want}, got {got}"))
+}
+
+fn require_true(label: &str, got: bool) -> Result<(), CheckpointError> {
+    if got {
+        return Ok(());
+    }
+    invalid(format!("{label} must be true"))
+}
+
+fn require_false(label: &str, got: bool) -> Result<(), CheckpointError> {
+    if !got {
+        return Ok(());
+    }
+    invalid(format!("{label} must be false"))
+}
+
+fn require_positive_usize(label: &str, got: usize) -> Result<(), CheckpointError> {
+    if got > 0 {
+        return Ok(());
+    }
+    invalid(format!("{label} must be > 0"))
+}
+
+fn require_exact_list(label: &str, got: &[String], want: &[&str]) -> Result<(), CheckpointError> {
+    if got.len() == want.len() && got.iter().zip(want).all(|(got, want)| got == want) {
+        return Ok(());
+    }
+    invalid(format!("{label} must equal [{}]", want.join(", ")))
+}
+
+fn validate_relative_path(label: &str, path: &Path) -> Result<PathBuf, CheckpointError> {
+    if path.as_os_str().is_empty() {
+        return invalid(format!("{label} must not be empty"));
+    }
+    let mut out = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::Normal(part) => out.push(part),
+            Component::CurDir
+            | Component::ParentDir
+            | Component::RootDir
+            | Component::Prefix(_) => {
+                return invalid(format!("{label} must be normalized relative path"));
+            }
+        }
+    }
+    if out.as_os_str().is_empty() {
+        return invalid(format!(
+            "{label} must contain at least one normal component"
+        ));
+    }
+    Ok(out)
+}
+
+fn is_pq_anchor_ready(stage: &str) -> Result<bool, CheckpointError> {
+    match stage {
+        "spec_only"
+        | "config_gate"
+        | "canonical_extended_statement"
+        | "recursive_shadow_sidecar" => Ok(false),
+        "pq_anchor_writer" | "verified_backend_candidate" => Ok(true),
+        "verified_backend_enabled" => {
+            invalid("verified_backend_enabled is not allowed by Phase 069 gate")
+        }
+        other => invalid(format!("unsupported authority_promotion.stage {other}")),
+    }
+}
+
+fn invalid<T>(detail: impl Into<String>) -> Result<T, CheckpointError> {
+    Err(CheckpointError::ContractConfig(detail.into()))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::{CheckpointContractConfigV1, CHECKPOINT_CONTRACT_CONFIG_PATH};
+    use crate::CheckpointError;
+
+    fn repo_config_path() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(CHECKPOINT_CONTRACT_CONFIG_PATH)
+    }
+
+    fn cfg() -> CheckpointContractConfigV1 {
+        CheckpointContractConfigV1::load(repo_config_path()).expect("repo checkpoint contract")
+    }
+
+    #[test]
+    fn test_repo_contract_loads() {
+        let cfg = cfg();
+
+        assert_eq!(cfg.version, 1);
+        assert!(!cfg.branches.recursive.is_authoritative);
+        assert_eq!(cfg.branches.recursive.proof_system, "recursive_hybrid_v1");
+        assert_eq!(cfg.branches.nova.proof_system, "nova_compressed_v1");
+        assert!(!cfg.branches.nova.is_pq_authoritative);
+        assert_eq!(
+            cfg.branches.plonky3_epoch.proof_system,
+            "plonky3_stark_epoch_v1"
+        );
+        assert!(cfg.branches.plonky3_epoch.is_pq_authoritative);
+        assert_eq!(cfg.post_quantum.cadence_blocks, 1000);
+        assert_eq!(cfg.post_quantum.mode, "plonky3_epoch_proof");
+        assert!(cfg.archive_retention.celestia_is_da_only);
+        assert_eq!(cfg.archive_retention.min_archive_replicas, 3);
+        assert!(cfg.archive_retention.ipfs_pinning_required);
+        assert_eq!(cfg.snapshots.object_type, "state_snapshot_v1");
+        assert_eq!(cfg.snapshots.cadence_blocks, 10_000);
+        assert!(!cfg.pruning.archive_node_pruning_allowed);
+    }
+
+    #[test]
+    fn test_pq_cadence_default() {
+        let cfg = cfg();
+
+        assert!(!cfg.is_pq_cadence_height(0));
+        assert!(!cfg.is_pq_cadence_height(999));
+        assert!(cfg.is_pq_cadence_height(1000));
+        assert!(cfg.is_pq_cadence_height(2000));
+    }
+
+    #[test]
+    fn test_recursive_authority_rejects() {
+        let mut cfg = cfg();
+        cfg.branches.recursive.is_authoritative = true;
+
+        let err = cfg.validate().expect_err("recursive authority must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_nova_pq_authority_rejects() {
+        let mut cfg = cfg();
+        cfg.branches.nova.is_pq_authoritative = true;
+
+        let err = cfg.validate().expect_err("nova pq authority must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_plonky3_cadence_rejects() {
+        let mut cfg = cfg();
+        cfg.branches.plonky3_epoch.cadence_blocks = 500;
+
+        let err = cfg
+            .validate()
+            .expect_err("plonky3 cadence mismatch rejects");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_plonky3_nova_rejects() {
+        let mut cfg = cfg();
+        cfg.branches.plonky3_epoch.must_not_depend_only_on_nova = false;
+
+        let err = cfg
+            .validate()
+            .expect_err("plonky3 proof cannot depend only on nova");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_plonky3_cap_rejects() {
+        let mut cfg = cfg();
+        cfg.limits.max_plonky3_epoch_proof_bytes = 1024 * 1024;
+
+        let err = cfg
+            .validate()
+            .expect_err("small plonky3 proof cap must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_celestia_archive_claim() {
+        let mut cfg = cfg();
+        cfg.archive_retention.celestia_is_da_only = false;
+
+        let err = cfg.validate().expect_err("celestia must remain DA-only");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_archive_replicas_reject() {
+        let mut cfg = cfg();
+        cfg.archive_retention.min_archive_replicas = 2;
+
+        let err = cfg
+            .validate()
+            .expect_err("archive replica threshold must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_ipfs_without_pinning_rejects() {
+        let mut cfg = cfg();
+        cfg.archive_retention.ipfs_pinning_required = false;
+
+        let err = cfg.validate().expect_err("ipfs pinning must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_snapshot_plonky3_missing() {
+        let mut cfg = cfg();
+        cfg.snapshots.must_bind_last_plonky3_epoch_proof = false;
+
+        let err = cfg
+            .validate()
+            .expect_err("snapshot without plonky3 binding must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_archive_node_pruning_rejects() {
+        let mut cfg = cfg();
+        cfg.pruning.archive_node_pruning_allowed = true;
+
+        let err = cfg
+            .validate()
+            .expect_err("archive node pruning must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_zero_pq_cadence_rejects() {
+        let mut cfg = cfg();
+        cfg.post_quantum.cadence_blocks = 0;
+
+        let err = cfg.validate().expect_err("zero cadence must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_early_pq_cadence() {
+        let mut cfg = cfg();
+        cfg.post_quantum.enforce_live_cadence = true;
+
+        let err = cfg.validate().expect_err("early live cadence must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_pq_writer_cadence() {
+        let mut cfg = cfg();
+        cfg.authority_promotion.stage = "pq_anchor_writer".to_string();
+        cfg.authority_promotion.allowed_next_stages =
+            vec!["verified_backend_candidate".to_string()];
+
+        let err = cfg.validate().expect_err("pq writer must enforce cadence");
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+
+        cfg.post_quantum.enforce_live_cadence = true;
+        cfg.validate().expect("pq writer live cadence");
+    }
+
+    #[test]
+    fn test_absolute_path_rejects() {
+        let mut cfg = cfg();
+        cfg.paths.recursive_sidecars = PathBuf::from("/tmp/recursive_shadow");
+
+        let err = cfg.validate().expect_err("absolute path must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_path_collision_rejects() {
+        let mut cfg = cfg();
+        cfg.paths.pq_checkpoints = cfg.paths.recursive_sidecars.clone();
+
+        let err = cfg.validate().expect_err("colliding path must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+
+    #[test]
+    fn test_documentation_gate_rejects() {
+        let mut cfg = cfg();
+        cfg.documentation.include_rejected_claim_register = false;
+
+        let err = cfg.validate().expect_err("missing docs gate must reject");
+
+        assert!(matches!(err, CheckpointError::ContractConfig(_)));
+    }
+}

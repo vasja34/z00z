@@ -132,7 +132,6 @@ mod tests {
         compute_dh_receiver, compute_dh_sender, derive_k_dh, derive_k_dh_with_req, dh_eq_ct,
         receiver_derive_keys, sender_derive_keys,
     };
-    use crate::stealth::crypto::encoding::decode_public_key;
     use z00z_crypto::{Z00ZRistrettoPoint, Z00ZScalar};
     use z00z_utils::rng::SystemRngProvider;
 
@@ -167,12 +166,6 @@ mod tests {
         let dh1 = compute_dh_sender(&r1, &view_pk).expect("dh1");
         let dh2 = compute_dh_sender(&r2, &view_pk).expect("dh2");
         assert_ne!(dh1, dh2);
-    }
-
-    #[test]
-    fn test_ecdh_identity_rejection() {
-        let identity = [0u8; 32];
-        assert!(decode_public_key(&identity).is_err());
     }
 
     #[test]

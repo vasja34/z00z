@@ -25,10 +25,7 @@ pub struct NullifierKey {
 impl NullifierKey {
     /// Compute domain-tagged key for nullifier state storage.
     pub fn state_key(&self) -> [u8; 32] {
-        let mut h = blake3::Hasher::new();
-        h.update(b"z00z.nullifier.state.v1");
-        h.update(&self.nullifier.0);
-        *h.finalize().as_bytes()
+        z00z_crypto::blake2b_hash(b"z00z.nullifier.state.v1", &[&self.nullifier.0])
     }
 }
 
@@ -77,14 +74,11 @@ impl NullifierEntry {
 
 /// Derive deterministic claim nullifier with domain separation and chain binding.
 pub fn derive_nullifier(claim_id: &[u8; 32], owner: &[u8; 32], chain_id: u32) -> NullifierBytes {
-    let mut h = blake3::Hasher::new();
-    h.update(b"z00z.nullifier.derive.v1");
-
-    h.update(&chain_id.to_le_bytes());
-    h.update(claim_id);
-    h.update(owner);
-
-    NullifierBytes(*h.finalize().as_bytes())
+    let chain_id_bytes = chain_id.to_le_bytes();
+    NullifierBytes(z00z_crypto::blake2b_hash(
+        b"z00z.nullifier.derive.v1",
+        &[&chain_id_bytes, claim_id, owner],
+    ))
 }
 
 #[cfg(test)]

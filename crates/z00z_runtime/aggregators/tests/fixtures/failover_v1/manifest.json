@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_failover_same_lineage print_failover_manifest_json -- --ignored --nocapture",
-  "test_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_failover_same_lineage test_failover_manifest_matches_live_contract -- --nocapture",
-  "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_failover_same_lineage.rs::test_failover_manifest_matches_live_contract",
+  "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_failover_same_lineage test_manifest_matches_contract -- --exact --nocapture",
+  "test_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_failover_same_lineage test_manifest_matches_contract -- --exact --nocapture",
+  "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_failover_same_lineage.rs::test_manifest_matches_contract",
   "cases": [
     {
       "fixture_id": "FOV-001",
@@ -15,7 +15,7 @@
       "routing_generation": 9,
       "requester_aggregator_id": 8,
       "primary_aggregator_id": 7,
-      "standby_ids": [
+      "secondary_ids": [
         8
       ],
       "journal_lineage_hex": "a2ea47bd5a701b45b6d686695e7563b287d55cda41c188099a0106d5d994b701",
@@ -33,7 +33,7 @@
       "routing_generation": 12,
       "requester_aggregator_id": 22,
       "primary_aggregator_id": 21,
-      "standby_ids": [
+      "secondary_ids": [
         22
       ],
       "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
@@ -51,7 +51,7 @@
       "routing_generation": 12,
       "requester_aggregator_id": 22,
       "primary_aggregator_id": 21,
-      "standby_ids": [
+      "secondary_ids": [
         22
       ],
       "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
@@ -69,7 +69,7 @@
       "routing_generation": 12,
       "requester_aggregator_id": 22,
       "primary_aggregator_id": 21,
-      "standby_ids": [
+      "secondary_ids": [
         22
       ],
       "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
@@ -87,7 +87,7 @@
       "routing_generation": 12,
       "requester_aggregator_id": 22,
       "primary_aggregator_id": 21,
-      "standby_ids": [
+      "secondary_ids": [
         22
       ],
       "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
@@ -97,15 +97,15 @@
     {
       "fixture_id": "FOV-T-002",
       "fixture_class": "Failover fixture",
-      "kind": "standby down",
+      "kind": "secondary aggregator down",
       "expected_verdict": "recovery_reject",
       "expected_reject_class": "DeferredRetry",
-      "expected_detail": "standby down",
+      "expected_detail": "secondary aggregator down",
       "shard_id": 5,
       "routing_generation": 12,
       "requester_aggregator_id": 22,
       "primary_aggregator_id": 21,
-      "standby_ids": [
+      "secondary_ids": [
         22
       ],
       "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
@@ -123,7 +123,7 @@
       "routing_generation": 12,
       "requester_aggregator_id": 21,
       "primary_aggregator_id": 21,
-      "standby_ids": [
+      "secondary_ids": [
         22
       ],
       "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
@@ -141,7 +141,7 @@
       "routing_generation": 12,
       "requester_aggregator_id": 22,
       "primary_aggregator_id": 21,
-      "standby_ids": [
+      "secondary_ids": [
         22
       ],
       "journal_lineage_hex": "0f63afce0399c5001982d93e4e034c5eef6b30406f0d9da5cd2e2d178b121d6f",
@@ -159,7 +159,7 @@
       "routing_generation": 9,
       "requester_aggregator_id": 8,
       "primary_aggregator_id": 7,
-      "standby_ids": [
+      "secondary_ids": [
         8
       ],
       "journal_lineage_hex": "4b9e6c788f59695d59813f6530a72c53f0a0cbbf627184d25757256e0b4740f8",
@@ -181,7 +181,7 @@
       "routing_generation": 14,
       "requester_aggregator_id": 8,
       "primary_aggregator_id": 7,
-      "standby_ids": [
+      "secondary_ids": [
         8
       ],
       "journal_lineage_hex": "b18ab093eef9f9ebeaee4a3dc03a76eb3dd030cbea962a229edbd04bf0acf78d",
@@ -203,7 +203,7 @@
       "routing_generation": 12,
       "requester_aggregator_id": 22,
       "primary_aggregator_id": 21,
-      "standby_ids": [
+      "secondary_ids": [
         22
       ],
       "journal_lineage_hex": "76fa664456bf90f7f6f1b1c9bae72d96f5242759a9d28e9c20358a9e3c05281f",

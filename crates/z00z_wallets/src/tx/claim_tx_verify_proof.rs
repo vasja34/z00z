@@ -46,11 +46,10 @@ impl ClaimTxVerifierImpl {
             .serialize(&leaf)
             .map_err(|e| ClaimTxError::LeafInvalid(format!("leaf encode failed: {e}")))?;
 
-        let mut hash = blake3::Hasher::new();
-        hash.update(b"z00z.claim.output_leaf.v1");
-        hash.update(&(leaf_bytes.len() as u32).to_le_bytes());
-        hash.update(&leaf_bytes);
-        Ok(*hash.finalize().as_bytes())
+        Ok(z00z_crypto::blake2b_hash(
+            b"z00z.claim.output_leaf.v1",
+            &[leaf_bytes.as_slice()],
+        ))
     }
 
     fn hash_bind_msg(
@@ -61,9 +60,7 @@ impl ClaimTxVerifierImpl {
         let claim = tx.inputs.first().ok_or_else(|| {
             ClaimTxError::StructureMalformed("claim tx inputs are empty".to_string())
         })?;
-        let mut hash = blake3::Hasher::new();
-        hash.update(b"z00z.claim.owner_bind.v1");
-
+        let mut msgs = Vec::with_capacity(leaves.len());
         for (idx, leaf) in leaves.iter().enumerate() {
             let msg = build_owner_attest_msg(
                 chain_id,
@@ -74,11 +71,13 @@ impl ClaimTxVerifierImpl {
                 idx as u32,
                 leaf,
             )?;
-            hash.update(&(msg.len() as u32).to_le_bytes());
-            hash.update(&msg);
+            msgs.push(msg);
         }
-
-        Ok(*hash.finalize().as_bytes())
+        let refs = msgs.iter().map(Vec::as_slice).collect::<Vec<_>>();
+        Ok(z00z_crypto::blake2b_hash(
+            b"z00z.claim.owner_bind.v1",
+            &refs,
+        ))
     }
 
     fn build_claim_stmt(
@@ -311,13 +310,10 @@ impl ClaimTxVerifierImpl {
     }
 }
 
-// Threat T-2 anchor: raw verifier passes internal consistency only; store rebinding via claim_source_contract_for_item is the mandatory second step for final admission.
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_claim_verifier_not_final() {
-        // Architectural boundary: ClaimTxVerifier::verify() checks internal consistency
-        // (structure, digest, auth). It does NOT perform store rebinding.
-        // claim_source_contract_for_item is required for final admission.
-    }
-}
+// Threat T-2 anchor: raw verifier passes internal consistency only; store
+// rebinding via claim_source_contract_for_item is the mandatory second step
+// for final admission.
+//
+// Architectural boundary: ClaimTxVerifier::verify() checks internal
+// consistency (structure, digest, auth). It does NOT perform store rebinding.
+// claim_source_contract_for_item is required for final admission.

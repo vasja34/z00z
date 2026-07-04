@@ -3,12 +3,22 @@
 #![forbid(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
-#[cfg(all(not(test), not(debug_assertions), feature = "test-params-fast"))]
+#[cfg(all(
+    not(test),
+    not(debug_assertions),
+    feature = "test-params-fast",
+    not(feature = "wallet_debug_tools")
+))]
 compile_error!(
     "`test-params-fast` MUST NOT be compiled into release-capable z00z_simulator builds"
 );
 
-#[cfg(all(not(test), not(debug_assertions), feature = "wallet_debug_tools"))]
+#[cfg(all(
+    not(test),
+    not(debug_assertions),
+    feature = "wallet_debug_tools",
+    not(feature = "test-params-fast")
+))]
 compile_error!(
     "`wallet_debug_tools` MUST NOT be compiled into release-capable z00z_simulator builds"
 );
@@ -29,6 +39,8 @@ pub mod result;
 pub mod rng_mode;
 /// Scenario 1 workflow implementation.
 pub mod scenario_1;
+/// Scenario 11 shard-local quorum harness.
+pub mod scenario_11;
 
 /// Simulator actor type.
 pub use actors::SimActor;

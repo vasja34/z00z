@@ -365,7 +365,7 @@ executed and how it must be rerun if any Phase 065 seam is reopened.
 <verify>
 1. Run `./.github/skills/smart-tests-bootstrap/scripts/bootstrap_tests.sh`.
 2. Run:
-   - `bash scripts/audit_phase065_narrowed_wording.sh`
+   - `bash scripts/audit/audit_narrowed_wording.sh`
    - `cargo test --release -p z00z_core --test test_live_guardrails -- --nocapture`
 3. Run `cargo test --release`.
 4. Run `/GSD-Review-Tasks-Execution` against

@@ -299,7 +299,10 @@ impl WalletTxHistoryJsonlEntry {
         let bytes = JsonCodec
             .serialize(&self.hash_input())
             .map_err(|err| format!("tx-history entry serialization failed: {err}"))?;
-        Ok(*blake3::hash(&bytes).as_bytes())
+        Ok(z00z_crypto::blake2b_hash(
+            b"z00z.wallet.tx_history.entry_hash.v1",
+            &[bytes.as_slice()],
+        ))
     }
 }
 
@@ -650,11 +653,14 @@ fn hash_tx_record(record: &TxRecord) -> Result<[u8; 32], String> {
     let bytes = JsonCodec
         .serialize(record)
         .map_err(|err| format!("tx record serialization failed: {err}"))?;
-    Ok(*blake3::hash(&bytes).as_bytes())
+    Ok(z00z_crypto::blake2b_hash(
+        b"z00z.wallet.tx_history.record_hash.v1",
+        &[bytes.as_slice()],
+    ))
 }
 
 fn hash_tx_bytes(tx_bytes: &[u8]) -> [u8; 32] {
-    *blake3::hash(tx_bytes).as_bytes()
+    z00z_crypto::blake2b_hash(b"z00z.wallet.tx_history.tx_bytes_hash.v1", &[tx_bytes])
 }
 
 #[cfg(test)]

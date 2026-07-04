@@ -40,7 +40,7 @@
     {
       "shard_id": 0,
       "primary_aggregator_id": 0,
-      "standby_ids": [
+      "secondary_ids": [
         1,
         2
       ],
@@ -49,7 +49,7 @@
     {
       "shard_id": 1,
       "primary_aggregator_id": 1,
-      "standby_ids": [
+      "secondary_ids": [
         0,
         3
       ],
@@ -58,7 +58,7 @@
     {
       "shard_id": 2,
       "primary_aggregator_id": 2,
-      "standby_ids": [
+      "secondary_ids": [
         0,
         4
       ],
@@ -67,7 +67,7 @@
     {
       "shard_id": 3,
       "primary_aggregator_id": 3,
-      "standby_ids": [
+      "secondary_ids": [
         1,
         4
       ],
@@ -76,7 +76,7 @@
     {
       "shard_id": 4,
       "primary_aggregator_id": 4,
-      "standby_ids": [
+      "secondary_ids": [
         2,
         3
       ],
@@ -85,7 +85,7 @@
     {
       "shard_id": 5,
       "primary_aggregator_id": 0,
-      "standby_ids": [
+      "secondary_ids": [
         2,
         4
       ],
@@ -94,7 +94,7 @@
     {
       "shard_id": 6,
       "primary_aggregator_id": 4,
-      "standby_ids": [
+      "secondary_ids": [
         0,
         2
       ],
@@ -184,7 +184,7 @@
     "proof_trace_file": "proof_flow.json",
     "digest_trace_file": "pub_flow.json"
   },
-  "regen_command": "cargo test -p z00z_rollup_node --release --features test-params-fast --test test_hjmt_topology print_sim_5a7s_manifest_json -- --ignored --nocapture",
+  "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_rollup_node --release --features test-params-fast --test test_hjmt_topology test_grid57_matches_contract -- --exact --nocapture",
   "test_command": "cargo test -p z00z_rollup_node --release --features test-params-fast --test test_hjmt_topology test_grid57_matches_contract -- --nocapture",
   "evidence_pointer": "crates/z00z_rollup_node/tests/test_hjmt_topology.rs::test_grid57_matches_contract"
 }

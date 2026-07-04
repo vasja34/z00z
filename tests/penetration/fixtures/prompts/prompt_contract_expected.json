@@ -1,7 +1,7 @@
 {
   "required_fragments": {
     "pentest-local.prompt.md": [
-      "./z00z_penetration_tests.sh",
+      "./scripts/run_pentest_tools.sh",
       "run_local_pentest.sh",
       "validated before confirmation"
     ],
@@ -11,8 +11,8 @@
       "pentest-report-doublecheck"
     ],
     "pentest-report-doublecheck.prompt.md": [
-      ".security-artifacts/<timestamp>/report/report-metadata.json",
-      "reports/z00z-pentests_report-<timestamp>/report-metadata.json",
+      "reports/z00z-pentests-report-<timestamp>/report/report-metadata.json",
+      "reports/z00z-pentests-report-<timestamp>/report-metadata.json",
       "Never upgrade a scanner-only hypothesis to confirmed without repository-backed",
       "unconfirmed or false-positive"
     ],
@@ -21,7 +21,7 @@
       "attack-surfaces-create",
       "z00z-crypto-auditor",
       "gsd-audit-4.prompt.md",
-      "./z00z_penetration_tests.sh"
+      "./scripts/run_pentest_tools.sh"
     ]
   },
   "disallowed_fragments": [

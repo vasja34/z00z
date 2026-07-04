@@ -190,11 +190,6 @@ fn test_derive_hash_multiple_chunks() {
 }
 
 #[test]
-fn test_initialize() {
-    TariCryptoBackend::initialize();
-}
-
-#[test]
 fn test_batch_verify_valid_proofs() {
     let backend = TariCryptoBackend;
     let mut rng = MockRngProvider::with_u64_seed(9).rng();

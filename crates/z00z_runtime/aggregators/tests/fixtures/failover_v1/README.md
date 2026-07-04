@@ -7,7 +7,7 @@ Phase 057 for `FOV-001`, `FOV-T-001`, `FOV-T-002`, and `FOV-G-002` through
 - The canonical failover registry lives in `manifest.json`.
 - `Failover fixture` rows cover the lawful same-lineage takeover plus the
   wrong-lineage, wrong-generation, stale-local-root, stale-restart,
-  standby-down, and split-brain reject rows.
+  secondary-down, and split-brain reject rows.
 - `Carry-forward fixture` rows cover byte-identical carried-forward shard-leaf
   bytes plus the exact public-root digest emitted by the lawful successor
   publication.

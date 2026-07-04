@@ -46,7 +46,7 @@ class PromptContractsTest(unittest.TestCase):
 
     def test_generic_prompt_keeps_one_external_entrypoint(self) -> None:
         text = (PROMPTS_DIR / "pentest-local.prompt.md").read_text(encoding="utf-8")
-        self.assertIn("./z00z_penetration_tests.sh", text)
+        self.assertIn("./scripts/run_pentest_tools.sh", text)
         self.assertIn("run_local_pentest.sh", text)
         self.assertIn("only external entrypoint", text)
 

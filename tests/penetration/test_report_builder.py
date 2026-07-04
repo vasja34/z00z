@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -36,14 +37,26 @@ def load_contract() -> dict[str, object]:
     return json.loads((REPORT_FIXTURES_DIR / "artifact_contract.json").read_text(encoding="utf-8"))
 
 
+def report_run_id(run_id: str) -> str:
+    """Convert the timestamp portion of a run id to the host report format."""
+
+    return re.sub(r"(\d{8})T(\d{6})Z", r"\1-\2", run_id, count=1)
+
+
+def report_dir_name(run_id: str) -> str:
+    """Return the canonical host report directory name for a run id."""
+
+    return f"z00z-pentests-report-{report_run_id(run_id)}"
+
+
 def create_artifact_tree(base_dir: Path, run_id: str, *, findings_fixture: str | None = None) -> tuple[Path, Path]:
     """Create a minimal artifact tree that satisfies the 066-06 contract."""
 
-    artifact_dir = base_dir / ".security-artifacts" / run_id
-    report_dir = base_dir / "reports" / f"z00z-pentests_report-{run_id}"
+    artifact_dir = base_dir / "reports" / report_dir_name(run_id)
+    report_dir = artifact_dir
     for directory_name in ("sast", "rust", "secrets", "dast", "report", "logs", "raw", "normalized"):
         (artifact_dir / directory_name).mkdir(parents=True, exist_ok=True)
-    report_dir.mkdir(parents=True, exist_ok=True)
+    artifact_dir.mkdir(parents=True, exist_ok=True)
 
     write_json(
         artifact_dir / "manifest.json",
@@ -54,7 +67,7 @@ def create_artifact_tree(base_dir: Path, run_id: str, *, findings_fixture: str |
             "report_dir": report_dir.as_posix(),
             "mode": "quick",
             "profile": "generic",
-            "scope_path": (ROOT / ".security" / "scope.yaml").as_posix(),
+            "scope_path": (ROOT / "scripts" / "penetration" / "scope.yaml").as_posix(),
             "status": "running",
             "flags": {"check_only": False, "no_dast": False, "static_only": True},
             "commands": [],
@@ -65,7 +78,7 @@ def create_artifact_tree(base_dir: Path, run_id: str, *, findings_fixture: str |
         {
             "status": "OK",
             "mode": "local-only",
-            "scope_path": (ROOT / ".security" / "scope.yaml").as_posix(),
+            "scope_path": (ROOT / "scripts" / "penetration" / "scope.yaml").as_posix(),
             "normalized_paths": ["crates", "scripts"],
             "normalized_hosts": ["127.0.0.1", "localhost"],
             "normalized_urls": [],

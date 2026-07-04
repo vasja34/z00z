@@ -21,20 +21,22 @@ use z00z_wallets::{
 };
 
 fn forged_artifact(stmt: &SpendProofStmt) -> SpendProofArtifact {
-    let statement_hash = *blake3::hash(&stmt.statement).as_bytes();
-    let mut public_hash_bytes = Vec::with_capacity(b"z00z.spend.public.hash.v1".len() + 32);
-    public_hash_bytes.extend_from_slice(b"z00z.spend.public.hash.v1");
-    public_hash_bytes.extend_from_slice(&statement_hash);
-    let public_hash = *blake3::hash(&public_hash_bytes).as_bytes();
+    let statement_hash = z00z_crypto::blake2b_hash(
+        b"z00z.spend.statement.hash.v1",
+        &[stmt.statement.as_slice()],
+    );
+    let public_hash = z00z_crypto::blake2b_hash(b"z00z.spend.public.hash.v1", &[&statement_hash]);
 
     let suite_id = b"regular_spend_theorem_bpplus";
-    let mut theorem_preimage =
-        Vec::with_capacity(b"z00z.spend.theorem.proof.v1".len() + suite_id.len() + 64);
-    theorem_preimage.extend_from_slice(b"z00z.spend.theorem.proof.v1");
+    let mut theorem_preimage = Vec::with_capacity(suite_id.len() + 64);
     theorem_preimage.extend_from_slice(suite_id);
     theorem_preimage.extend_from_slice(&statement_hash);
     theorem_preimage.extend_from_slice(&public_hash);
-    let theorem_bytes = blake3::hash(&theorem_preimage).as_bytes().to_vec();
+    let theorem_bytes = z00z_crypto::blake2b_hash(
+        b"z00z.spend.theorem.proof.v1",
+        &[theorem_preimage.as_slice()],
+    )
+    .to_vec();
 
     let mut proof_bytes = Vec::new();
     proof_bytes.extend_from_slice(b"z00z.spend.proof.backend.v2");

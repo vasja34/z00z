@@ -161,7 +161,7 @@ Virtual servers (more control, more setup).
 **Docker**:
 ```dockerfile
 # Dockerfile
-FROM node:18-alpine
+FROM node:20-bookworm-slim
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production

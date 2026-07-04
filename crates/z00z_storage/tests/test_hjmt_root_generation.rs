@@ -13,12 +13,12 @@ use z00z_utils::{
     io,
 };
 
-const LEAF_REGEN_CMD: &str = "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_shard_root_leaf_manifest_json -- --ignored --nocapture";
-const PUB_REGEN_CMD: &str = "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture";
+const LEAF_REGEN_CMD: &str = "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation leaf_manifest_matches_contract -- --exact --nocapture";
+const PUB_REGEN_CMD: &str = "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture";
 const LEAF_EVIDENCE_PTR: &str =
-    "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_shard_root_leaf_manifest_matches_live_contract";
+    "crates/z00z_storage/tests/test_hjmt_root_generation.rs::leaf_manifest_matches_contract";
 const PUB_EVIDENCE_PTR: &str =
-    "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract";
+    "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract";
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -150,13 +150,30 @@ fn leaf_rejects_policy_digest_drift() {
 #[test]
 fn leaf_manifest_matches_contract() {
     let manifest = load_leaf_manifest();
-    assert_eq!(manifest, build_leaf_manifest());
+    let live = build_leaf_manifest();
+    if std::env::var_os("Z00Z_REGEN_DUMP").is_some() {
+        let json = JsonCodec
+            .serialize_pretty(&live)
+            .expect("encode leaf manifest");
+        println!("{}", String::from_utf8(json).expect("leaf manifest utf8"));
+    }
+    assert_eq!(manifest, live);
 }
 
 #[test]
 fn publication_manifest_matches_contract() {
     let manifest = load_publication_manifest();
-    assert_eq!(manifest, build_publication_manifest());
+    let live = build_publication_manifest();
+    if std::env::var_os("Z00Z_REGEN_DUMP").is_some() {
+        let json = JsonCodec
+            .serialize_pretty(&live)
+            .expect("encode publication manifest");
+        println!(
+            "{}",
+            String::from_utf8(json).expect("publication manifest utf8")
+        );
+    }
+    assert_eq!(manifest, live);
 }
 
 #[test]
@@ -508,27 +525,6 @@ fn publication_route_rejects_stale() {
     .expect_err("stale activation checkpoint must reject");
 
     assert_eq!(err, ProofChkErr::PublicationCheckpointMix);
-}
-
-#[ignore]
-#[test]
-fn print_shard_leaf_manifest() {
-    let json = JsonCodec
-        .serialize_pretty(&build_leaf_manifest())
-        .expect("encode leaf manifest");
-    println!("{}", String::from_utf8(json).expect("leaf manifest utf8"));
-}
-
-#[ignore]
-#[test]
-fn print_checkpoint_publication_manifest_json() {
-    let json = JsonCodec
-        .serialize_pretty(&build_publication_manifest())
-        .expect("encode publication manifest");
-    println!(
-        "{}",
-        String::from_utf8(json).expect("publication manifest utf8")
-    );
 }
 
 fn build_leaf_manifest() -> LeafManifest {

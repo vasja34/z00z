@@ -173,7 +173,7 @@ struct TraceFileView {
 struct PlacementRowView {
     shard_id: u16,
     primary_aggregator_id: u16,
-    standby_ids: Vec<u16>,
+    secondary_ids: Vec<u16>,
     expected_journal_lineage_hex: String,
 }
 
@@ -382,7 +382,7 @@ struct PublicationTopologyStageView {
     shard_count: usize,
     route_generation: u64,
     owner_aggregator_id: u16,
-    standby_aggregator_ids: Vec<u16>,
+    secondary_aggregator_ids: Vec<u16>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -398,14 +398,14 @@ struct PublicationTopologyView {
     route_generation_from: u64,
     route_generation_to: u64,
     owner_aggregator_id: u16,
-    standby_aggregator_ids: Vec<u16>,
+    secondary_aggregator_ids: Vec<u16>,
     join_mode: String,
     transfer_target: String,
     activation_checkpoint: u64,
     transition_stages: Vec<PublicationTopologyStageView>,
     removed_aggregator_ids: Vec<u16>,
     removed_aggregator_absent_from_owner_tables: bool,
-    removed_aggregator_absent_from_standby_tables: bool,
+    removed_aggregator_absent_from_secondary_tables: bool,
     all_shards_owned_across_stages: bool,
     prior_lineage_preserved: bool,
     publication_continuity_preserved: bool,
@@ -416,7 +416,7 @@ struct PublicationLeafView {
     shard_id: u16,
     source_settlement_path: String,
     primary_aggregator_id: u16,
-    standby_ids: Vec<u16>,
+    secondary_ids: Vec<u16>,
     state_root_hex: String,
     leaf_canonical_bytes_hex: String,
     leaf_digest_hex: String,
@@ -445,7 +445,7 @@ struct PublicationProcessVerdictView {
     process_id: String,
     journal_path: PathBuf,
     owned_shard_ids: Vec<u16>,
-    standby_shard_ids: Vec<u16>,
+    secondary_shard_ids: Vec<u16>,
     exit_verdict: String,
     restart_verdict: String,
 }
@@ -3409,16 +3409,15 @@ fn build_wallet_lifecycle_rows(
                     let tx_id = portable_tx_id(&contents)?;
                     let mut portable = portable_tx_package_from_export(&contents)?;
                     portable.chain_id = "999".to_string();
-                    portable.metadata_hash_hex = hex::encode(
-                        blake3::hash(
-                            format!(
-                                "{}:{}:{}",
-                                portable.package_version, portable.chain_id, portable.tx_hash_hex
-                            )
-                            .as_bytes(),
-                        )
-                        .as_bytes(),
-                    );
+                    let package_version_bytes = portable.package_version.to_le_bytes();
+                    portable.metadata_hash_hex = hex::encode(z00z_crypto::blake2b_hash(
+                        b"z00z.wallet.portable.metadata.v1",
+                        &[
+                            &package_version_bytes,
+                            portable.chain_id.as_bytes(),
+                            portable.tx_hash_hex.as_bytes(),
+                        ],
+                    ));
                     let tampered = String::from_utf8(JsonCodec.serialize(&portable).map_err(|err| {
                         Scenario1Err::Evidence(format!(
                             "wallet lifecycle simulation wrong-chain package encode failed for {}: {err}",
@@ -3583,16 +3582,15 @@ fn build_wallet_lifecycle_rows(
                     let tx_id = portable_tx_id(&contents)?;
                     let mut portable = portable_tx_package_from_export(&contents)?;
                     portable.package_version = 2;
-                    portable.metadata_hash_hex = hex::encode(
-                        blake3::hash(
-                            format!(
-                                "{}:{}:{}",
-                                portable.package_version, portable.chain_id, portable.tx_hash_hex
-                            )
-                            .as_bytes(),
-                        )
-                        .as_bytes(),
-                    );
+                    let package_version_bytes = portable.package_version.to_le_bytes();
+                    portable.metadata_hash_hex = hex::encode(z00z_crypto::blake2b_hash(
+                        b"z00z.wallet.portable.metadata.v1",
+                        &[
+                            &package_version_bytes,
+                            portable.chain_id.as_bytes(),
+                            portable.tx_hash_hex.as_bytes(),
+                        ],
+                    ));
                     let tampered = String::from_utf8(JsonCodec.serialize(&portable).map_err(|err| {
                         Scenario1Err::Evidence(format!(
                             "wallet lifecycle simulation wrong-version package encode failed for {}: {err}",
@@ -4951,17 +4949,19 @@ fn validate_observability_cfg(
                     .to_string(),
             ));
         }
-        if example.standby_aggregator_ids.is_empty() {
+        if example.secondary_aggregator_ids.is_empty() {
             return Err(Scenario1Err::Evidence(
-                "runtime_observability publication topology standby set must stay non-empty"
+                "runtime_observability publication topology secondary set must stay non-empty"
                     .to_string(),
             ));
         }
-        let mut top_level_standby_ids = BTreeSet::new();
-        for standby in &example.standby_aggregator_ids {
-            if *standby == example.owner_aggregator_id || !top_level_standby_ids.insert(*standby) {
+        let mut top_level_secondary_ids = BTreeSet::new();
+        for secondary in &example.secondary_aggregator_ids {
+            if *secondary == example.owner_aggregator_id
+                || !top_level_secondary_ids.insert(*secondary)
+            {
                 return Err(Scenario1Err::Evidence(
-                    "runtime_observability publication topology owner and standby set must stay unique"
+                    "runtime_observability publication topology owner and secondary set must stay unique"
                         .to_string(),
                 ));
             }
@@ -5025,17 +5025,18 @@ fn validate_observability_cfg(
                         ));
                     }
                 }
-                if stage.standby_aggregator_ids.is_empty() {
+                if stage.secondary_aggregator_ids.is_empty() {
                     return Err(Scenario1Err::Evidence(
-                        "runtime_observability staged topology standby set must stay non-empty"
+                        "runtime_observability staged topology secondary set must stay non-empty"
                             .to_string(),
                     ));
                 }
-                let mut standby_ids = BTreeSet::new();
-                for standby in &stage.standby_aggregator_ids {
-                    if *standby == stage.owner_aggregator_id || !standby_ids.insert(*standby) {
+                let mut secondary_ids = BTreeSet::new();
+                for secondary in &stage.secondary_aggregator_ids {
+                    if *secondary == stage.owner_aggregator_id || !secondary_ids.insert(*secondary)
+                    {
                         return Err(Scenario1Err::Evidence(
-                            "runtime_observability staged topology owner and standby set must stay unique"
+                            "runtime_observability staged topology owner and secondary set must stay unique"
                                 .to_string(),
                         ));
                     }
@@ -5054,7 +5055,7 @@ fn validate_observability_cfg(
             }
         }
         if (example.removed_aggregator_absent_from_owner_tables
-            || example.removed_aggregator_absent_from_standby_tables
+            || example.removed_aggregator_absent_from_secondary_tables
             || example.all_shards_owned_across_stages
             || example.prior_lineage_preserved
             || example.publication_continuity_preserved)
@@ -5330,10 +5331,10 @@ fn build_journal_view(hjmt: &z00z_rollup_node::HjmtCfg) -> JournalContractView {
             agg.shards.iter().map(move |shard| PlacementRowView {
                 shard_id: shard.shard_id.as_u16(),
                 primary_aggregator_id: agg.aggregator_id.as_u16(),
-                standby_ids: shard
-                    .standby_ids
+                secondary_ids: shard
+                    .secondary_ids
                     .iter()
-                    .map(|standby| standby.as_u16())
+                    .map(|secondary| secondary.as_u16())
                     .collect(),
                 expected_journal_lineage_hex: hex::encode(shard.expected_journal_lineage),
             })
@@ -5645,7 +5646,7 @@ fn publication_topology_views(
             route_generation_from: example.route_generation_from,
             route_generation_to: example.route_generation_to,
             owner_aggregator_id: example.owner_aggregator_id,
-            standby_aggregator_ids: example.standby_aggregator_ids.clone(),
+            secondary_aggregator_ids: example.secondary_aggregator_ids.clone(),
             join_mode: example.join_mode.clone(),
             transfer_target: example.transfer_target.clone(),
             activation_checkpoint: example.activation_checkpoint,
@@ -5659,14 +5660,14 @@ fn publication_topology_views(
                     shard_count: stage.shard_count,
                     route_generation: stage.route_generation,
                     owner_aggregator_id: stage.owner_aggregator_id,
-                    standby_aggregator_ids: stage.standby_aggregator_ids.clone(),
+                    secondary_aggregator_ids: stage.secondary_aggregator_ids.clone(),
                 })
                 .collect(),
             removed_aggregator_ids: example.removed_aggregator_ids.clone(),
             removed_aggregator_absent_from_owner_tables: example
                 .removed_aggregator_absent_from_owner_tables,
-            removed_aggregator_absent_from_standby_tables: example
-                .removed_aggregator_absent_from_standby_tables,
+            removed_aggregator_absent_from_secondary_tables: example
+                .removed_aggregator_absent_from_secondary_tables,
             all_shards_owned_across_stages: example.all_shards_owned_across_stages,
             prior_lineage_preserved: example.prior_lineage_preserved,
             publication_continuity_preserved: example.publication_continuity_preserved,
@@ -5725,7 +5726,7 @@ fn build_publication_evidence(
             shard_id: row.shard_id,
             source_settlement_path: source_path.path_text.clone(),
             primary_aggregator_id: row.primary_aggregator_id,
-            standby_ids: row.standby_ids.clone(),
+            secondary_ids: row.secondary_ids.clone(),
             state_root_hex: hex::encode(leaf.shard_root),
             leaf_canonical_bytes_hex: hex::encode(
                 leaf.canonical_bytes()
@@ -6057,11 +6058,11 @@ fn build_process_verdicts(spec: &RuntimeTraceSpec) -> Vec<PublicationProcessVerd
         .aggregators
         .iter()
         .map(|agg| {
-            let standby_shard_ids = spec
+            let secondary_shard_ids = spec
                 .journal_view
                 .lineage_rows
                 .iter()
-                .filter(|row| row.standby_ids.contains(&agg.aggregator_id))
+                .filter(|row| row.secondary_ids.contains(&agg.aggregator_id))
                 .map(|row| row.shard_id)
                 .collect::<Vec<_>>();
             PublicationProcessVerdictView {
@@ -6069,7 +6070,7 @@ fn build_process_verdicts(spec: &RuntimeTraceSpec) -> Vec<PublicationProcessVerd
                 process_id: format!("agg-{}", agg.aggregator_id),
                 journal_path: agg.journal_path.clone(),
                 owned_shard_ids: agg.shard_ids.clone(),
-                standby_shard_ids,
+                secondary_shard_ids,
                 exit_verdict: "config_bound_exit_ready".to_string(),
                 restart_verdict: if agg.restart_cmd.trim().is_empty() {
                     "restart_cmd_missing".to_string()

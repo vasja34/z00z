@@ -3,12 +3,35 @@ use z00z_utils::codec::{BincodeCodec, Codec, JsonCodec};
 use crate::CheckpointError;
 
 use super::{
+    archive_manifest::{
+        decode_archive_manifest_bin_checked, decode_archive_manifest_json_checked,
+        encode_archive_manifest_bin_checked, encode_archive_manifest_json_checked,
+        CheckpointArchiveManifestV1,
+    },
+    archive_receipt::{
+        decode_archive_receipt_bin_checked, decode_archive_receipt_json_checked,
+        encode_archive_receipt_bin_checked, encode_archive_receipt_json_checked,
+        ArchiveProviderReceiptV1,
+    },
     artifact_final::{check_proof_sys, check_ver},
     audit::{check_audit_ver, CheckpointAudit},
     exec_input::{check_exec_ver, CheckpointExecInput},
     link::{
         decode_link_bin_checked, decode_link_json_checked, encode_link_bin_checked,
         encode_link_json_checked, CheckpointLink,
+    },
+    pruning::{
+        decode_pruning_decision_bin_checked, decode_pruning_decision_json_checked,
+        encode_pruning_decision_bin_checked, encode_pruning_decision_json_checked,
+        PruningDecisionV1,
+    },
+    retrieval_audit::{
+        decode_retrieval_audit_bin_checked, decode_retrieval_audit_json_checked,
+        encode_retrieval_audit_bin_checked, encode_retrieval_audit_json_checked, RetrievalAuditV1,
+    },
+    state_snapshot::{
+        decode_state_snapshot_bin_checked, decode_state_snapshot_json_checked,
+        encode_state_snapshot_bin_checked, encode_state_snapshot_json_checked, StateSnapshotV1,
     },
     CheckpointArtifact, CheckpointDraft, CheckpointStatement,
 };
@@ -187,26 +210,140 @@ pub fn decode_audit_json(bytes: &[u8]) -> Result<CheckpointAudit, CheckpointErro
     Ok(audit)
 }
 
+pub fn encode_archive_manifest_bin(
+    manifest: &CheckpointArchiveManifestV1,
+) -> Result<Vec<u8>, CheckpointError> {
+    encode_archive_manifest_bin_checked(manifest)
+}
+
+pub fn decode_archive_manifest_bin(
+    bytes: &[u8],
+) -> Result<CheckpointArchiveManifestV1, CheckpointError> {
+    decode_archive_manifest_bin_checked(bytes)
+}
+
+pub fn encode_archive_manifest_json(
+    manifest: &CheckpointArchiveManifestV1,
+) -> Result<Vec<u8>, CheckpointError> {
+    encode_archive_manifest_json_checked(manifest)
+}
+
+pub fn decode_archive_manifest_json(
+    bytes: &[u8],
+) -> Result<CheckpointArchiveManifestV1, CheckpointError> {
+    decode_archive_manifest_json_checked(bytes)
+}
+
+pub fn encode_archive_receipt_bin(
+    receipt: &ArchiveProviderReceiptV1,
+) -> Result<Vec<u8>, CheckpointError> {
+    encode_archive_receipt_bin_checked(receipt)
+}
+
+pub fn decode_archive_receipt_bin(
+    bytes: &[u8],
+) -> Result<ArchiveProviderReceiptV1, CheckpointError> {
+    decode_archive_receipt_bin_checked(bytes)
+}
+
+pub fn encode_archive_receipt_json(
+    receipt: &ArchiveProviderReceiptV1,
+) -> Result<Vec<u8>, CheckpointError> {
+    encode_archive_receipt_json_checked(receipt)
+}
+
+pub fn decode_archive_receipt_json(
+    bytes: &[u8],
+) -> Result<ArchiveProviderReceiptV1, CheckpointError> {
+    decode_archive_receipt_json_checked(bytes)
+}
+
+pub fn encode_retrieval_audit_bin(audit: &RetrievalAuditV1) -> Result<Vec<u8>, CheckpointError> {
+    encode_retrieval_audit_bin_checked(audit)
+}
+
+pub fn decode_retrieval_audit_bin(bytes: &[u8]) -> Result<RetrievalAuditV1, CheckpointError> {
+    decode_retrieval_audit_bin_checked(bytes)
+}
+
+pub fn encode_retrieval_audit_json(audit: &RetrievalAuditV1) -> Result<Vec<u8>, CheckpointError> {
+    encode_retrieval_audit_json_checked(audit)
+}
+
+pub fn decode_retrieval_audit_json(bytes: &[u8]) -> Result<RetrievalAuditV1, CheckpointError> {
+    decode_retrieval_audit_json_checked(bytes)
+}
+
+pub fn encode_state_snapshot_bin(snapshot: &StateSnapshotV1) -> Result<Vec<u8>, CheckpointError> {
+    encode_state_snapshot_bin_checked(snapshot)
+}
+
+pub fn decode_state_snapshot_bin(bytes: &[u8]) -> Result<StateSnapshotV1, CheckpointError> {
+    decode_state_snapshot_bin_checked(bytes)
+}
+
+pub fn encode_state_snapshot_json(snapshot: &StateSnapshotV1) -> Result<Vec<u8>, CheckpointError> {
+    encode_state_snapshot_json_checked(snapshot)
+}
+
+pub fn decode_state_snapshot_json(bytes: &[u8]) -> Result<StateSnapshotV1, CheckpointError> {
+    decode_state_snapshot_json_checked(bytes)
+}
+
+pub fn encode_pruning_decision_bin(
+    decision: &PruningDecisionV1,
+) -> Result<Vec<u8>, CheckpointError> {
+    encode_pruning_decision_bin_checked(decision)
+}
+
+pub fn decode_pruning_decision_bin(bytes: &[u8]) -> Result<PruningDecisionV1, CheckpointError> {
+    decode_pruning_decision_bin_checked(bytes)
+}
+
+pub fn encode_pruning_decision_json(
+    decision: &PruningDecisionV1,
+) -> Result<Vec<u8>, CheckpointError> {
+    encode_pruning_decision_json_checked(decision)
+}
+
+pub fn decode_pruning_decision_json(bytes: &[u8]) -> Result<PruningDecisionV1, CheckpointError> {
+    decode_pruning_decision_json_checked(bytes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        decode_art_bin, decode_audit_bin, decode_draft_bin, decode_draft_json, decode_exec_bin,
-        decode_exec_json, decode_link_bin, decode_link_json, encode_art_bin, encode_audit_bin,
-        encode_draft_bin, encode_exec_bin, encode_link_bin,
+        decode_archive_manifest_bin, decode_archive_manifest_json, decode_archive_receipt_bin,
+        decode_archive_receipt_json, decode_art_bin, decode_audit_bin, decode_draft_bin,
+        decode_draft_json, decode_exec_bin, decode_exec_json, decode_link_bin, decode_link_json,
+        decode_pruning_decision_bin, decode_pruning_decision_json, decode_retrieval_audit_bin,
+        decode_retrieval_audit_json, decode_state_snapshot_bin, decode_state_snapshot_json,
+        encode_archive_manifest_bin, encode_archive_manifest_json, encode_archive_receipt_bin,
+        encode_archive_receipt_json, encode_art_bin, encode_audit_bin, encode_draft_bin,
+        encode_exec_bin, encode_link_bin, encode_pruning_decision_bin,
+        encode_pruning_decision_json, encode_retrieval_audit_bin, encode_retrieval_audit_json,
+        encode_state_snapshot_bin, encode_state_snapshot_json,
     };
     use crate::{
         checkpoint::audit::{CheckpointAudit, CheckpointAuditVersion},
         checkpoint::{
-            CheckpointArtifact, CheckpointDraft, CheckpointExecInput, CheckpointExecInputId,
-            CheckpointExecOut, CheckpointExecTx, CheckpointExecVersion, CheckpointId,
-            CheckpointInRef, CheckpointLink, CheckpointLinkVersion, CheckpointVersion, CreatedEnt,
-            SpentEnt,
+            ArchiveBackend, ArchiveManifestVersion, ArchiveProviderReceiptV1,
+            ArchiveProviderReceiptVersion, CheckpointArchiveManifestV1, CheckpointArtifact,
+            CheckpointDraft, CheckpointExecInput, CheckpointExecInputId, CheckpointExecOut,
+            CheckpointExecTx, CheckpointExecVersion, CheckpointId, CheckpointInRef, CheckpointLink,
+            CheckpointLinkVersion, CheckpointVersion, CreatedEnt, PruningDecisionV1,
+            PruningDecisionVersion, PruningNodeClass, RetrievalAuditV1, RetrievalAuditVersion,
+            SpentEnt, StateSnapshotV1, StateSnapshotVersion,
         },
         settlement::CheckRoot,
         snapshot::PrepSnapshotId,
         CheckpointError,
     };
     use z00z_core::assets::AssetLeaf;
+
+    fn root(byte: u8) -> [u8; 32] {
+        [byte; 32]
+    }
 
     fn draft() -> CheckpointDraft {
         CheckpointDraft::new(
@@ -271,6 +408,89 @@ mod tests {
         .expect("audit")
     }
 
+    fn archive_manifest() -> CheckpointArchiveManifestV1 {
+        CheckpointArchiveManifestV1::new(
+            ArchiveManifestVersion::CURRENT,
+            root(11),
+            root(12),
+            root(13),
+            root(14),
+            root(15),
+            root(16),
+            root(17),
+            root(18),
+            root(19),
+            root(20),
+            3,
+        )
+        .expect("archive manifest")
+    }
+
+    fn archive_receipt() -> ArchiveProviderReceiptV1 {
+        ArchiveProviderReceiptV1::new(
+            ArchiveProviderReceiptVersion::CURRENT,
+            ArchiveBackend::IpfsPinned,
+            root(21),
+            4096,
+            root(22),
+            root(23),
+            true,
+            true,
+        )
+        .expect("archive receipt")
+    }
+
+    fn retrieval_audit() -> RetrievalAuditV1 {
+        RetrievalAuditV1::new(
+            RetrievalAuditVersion::CURRENT,
+            1000,
+            1000,
+            root(24),
+            root(25),
+            root(26),
+            [0u8; 32],
+            3,
+            true,
+        )
+        .expect("retrieval audit")
+    }
+
+    fn state_snapshot() -> StateSnapshotV1 {
+        StateSnapshotV1::new(
+            StateSnapshotVersion::CURRENT,
+            10_000,
+            10,
+            10_000,
+            root(27),
+            root(28),
+            root(29),
+            root(30),
+            root(31),
+            root(32),
+            root(33),
+            root(34),
+        )
+        .expect("state snapshot")
+    }
+
+    fn pruning_decision() -> PruningDecisionV1 {
+        PruningDecisionV1::new(
+            PruningDecisionVersion::CURRENT,
+            PruningNodeClass::FullNode,
+            "local_full_node_only",
+            10,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        )
+        .expect("pruning decision")
+    }
+
     #[test]
     fn test_codec_roundtrip_bin() {
         assert_eq!(
@@ -292,6 +512,80 @@ mod tests {
         assert_eq!(
             decode_audit_bin(&encode_audit_bin(&audit()).expect("audit bin")).expect("audit"),
             audit()
+        );
+        assert_eq!(
+            decode_archive_manifest_bin(
+                &encode_archive_manifest_bin(&archive_manifest()).expect("archive manifest bin")
+            )
+            .expect("archive manifest"),
+            archive_manifest()
+        );
+        assert_eq!(
+            decode_archive_receipt_bin(
+                &encode_archive_receipt_bin(&archive_receipt()).expect("archive receipt bin")
+            )
+            .expect("archive receipt"),
+            archive_receipt()
+        );
+        assert_eq!(
+            decode_retrieval_audit_bin(
+                &encode_retrieval_audit_bin(&retrieval_audit()).expect("retrieval audit bin")
+            )
+            .expect("retrieval audit"),
+            retrieval_audit()
+        );
+        assert_eq!(
+            decode_state_snapshot_bin(
+                &encode_state_snapshot_bin(&state_snapshot()).expect("state snapshot bin")
+            )
+            .expect("state snapshot"),
+            state_snapshot()
+        );
+        assert_eq!(
+            decode_pruning_decision_bin(
+                &encode_pruning_decision_bin(&pruning_decision()).expect("pruning decision bin")
+            )
+            .expect("pruning decision"),
+            pruning_decision()
+        );
+    }
+
+    #[test]
+    fn test_archive_codec_roundtrip_json() {
+        assert_eq!(
+            decode_archive_manifest_json(
+                &encode_archive_manifest_json(&archive_manifest()).expect("archive manifest json")
+            )
+            .expect("archive manifest"),
+            archive_manifest()
+        );
+        assert_eq!(
+            decode_archive_receipt_json(
+                &encode_archive_receipt_json(&archive_receipt()).expect("archive receipt json")
+            )
+            .expect("archive receipt"),
+            archive_receipt()
+        );
+        assert_eq!(
+            decode_retrieval_audit_json(
+                &encode_retrieval_audit_json(&retrieval_audit()).expect("retrieval audit json")
+            )
+            .expect("retrieval audit"),
+            retrieval_audit()
+        );
+        assert_eq!(
+            decode_state_snapshot_json(
+                &encode_state_snapshot_json(&state_snapshot()).expect("state snapshot json")
+            )
+            .expect("state snapshot"),
+            state_snapshot()
+        );
+        assert_eq!(
+            decode_pruning_decision_json(
+                &encode_pruning_decision_json(&pruning_decision()).expect("pruning decision json")
+            )
+            .expect("pruning decision"),
+            pruning_decision()
         );
     }
 

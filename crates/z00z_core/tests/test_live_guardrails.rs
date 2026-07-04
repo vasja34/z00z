@@ -33,9 +33,9 @@ const ARCHITECTURE_DOC: &str = include_str!("../../../.planning/codebase/ARCHITE
 const PROFILING_DOC: &str = include_str!("../../../.planning/phases/profiling-comprehensive.md");
 const ROOT_TYPES_DOC: &str =
     include_str!("../../../crates/z00z_storage/src/settlement/root_types.md");
-const PHASE066_TODO: &str = include_str!("../../../.planning/phases/069-New-Scenarios/066-TODO.md");
+const PHASE066_TODO: &str = include_str!("../../../.planning/phases/090-New-Scenarios/066-TODO.md");
 const PHASE065_WORDING_AUDIT: &str =
-    include_str!("../../../scripts/audit_phase065_narrowed_wording.sh");
+    include_str!("../../../scripts/audit/audit_narrowed_wording.sh");
 const UTILS_BOUNDARY_AUDIT: &str =
     include_str!("../../../scripts/audit/audit_z00z_utils_boundary.sh");
 const BOUNDARY_WORKFLOW: &str = include_str!("../../../.github/workflows/boundary-guards.yml");

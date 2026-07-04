@@ -192,6 +192,25 @@ hash_domain!(Stage4OutSeedDomain, "z00z.consensus.stage4_out_seed.v1", 1); // St
 hash_domain!(TxProofDomain, "z00z.consensus.tx_proof.v1", 1); // TxProof Fiat-Shamir challenge
 hash_domain!(CheckpointDomain, "z00z.consensus.checkpoint.v1", 1); // CheckpointProof
 
+// Aggregator quorum artifacts
+hash_domain!(
+    ShardMembershipDomain,
+    "z00z.consensus.shard_membership.v1",
+    1
+); // Active shard placement membership digest
+hash_domain!(CommitSubjectDomain, "z00z.consensus.commit_subject.v1", 1); // Canonical shard commit subject digest
+hash_domain!(ShardVoteDomain, "z00z.consensus.shard_vote.v1", 1); // Canonical shard vote digest
+hash_domain!(
+    ShardVoteLocalSignatureDomain,
+    "z00z.consensus.shard_vote_local_signature.v1",
+    1
+); // Deterministic local signature seam for simulator votes
+hash_domain!(
+    ShardQuorumCertificateDomain,
+    "z00z.consensus.shard_qc.v1",
+    1
+); // Canonical shard quorum certificate digest
+
 // Identity & Requests
 hash_domain!(PaymentRequestDomain, "z00z.payment.request.v1", 1); // PaymentRequest signature domain
 hash_domain!(ReceiverCardDomain, "z00z.receiver.card.v1", 1); // ReceiverCard signature domain
@@ -217,7 +236,7 @@ mod tests {
     /// CRITICAL: Duplicate domains would cause cross-protocol attacks.
     #[test]
     fn test_consensus_domains_unique() {
-        let domains: [&[u8]; 24] = [
+        let domains: [&[u8]; 29] = [
             // Core: Receiver Identity & Keys
             b"z00z.consensus.ephemeral_scalar.v1",
             b"z00z.consensus.receiver_id.v1",
@@ -246,6 +265,12 @@ mod tests {
             b"z00z.consensus.stage4_out_seed.v1",
             b"z00z.consensus.tx_proof.v1",
             b"z00z.consensus.checkpoint.v1",
+            // Aggregator quorum artifacts
+            b"z00z.consensus.shard_membership.v1",
+            b"z00z.consensus.commit_subject.v1",
+            b"z00z.consensus.shard_vote.v1",
+            b"z00z.consensus.shard_vote_local_signature.v1",
+            b"z00z.consensus.shard_qc.v1",
             // Identity & Requests
             b"z00z.payment.request.v1",
             b"z00z.receiver.card.v1",
@@ -263,8 +288,8 @@ mod tests {
     #[test]
     fn test_consensus_domain_count() {
         // Keep this synchronized with the dedicated consensus-domain registry above.
-        let expected = 24;
-        let actual = 24;
+        let expected = 29;
+        let actual = 29;
 
         assert_eq!(
             actual, expected,
@@ -280,7 +305,7 @@ mod tests {
     fn test_spec_domain_strings() {
         use crate::domains::*;
 
-        let checks: [(&str, &str, &str); 24] = [
+        let checks: [(&str, &str, &str); 29] = [
             (
                 EphemeralScalarDomain::domain(),
                 "z00z.consensus.ephemeral_scalar.v1",
@@ -390,6 +415,31 @@ mod tests {
                 CheckpointDomain::domain(),
                 "z00z.consensus.checkpoint.v1",
                 "CheckpointDomain mismatch",
+            ),
+            (
+                ShardMembershipDomain::domain(),
+                "z00z.consensus.shard_membership.v1",
+                "ShardMembershipDomain mismatch",
+            ),
+            (
+                CommitSubjectDomain::domain(),
+                "z00z.consensus.commit_subject.v1",
+                "CommitSubjectDomain mismatch",
+            ),
+            (
+                ShardVoteDomain::domain(),
+                "z00z.consensus.shard_vote.v1",
+                "ShardVoteDomain mismatch",
+            ),
+            (
+                ShardVoteLocalSignatureDomain::domain(),
+                "z00z.consensus.shard_vote_local_signature.v1",
+                "ShardVoteLocalSignatureDomain mismatch",
+            ),
+            (
+                ShardQuorumCertificateDomain::domain(),
+                "z00z.consensus.shard_qc.v1",
+                "ShardQuorumCertificateDomain mismatch",
             ),
             (
                 PaymentRequestDomain::domain(),

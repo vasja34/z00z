@@ -1422,7 +1422,7 @@ For the current 3-member committee, the theorem claim must be CFT-only. A BFT th
 The missing high-value harness is an end-to-end `sim_5a7s` quorum path.
 
 Implementation home: add this as independent `scenario_11` in
-`.planning/phases/069-New-Scenarios/066-TODO.md`. Do not append a new stage to
+`.planning/phases/090-New-Scenarios/066-TODO.md`. Do not append a new stage to
 `crates/z00z_simulator/src/scenario_1`; the current `scenario_1` runner contract
 should remain reference evidence, not the owner of this quorum-certificate
 scenario.
@@ -1769,7 +1769,7 @@ Once that is complete, the BFT and Celestia design can be implemented as a secon
 
 This addendum is the short implementation contract for agents and reviewers. It resolves the remaining ambiguity in this spec without replacing the detailed sections above.
 
-1. Canonical authority is `.planning/phases/067-Sharded-Concensus/Agg-Concensus-Spec.md`. Scenario execution scope is tracked in `.planning/phases/069-New-Scenarios/066-TODO.md` under `scenario_11`. Older review-named copies are derived references, not implementation authority.
+1. Canonical authority is `.planning/phases/067-Sharded-Concensus/067-TODO.md`. Scenario execution scope is tracked in `.planning/phases/090-New-Scenarios/066-TODO.md` under `scenario_11`. Older review-named copies are derived references, not implementation authority.
 2. Implementation starts inside `crates/z00z_runtime/aggregators`. Do not create a separate production consensus crate until `CommitSubject`, `ShardVote`, `ShardQuorumCertificate`, and `SecondaryReplayVerifier` are proven through local tests and `scenario_11`.
 3. Public Rust exports must be added through the `z00z_aggregators` crate root. Proposed module homes are `commit_subject.rs`, `shard_vote.rs`, `shard_quorum_certificate.rs`, and `secondary_replay.rs`, unless implementation discovers a tighter existing seam.
 4. Canonical digest inputs must be binary-encoded in stable field order with explicit domain/version bytes. Do not use JSON display text, debug output, map iteration order, or fixture filenames as digest material.
@@ -1780,4 +1780,4 @@ This addendum is the short implementation contract for agents and reviewers. It 
 9. Local DA binding must carry or reference the quorum certificate digest without replacing `PublicationRequest`, `PublishedBatch`, or `ResolvedBatch`. Validator gating must reject missing, detached, stale, or mismatched certificate binding when `scenario_11` enables the gate.
 10. `scenario_11` owns its own evidence/report writer. `scenario_1` is a reference corpus only and must not gain new quorum-certificate stages or observability fields for this work.
 11. Protocol prose uses `secondary aggregator`. Code may use concise `secondary` identifiers. Do not combine secondary role names with validator terminology.
-12. Verification anchors listed in `069-New-Scenarios` become mandatory after their targets exist. Before target creation, implementation plans must include the target creation step instead of claiming the commands are already runnable.
+12. Verification anchors listed in `090-New-Scenarios` become mandatory after their targets exist. Before target creation, implementation plans must include the target creation step instead of claiming the commands are already runnable.

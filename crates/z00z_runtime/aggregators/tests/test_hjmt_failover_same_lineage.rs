@@ -3,7 +3,7 @@ mod test_recovery_common;
 use tempfile::tempdir;
 use z00z_aggregators::{
     AggregatorId, PublicationRecord, PublicationState, RecoveryBoundary, RecoveryIntent,
-    ShardExecState, ShardExecTicket, ShardPlacement, StandbyState,
+    SecondaryState, ShardExecState, ShardExecTicket, ShardPlacement,
 };
 use z00z_storage::checkpoint::CheckpointId;
 use z00z_storage::settlement::SettlementRecoveryState;
@@ -40,7 +40,12 @@ fn manifest_case<'a>(
 fn test_manifest_matches_contract() -> Result<(), Box<dyn std::error::Error>> {
     let expected: FailoverManifest =
         JsonCodec.deserialize(include_bytes!("fixtures/failover_v1/manifest.json"))?;
-    assert_eq!(expected, live_failover_manifest()?);
+    let live = live_failover_manifest()?;
+    if std::env::var_os("Z00Z_REGEN_DUMP").is_some() {
+        let json = JsonCodec.serialize_pretty(&live)?;
+        println!("{}", String::from_utf8(json).expect("manifest utf8"));
+    }
+    assert_eq!(expected, live);
     Ok(())
 }
 
@@ -49,9 +54,9 @@ fn test_same_lineage_takeover() -> Result<(), Box<dyn std::error::Error>> {
     let route = route(3, 9);
     let recovery = route_bound_recovery_state(0x71, batch_id(FOV_001), route, [0x31; 32])?;
     let primary = AggregatorId::new(7);
-    let standby = StandbyState::ready(AggregatorId::new(8));
-    let table = placement_table(route, primary, vec![standby], recovery.journal_lineage);
-    let record = recovery_record(FOV_001, route, primary, vec![standby], recovery.clone());
+    let secondary = SecondaryState::ready(AggregatorId::new(8));
+    let table = placement_table(route, primary, vec![secondary], recovery.journal_lineage);
+    let record = recovery_record(FOV_001, route, primary, vec![secondary], recovery.clone());
     let encoded = JsonCodec.serialize_pretty(&record)?;
     let decoded: z00z_aggregators::ShardRecoveryRecord = JsonCodec.deserialize(&encoded)?;
     assert_eq!(decoded, record);
@@ -63,7 +68,7 @@ fn test_same_lineage_takeover() -> Result<(), Box<dyn std::error::Error>> {
             &table,
             &record,
             &recovery,
-            RecoveryIntent::TakeoverStandby,
+            RecoveryIntent::TakeoverSecondary,
         )
         .expect("same-lineage takeover must resume");
 
@@ -78,26 +83,18 @@ fn test_same_lineage_takeover() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-#[ignore]
-fn print_failover_manifest_json() -> Result<(), Box<dyn std::error::Error>> {
-    let json = JsonCodec.serialize_pretty(&live_failover_manifest()?)?;
-    println!("{}", String::from_utf8(json).expect("manifest utf8"));
-    Ok(())
-}
-
-#[test]
 fn test_restart_keeps_lineage() -> Result<(), Box<dyn std::error::Error>> {
     let route = route(4, 10);
     let recovery =
         route_bound_recovery_state(0x72, batch_id("primary-restart"), route, [0x32; 32])?;
     let primary = AggregatorId::new(17);
-    let standby = StandbyState::ready(AggregatorId::new(18));
-    let table = placement_table(route, primary, vec![standby], recovery.journal_lineage);
+    let secondary = SecondaryState::ready(AggregatorId::new(18));
+    let table = placement_table(route, primary, vec![secondary], recovery.journal_lineage);
     let record = recovery_record(
         "primary-restart",
         route,
         primary,
-        vec![standby],
+        vec![secondary],
         recovery.clone(),
     );
 
@@ -139,7 +136,7 @@ fn test_keeps_takeover_lawful() -> Result<(), Box<dyn std::error::Error>> {
 
     let new_cfg = load_cfg(&new_home);
     let row = placement_row(&new_cfg, 5, 2);
-    let standby = row.standby[0];
+    let secondary = row.secondaries[0];
     let recovery = route_bound_recovery_state(
         0x74,
         batch_id("decommissioned-topology"),
@@ -160,23 +157,23 @@ fn test_keeps_takeover_lawful() -> Result<(), Box<dyn std::error::Error>> {
         "decommissioned-topology",
         row.route,
         row.primary_id,
-        row.standby.clone(),
+        row.secondaries.clone(),
         recovery.clone(),
     );
 
     let resumed = RecoveryBoundary
         .resume(
-            standby.aggregator_id,
+            secondary.aggregator_id,
             &new_cfg.placement_table().expect("placement table"),
             &record,
             &recovery,
-            RecoveryIntent::TakeoverStandby,
+            RecoveryIntent::TakeoverSecondary,
         )
-        .expect("decommissioned topology standby takeover must stay lawful");
+        .expect("decommissioned topology secondary-aggregator takeover must stay lawful");
 
     assert_eq!(resumed.state, ShardExecState::RecoveryPending);
     assert_eq!(resumed.placement.route, row.route);
-    assert_eq!(resumed.placement.primary_id, standby.aggregator_id);
+    assert_eq!(resumed.placement.primary_id, secondary.aggregator_id);
     assert_eq!(
         resumed.placement.expected_journal_lineage,
         row.expected_journal_lineage
@@ -191,9 +188,9 @@ fn test_publication_handoff_metadata_roundtrips() -> Result<(), Box<dyn std::err
     let recovery =
         route_bound_recovery_state(0x73, batch_id("publication-handoff"), route, [0x33; 32])?;
     let primary = AggregatorId::new(27);
-    let standby = StandbyState::ready(AggregatorId::new(28));
+    let secondary = SecondaryState::ready(AggregatorId::new(28));
     let checkpoint_id = CheckpointId::new([0xA5; 32]);
-    let placement = ShardPlacement::new(route, primary, vec![standby], recovery.journal_lineage);
+    let placement = ShardPlacement::new(route, primary, vec![secondary], recovery.journal_lineage);
     let ticket = ShardExecTicket {
         batch_id: batch_id("publication-handoff"),
         placement: placement.view(),
@@ -215,11 +212,11 @@ fn test_publication_handoff_metadata_roundtrips() -> Result<(), Box<dyn std::err
 
     let resumed = RecoveryBoundary
         .resume(
-            standby.aggregator_id,
-            &placement_table(route, primary, vec![standby], recovery.journal_lineage),
+            secondary.aggregator_id,
+            &placement_table(route, primary, vec![secondary], recovery.journal_lineage),
             &record,
             &recovery,
-            RecoveryIntent::TakeoverStandby,
+            RecoveryIntent::TakeoverSecondary,
         )
         .expect("publication handoff metadata must not block lawful takeover");
 

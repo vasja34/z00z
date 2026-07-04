@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Validate the Phase 066 machine-readable artifact and host report contract."""
+"""Validate the Phase 066 single-root artifact/report contract."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,18 @@ REQUIRED_DIRS = [
 ]
 
 
+def report_run_id(run_id: str) -> str:
+    """Convert the timestamp portion of a run id to the host report format."""
+
+    return re.sub(r"(\d{8})T(\d{6})Z", r"\1-\2", run_id, count=1)
+
+
+def expected_report_dir_name(run_id: str) -> str:
+    """Return the canonical host report directory name for a run id."""
+
+    return f"z00z-pentests-report-{report_run_id(run_id)}"
+
+
 @dataclass
 class ValidationResult:
     """Structured artifact-validation output."""
@@ -51,7 +64,7 @@ def parse_args() -> argparse.Namespace:
     """Parse CLI arguments."""
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("artifact_dir", help="path to .security-artifacts/<timestamp>")
+    parser.add_argument("artifact_dir", help="path to reports/z00z-pentests-report-<timestamp>")
     parser.add_argument("--json", action="store_true", help="emit machine-readable output")
     return parser.parse_args()
 
@@ -177,10 +190,21 @@ def validate_manifest_identity(
     """Validate the manifest identity and paired host report location."""
 
     run_id = manifest.get("run_id")
-    if run_id != artifact_dir.name:
+    if not isinstance(run_id, str) or not run_id:
+        errors.append("manifest.run_id must be a non-empty string")
+        return None
+
+    expected_name = expected_report_dir_name(run_id)
+    if artifact_dir.name != expected_name:
         errors.append(
-            f"manifest.run_id must match artifact directory name: {artifact_dir.name}"
+            f"artifact root must end with {expected_name}, found {artifact_dir.name}"
         )
+
+    artifact_dir_raw = manifest.get("artifact_dir")
+    if not isinstance(artifact_dir_raw, str) or not artifact_dir_raw:
+        errors.append("manifest.artifact_dir must be a non-empty string")
+    elif Path(artifact_dir_raw) != artifact_dir:
+        errors.append("manifest.artifact_dir must match the validated artifact root")
 
     report_dir_raw = manifest.get("report_dir")
     if not isinstance(report_dir_raw, str) or not report_dir_raw:
@@ -188,11 +212,8 @@ def validate_manifest_identity(
         return None
 
     report_dir = Path(report_dir_raw)
-    expected_name = f"z00z-pentests_report-{artifact_dir.name}"
-    if report_dir.name != expected_name:
-        errors.append(
-            f"manifest.report_dir must end with {expected_name}, found {report_dir.name}"
-        )
+    if report_dir != artifact_dir:
+        errors.append("manifest.report_dir must match manifest.artifact_dir under the single-root contract")
 
     if not report_dir.is_dir():
         errors.append(f"host report directory is missing: {report_dir}")

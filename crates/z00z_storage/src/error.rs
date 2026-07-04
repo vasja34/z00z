@@ -32,6 +32,15 @@ pub enum CheckpointError {
     /// One execution-input binding is inconsistent.
     #[error("checkpoint replay-input mismatch")]
     ReplayMix,
+    /// One archive-retention object is inconsistent.
+    #[error("checkpoint archive-retention mismatch")]
+    ArchiveMix,
+    /// One checkpoint snapshot object is inconsistent.
+    #[error("checkpoint snapshot mismatch")]
+    SnapshotMix,
+    /// One checkpoint pruning decision is unsafe.
+    #[error("checkpoint pruning mismatch")]
+    PruningMix,
     /// One root boundary is inconsistent.
     #[error("checkpoint root mismatch")]
     RootMix,
@@ -50,6 +59,9 @@ pub enum CheckpointError {
     /// Backend-specific storage failure.
     #[error("checkpoint backend failure: {0}")]
     Backend(String),
+    /// Checkpoint contract configuration is missing, malformed, or unsafe.
+    #[error("checkpoint contract config error: {0}")]
+    ContractConfig(String),
 }
 
 /// Errors for deterministic JMT serialization, reconstruction, and rendering.

@@ -1,13 +1,15 @@
 # Multi-stage build for ZUZ blockchain node
-FROM rust:1.70-alpine AS builder
+FROM rust:1.90-slim-bookworm AS builder
 
 # Install build dependencies
-RUN apk add --no-cache \
-    musl-dev \
-    pkgconfig \
-    openssl-dev \
-    clang \
-    lld
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        ca-certificates \
+        clang \
+        libssl-dev \
+        lld \
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -33,20 +35,23 @@ COPY runtime ./runtime
 RUN touch src/main.rs && cargo build --release
 
 # Runtime stage
-FROM alpine:latest
+FROM debian:12-slim
 
 # Install runtime dependencies
-RUN apk add --no-cache \
-    ca-certificates \
-    openssl \
-    libgcc
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        ca-certificates \
+        libgcc-s1 \
+        libssl3 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN addgroup -g 1001 zuz && \
-    adduser -D -s /bin/sh -u 1001 -G zuz zuz
+RUN groupadd --system --gid 1001 zuz \
+    && useradd --system --uid 1001 --gid zuz --create-home --home-dir /home/zuz --shell /usr/sbin/nologin zuz
 
 # Create data directory
-RUN mkdir -p /data && chown -R zuz:zuz /data
+RUN mkdir -p /data /etc/zuz \
+    && chown -R zuz:zuz /data /etc/zuz
 
 # Copy the binary from builder stage
 COPY --from=builder /app/target/release/zuz-node /usr/local/bin/zuz-node

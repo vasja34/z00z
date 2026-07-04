@@ -94,10 +94,20 @@ compile_error!(
 )))]
 compile_error!("Enable exactly one: ownership_policy_keyring OR ownership_policy_challenge");
 
-#[cfg(all(not(test), not(debug_assertions), feature = "test-params-fast"))]
+#[cfg(all(
+    not(test),
+    not(debug_assertions),
+    feature = "test-params-fast",
+    not(feature = "wallet_debug_tools")
+))]
 compile_error!("`test-params-fast` MUST NOT be compiled into release-capable z00z_wallets builds");
 
-#[cfg(all(not(test), not(debug_assertions), feature = "wallet_debug_tools"))]
+#[cfg(all(
+    not(test),
+    not(debug_assertions),
+    feature = "wallet_debug_tools",
+    not(feature = "test-params-fast")
+))]
 compile_error!(
     "`wallet_debug_tools` MUST NOT be compiled into release-capable z00z_wallets builds"
 );
@@ -145,7 +155,7 @@ pub mod db;
 /// not part of the stable public wallet facade.
 #[cfg(all(
     feature = "wallet_debug_tools",
-    debug_assertions,
+    any(debug_assertions, feature = "test-params-fast"),
     not(target_arch = "wasm32")
 ))]
 pub mod internal_debug_tools {

@@ -122,10 +122,15 @@ fn canonical_domain_lines() -> Vec<String> {
 fn test_domain_strings_are_frozen() {
     let expected = snapshot_lines_from_str(DOMAINS_SNAPSHOT);
     let actual = canonical_domain_lines();
+    if std::env::var_os("Z00Z_REGEN_DUMP").is_some() {
+        for line in &actual {
+            println!("{line}");
+        }
+    }
 
     assert_eq!(
         actual, expected,
-        "Domain snapshot mismatch. Run the ignored test `test_print_domain_snapshot` and update `docs/domains_snapshot.txt` intentionally."
+        "Domain snapshot mismatch. Run `Z00Z_REGEN_DUMP=1 cargo test -p z00z_wallets test_domain_strings_are_frozen -- --exact --nocapture` and update `docs/domains_snapshot.txt` intentionally."
     );
 }
 
@@ -177,11 +182,4 @@ fn test_pack_domains_frozen() {
         WalletLeafAdHashProdDomain::domain(),
         "z00z.wallet.stealth.leaf_ad.prod"
     );
-}
-
-#[test]
-#[ignore]
-fn test_print_domain_snapshot() {
-    let lines = canonical_domain_lines();
-    assert!(!lines.is_empty());
 }

@@ -256,11 +256,11 @@ pub fn canonical_proof_stmt() -> SpendProofStmt {
 
 pub fn wrong_prefix_artifact() -> SpendProofArtifact {
     let stmt = canonical_proof_stmt();
-    let statement_hash = *blake3::hash(&stmt.statement).as_bytes();
-    let mut pub_hash_bytes = Vec::with_capacity(b"z00z.spend.public.hash.v1".len() + 32);
-    pub_hash_bytes.extend_from_slice(b"z00z.spend.public.hash.v1");
-    pub_hash_bytes.extend_from_slice(&statement_hash);
-    let public_hash = *blake3::hash(&pub_hash_bytes).as_bytes();
+    let statement_hash = z00z_crypto::blake2b_hash(
+        b"z00z.spend.statement.hash.v1",
+        &[stmt.statement.as_slice()],
+    );
+    let public_hash = z00z_crypto::blake2b_hash(b"z00z.spend.public.hash.v1", &[&statement_hash]);
 
     let mut proof_bytes = Vec::new();
     proof_bytes.extend_from_slice(b"z00z.spend.proof.rejected");
@@ -275,11 +275,11 @@ pub fn wrong_prefix_artifact() -> SpendProofArtifact {
 
 pub fn noncanonical_suite_artifact() -> SpendProofArtifact {
     let stmt = canonical_proof_stmt();
-    let statement_hash = *blake3::hash(&stmt.statement).as_bytes();
-    let mut pub_hash_bytes = Vec::with_capacity(b"z00z.spend.public.hash.v1".len() + 32);
-    pub_hash_bytes.extend_from_slice(b"z00z.spend.public.hash.v1");
-    pub_hash_bytes.extend_from_slice(&statement_hash);
-    let public_hash = *blake3::hash(&pub_hash_bytes).as_bytes();
+    let statement_hash = z00z_crypto::blake2b_hash(
+        b"z00z.spend.statement.hash.v1",
+        &[stmt.statement.as_slice()],
+    );
+    let public_hash = z00z_crypto::blake2b_hash(b"z00z.spend.public.hash.v1", &[&statement_hash]);
 
     let suite_id = b"regular_spend_theorem_bpplus_alias";
     let theorem_bytes = [0xA5u8];

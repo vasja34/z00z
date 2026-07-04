@@ -3,7 +3,6 @@
 members = [
   "crates/z00z_core",
   "crates/z00z_crypto",
-  "crates/z00z_extensions",
   "crates/z00z_networks/onionnet",
   "crates/z00z_networks/rpc",
   "crates/z00z_rollup_node",
@@ -27,7 +26,6 @@ exclude = [
 default-members = [
   "crates/z00z_core",
   "crates/z00z_crypto",
-  "crates/z00z_extensions",
   "crates/z00z_networks/onionnet",
   "crates/z00z_networks/rpc",
   "crates/z00z_rollup_node",

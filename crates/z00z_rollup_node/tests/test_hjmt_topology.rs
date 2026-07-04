@@ -11,7 +11,7 @@ mod hjmt_test_home;
 
 use hjmt_test_home::{agg, repo_hjmt_home, write_hjmt_home, write_hjmt_home_with_mapping};
 
-const REGEN_CMD: &str = "cargo test -p z00z_rollup_node --release --features test-params-fast --test test_hjmt_topology print_sim_5a7s_manifest_json -- --ignored --nocapture";
+const REGEN_CMD: &str = "Z00Z_REGEN_DUMP=1 cargo test -p z00z_rollup_node --release --features test-params-fast --test test_hjmt_topology test_grid57_matches_contract -- --exact --nocapture";
 const TEST_CMD: &str = "cargo test -p z00z_rollup_node --release --features test-params-fast --test test_hjmt_topology test_grid57_matches_contract -- --nocapture";
 const EVIDENCE_PTR: &str =
     "crates/z00z_rollup_node/tests/test_hjmt_topology.rs::test_grid57_matches_contract";
@@ -44,7 +44,7 @@ fn test_grid57_loads_topology() {
             routing_generation: 1,
         };
         let placement = table.placement(route).expect("placement row");
-        assert!(!placement.standby.is_empty());
+        assert!(!placement.secondaries.is_empty());
         assert_eq!(placement.expected_journal_lineage, [0u8; 32]);
     }
 
@@ -58,7 +58,12 @@ fn test_grid57_matches_contract() {
     let expected: SimFixtureManifest = JsonCodec
         .deserialize(&io::read_file(repo_hjmt_home().join("manifest.json")).expect("manifest"))
         .expect("manifest json");
-    assert_eq!(expected, live_manifest());
+    let live = live_manifest();
+    if std::env::var_os("Z00Z_REGEN_DUMP").is_some() {
+        let json = JsonCodec.serialize_pretty(&live).expect("manifest json");
+        println!("{}", String::from_utf8(json).expect("manifest utf8"));
+    }
+    assert_eq!(expected, live);
 }
 
 #[test]
@@ -240,15 +245,6 @@ fn test_grid57_requires_shards() {
         .contains("SIM-5A7S must declare ShardId(0)..ShardId(6)"));
 }
 
-#[test]
-#[ignore]
-fn print_sim_5a7s_manifest_json() {
-    let json = JsonCodec
-        .serialize_pretty(&live_manifest())
-        .expect("manifest json");
-    println!("{}", String::from_utf8(json).expect("manifest utf8"));
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 struct SimFixtureManifest {
     version: u32,
@@ -286,7 +282,7 @@ struct SimFixtureManifest {
 struct SimPlacementRow {
     shard_id: u16,
     primary_aggregator_id: u16,
-    standby_ids: Vec<u16>,
+    secondary_ids: Vec<u16>,
     expected_journal_lineage_hex: String,
 }
 
@@ -334,10 +330,10 @@ fn live_manifest() -> SimFixtureManifest {
             agg.shards.iter().map(move |shard| SimPlacementRow {
                 shard_id: shard.shard_id.as_u16(),
                 primary_aggregator_id: agg.aggregator_id.as_u16(),
-                standby_ids: shard
-                    .standby_ids
+                secondary_ids: shard
+                    .secondary_ids
                     .iter()
-                    .map(|standby| standby.as_u16())
+                    .map(|secondary| secondary.as_u16())
                     .collect(),
                 expected_journal_lineage_hex: hex::encode(shard.expected_journal_lineage),
             })

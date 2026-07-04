@@ -56,9 +56,13 @@ impl<'a> LocalMutationExec<'a> {
     fn build_package(&self) -> RpcResult<TxPackage> {
         let chain_id = wallet_chain_id()?;
         let (_, chain_type, chain_name) = AssetRpcImpl::chain_meta_from_id(chain_id);
-        let digest = blake3::hash(&self.digest_seed());
+        let digest_seed = self.digest_seed();
+        let digest = z00z_crypto::blake2b_hash(
+            b"z00z.wallet.local_mutation.digest_seed.v1",
+            &[&digest_seed],
+        );
         let mut nonce_bytes = [0u8; 8];
-        nonce_bytes.copy_from_slice(&digest.as_bytes()[..8]);
+        nonce_bytes.copy_from_slice(&digest[..8]);
         let nonce = u64::from_le_bytes(nonce_bytes);
 
         let tx = TxWire {
@@ -242,7 +246,10 @@ impl AssetRpcImpl {
         nonce_seed.extend_from_slice(&(output_index as u64).to_le_bytes());
 
         let mut nonce = [0u8; 32];
-        nonce.copy_from_slice(blake3::hash(&nonce_seed).as_bytes());
+        nonce.copy_from_slice(&z00z_crypto::blake2b_hash(
+            b"z00z.wallet.local_mutation.output_nonce.v1",
+            &[nonce_seed.as_slice()],
+        ));
 
         let serial_bytes = serial_id.to_le_bytes();
         let amount_bytes = amount.to_le_bytes();

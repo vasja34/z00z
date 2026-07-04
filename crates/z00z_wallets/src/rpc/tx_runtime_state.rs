@@ -381,7 +381,10 @@ pub(crate) fn pending_input_asset_ids(
 }
 
 fn tx_receipt_hash(label: &str, tx_hash: &str) -> String {
-    hex::encode(blake3::hash(format!("{label}:{tx_hash}").as_bytes()).as_bytes())
+    hex::encode(z00z_crypto::blake2b_hash(
+        b"z00z.wallet.tx.receipt.hash.v1",
+        &[label.as_bytes(), tx_hash.as_bytes()],
+    ))
 }
 
 fn decode_package_asset_ids(

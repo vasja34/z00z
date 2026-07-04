@@ -58,8 +58,6 @@ pub mod range_proof_soundness;
 pub mod registry_concurrent_reads;
 #[path = "test_assets_registry_integration.rs"]
 pub mod registry_integration;
-#[path = "test_assets_registry_lookup_performance.rs"]
-pub mod registry_lookup_performance;
 #[path = "test_assets_registry_snapshot_updates.rs"]
 pub mod registry_snapshot_updates;
 #[path = "test_assets_registry_stress.rs"]

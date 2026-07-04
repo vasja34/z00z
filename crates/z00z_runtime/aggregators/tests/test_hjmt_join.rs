@@ -7,17 +7,17 @@ mod hjmt_topology_support;
 
 use hjmt_topology_support::{
     bind_previous_generation, canonical_five_by_seven, load_cfg, owner_join_six_by_seven,
-    placement_row, primary_id, read_route_table, set_activation_checkpoint,
-    standby_join_six_by_seven, write_home,
+    placement_row, primary_id, read_route_table, secondary_join_six_by_seven,
+    set_activation_checkpoint, write_home,
 };
 
 #[test]
 fn test_join_keeps_route() {
     let temp = tempdir().expect("tempdir");
     let old_home = temp.path().join("old_5a7s");
-    let new_home = temp.path().join("new_6a7s_standby");
+    let new_home = temp.path().join("new_6a7s_secondary");
     write_home(&old_home, 1, &canonical_five_by_seven(7700));
-    write_home(&new_home, 1, &standby_join_six_by_seven(7800));
+    write_home(&new_home, 1, &secondary_join_six_by_seven(7800));
     set_activation_checkpoint(&old_home, 11);
     set_activation_checkpoint(&new_home, 11);
 
@@ -33,9 +33,9 @@ fn test_join_keeps_route() {
     assert_eq!(primary_id(&old_cfg, 0, 1), AggregatorId::new(0));
     assert_eq!(new_row.primary_id, AggregatorId::new(0));
     assert!(new_row
-        .standby
+        .secondaries
         .iter()
-        .any(|standby| standby.aggregator_id == AggregatorId::new(5)));
+        .any(|secondary| secondary.aggregator_id == AggregatorId::new(5)));
     assert_eq!(old_table.canonical_bytes(), new_table.canonical_bytes());
 }
 
@@ -63,9 +63,9 @@ fn test_join_advances_generation() {
     assert_eq!(primary_id(&old_cfg, 0, 1), AggregatorId::new(0));
     assert_eq!(new_row.primary_id, AggregatorId::new(5));
     assert!(new_row
-        .standby
+        .secondaries
         .iter()
-        .any(|standby| standby.aggregator_id == AggregatorId::new(0)));
+        .any(|secondary| secondary.aggregator_id == AggregatorId::new(0)));
     assert_eq!(old_cfg.node_stat().expect("old stat").routing_generation, 1);
     assert_eq!(new_cfg.node_stat().expect("new stat").routing_generation, 2);
     assert_eq!(old_table.activation_checkpoint, 11);

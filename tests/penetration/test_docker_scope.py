@@ -40,7 +40,7 @@ class DockerScopeValidationTest(unittest.TestCase):
             self.assertIn("validated_json=", completed.stdout)
             payload = json.loads(json_path.read_text(encoding="utf-8"))
             self.assertEqual(payload["findings"], [])
-            self.assertIn("z00z_penetration_tests.sh", payload["checked_files"])
+            self.assertIn("scripts/run_pentest_tools.sh", payload["checked_files"])
             self.assertIn(
                 "tools/penetration/docker/run_pentest_container.sh",
                 payload["checked_files"],
@@ -51,7 +51,7 @@ class DockerScopeValidationTest(unittest.TestCase):
             fixture_dir = Path(tmp_dir)
             fixture_path = fixture_dir / "forbidden.sh"
             fixture_path.write_text(
-                "#!/usr/bin/env bash\nscripts/install-verification-tools.sh --install --profile research --strict\n",
+                "#!/usr/bin/env bash\nscripts/verification-tools/install-verification-tools.sh --install --profile research --strict\n",
                 encoding="utf-8",
             )
             completed = subprocess.run(
@@ -65,6 +65,26 @@ class DockerScopeValidationTest(unittest.TestCase):
             payload = json.loads(completed.stdout)
             self.assertEqual(len(payload["findings"]), 1)
             self.assertEqual(payload["findings"][0]["pattern"], "install-verification-tools")
+
+    def test_validator_allows_formal_verification_skip_dirs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            fixture_dir = Path(tmp_dir)
+            fixture_path = fixture_dir / "allowed.sh"
+            json_path = fixture_dir / "scope.json"
+            fixture_path.write_text(
+                '#!/usr/bin/env bash\ntrivy fs --skip-dirs "$ROOT/tools/formal_verification" "$ROOT"\n',
+                encoding="utf-8",
+            )
+            completed = subprocess.run(
+                ["python3", str(VALIDATOR), str(fixture_dir), "--json-out", str(json_path)],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertIn("validated_json=", completed.stdout)
+            payload = json.loads(json_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["findings"], [])
 
     def test_runner_enforces_archive_only_attached_non_privileged_contract(self) -> None:
         script = RUNNER.read_text(encoding="utf-8")
@@ -84,7 +104,7 @@ class DockerScopeValidationTest(unittest.TestCase):
         readme = README.read_text(encoding="utf-8")
         self.assertIn("Docker is optional", readme)
         self.assertIn("archive-driven", readme)
-        self.assertIn("reports/z00z-pentests_report-", readme)
+        self.assertIn("reports/z00z-pentests-report-", readme)
         self.assertIn("No formal-verification tooling", readme)
         self.assertIn("No `--privileged`", readme)
         self.assertIn("No `/var/run/docker.sock` mount", readme)

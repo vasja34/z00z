@@ -689,7 +689,7 @@ manifest = {
         ],
     },
     "restore_steps": [
-        "scripts/install-verification-tools.sh --profile research --strict",
+        "scripts/verification-tools/install-verification-tools.sh --profile research --strict",
         "scripts/install_py_venv.sh",
         "scripts/install_deep_wiki.sh",
         "scripts/install_nvk_llm_wiki.sh",

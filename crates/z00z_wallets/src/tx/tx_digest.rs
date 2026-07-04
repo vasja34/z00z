@@ -1,4 +1,3 @@
-use blake3::Hasher;
 use z00z_crypto::{frame_bytes, frame_str, frame_u32_le};
 use z00z_utils::codec::{Codec, JsonCodec};
 
@@ -34,14 +33,16 @@ pub fn build_tx_package_digest(
 ) -> Result<String, String> {
     let digest_tx = normalize_digest_tx(tx)?;
     let tx_json = JsonCodec.serialize(&digest_tx).map_err(|e| e.to_string())?;
-    let mut hasher = Hasher::new();
-    hasher.update(b"z00z.tx.pkg.digest.v2.");
-    hasher.update(&frame_str(kind));
-    hasher.update(&frame_str(package_type));
-    hasher.update(&frame_bytes(&[version]));
-    hasher.update(&frame_u32_le(chain_id));
-    hasher.update(&frame_str(chain_type));
-    hasher.update(&frame_str(chain_name));
-    hasher.update(&frame_bytes(&tx_json));
-    Ok(hex::encode(*hasher.finalize().as_bytes()))
+    let mut preimage = Vec::new();
+    preimage.extend_from_slice(&frame_str(kind));
+    preimage.extend_from_slice(&frame_str(package_type));
+    preimage.extend_from_slice(&frame_bytes(&[version]));
+    preimage.extend_from_slice(&frame_u32_le(chain_id));
+    preimage.extend_from_slice(&frame_str(chain_type));
+    preimage.extend_from_slice(&frame_str(chain_name));
+    preimage.extend_from_slice(&frame_bytes(&tx_json));
+    Ok(hex::encode(z00z_crypto::blake2b_hash(
+        b"z00z.tx.pkg.digest.v2",
+        &[preimage.as_slice()],
+    )))
 }

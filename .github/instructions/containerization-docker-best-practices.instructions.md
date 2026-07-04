@@ -85,13 +85,13 @@ As GitHub Copilot, you are an expert in containerization with deep knowledge of 
 - **Example (Advanced Multi-Stage with Testing):**
 ```dockerfile
 # Stage 1: Dependencies
-FROM node:18-alpine AS deps
+FROM node:20-bookworm-slim AS deps
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 # Stage 2: Build
-FROM node:18-alpine AS build
+FROM node:20-bookworm-slim AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -104,7 +104,7 @@ RUN npm run test
 RUN npm run lint
 
 # Stage 4: Production
-FROM node:18-alpine AS production
+FROM node:20-bookworm-slim AS production
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
@@ -118,12 +118,12 @@ CMD ["node", "dist/main.js"]
 - **Principle:** Select official, stable, and minimal base images that meet your application's requirements.
 - **Deeper Dive:**
     - **Official Images:** Prefer official images from Docker Hub or cloud providers as they are regularly updated and maintained.
-    - **Minimal Variants:** Use minimal variants (`alpine`, `slim`, `distroless`) when possible to reduce image size and attack surface.
+    - **Minimal Variants:** Use minimal variants (`slim`, `bookworm-slim`, `distroless`) when possible to reduce image size and attack surface. Treat Alpine as an explicit opt-in when musl compatibility has been reviewed.
     - **Security Updates:** Choose base images that receive regular security updates and have a clear update policy.
     - **Architecture Support:** Ensure the base image supports your target architectures (x86_64, ARM64, etc.).
 - **Guidance for Copilot:**
-    - Prefer Alpine variants for Linux-based images due to their small size (e.g., `alpine`, `node:18-alpine`).
-    - Use official language-specific images (e.g., `python:3.9-slim-buster`, `openjdk:17-jre-slim`).
+    - For Z00Z Linux containers, prefer Debian 12 `slim` / `bookworm-slim` variants first (e.g., `debian:12-slim`, `node:20-bookworm-slim`).
+    - Use official language-specific images that stay on Debian `slim` / `bookworm-slim` tracks (e.g., `python:3.12-slim-bookworm`, `openjdk:17-jre-slim`).
     - Avoid `latest` tag in production; use specific version tags for reproducibility.
     - Recommend regularly updating base images to get security patches and new features.
 - **Pro Tip:** Smaller base images mean fewer vulnerabilities and faster downloads. Always start with the smallest image that meets your needs.
@@ -143,7 +143,7 @@ CMD ["node", "dist/main.js"]
 - **Example (Advanced Layer Optimization):**
 ```dockerfile
 # BAD: Multiple layers, inefficient caching
-FROM ubuntu:20.04
+FROM debian:12-slim
 RUN apt-get update
 RUN apt-get install -y python3 python3-pip
 RUN pip3 install flask
@@ -151,7 +151,7 @@ RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/*
 
 # GOOD: Optimized layers with proper cleanup
-FROM ubuntu:20.04
+FROM debian:12-slim
 RUN apt-get update && \
     apt-get install -y python3 python3-pip && \
     pip3 install flask && \
@@ -350,20 +350,20 @@ VOLUME ["/app/data"]
     - **Resource Efficiency:** Smaller images consume less storage and network bandwidth.
     - **Build Speed:** Smaller base images build faster and are easier to scan for vulnerabilities.
 - **Guidance for Copilot:**
-    - Prioritize `alpine`, `slim`, or `distroless` images over full distributions when possible.
+    - Prioritize Debian `slim` / `bookworm-slim` or `distroless` images over full distributions when possible.
     - Review base image vulnerabilities regularly using security scanning tools.
     - Consider using language-specific minimal images (e.g., `openjdk:17-jre-slim` instead of `openjdk:17`).
     - Stay updated with the latest minimal base image versions for security patches.
 - **Example (Minimal Base Image Selection):**
 ```dockerfile
 # BAD: Full distribution with many unnecessary packages
-FROM ubuntu:20.04
+FROM debian:12
 
-# GOOD: Minimal Alpine-based image
-FROM node:18-alpine
+# GOOD: Minimal Debian-based image aligned with Z00Z defaults
+FROM debian:12-slim
 
-# BETTER: Distroless image for maximum security
-FROM gcr.io/distroless/nodejs18-debian11
+# BETTER: Language runtime on bookworm-slim
+FROM node:20-bookworm-slim
 ```
 
 ### **3. Static Analysis Security Testing (SAST) for Dockerfiles**

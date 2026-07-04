@@ -6,76 +6,12 @@ use serde::{Deserialize, Serialize};
 use z00z_storage::settlement::SettlementStateRoot;
 
 use crate::{
-    placement::{AggregatorId, ShardPlacementTable},
-    recovery::ShardRecoveryRecord,
+    commit_subject::CommitSubject,
+    placement::{AggregatorId, ShardPlacement, ShardPlacementTable},
+    shard_quorum_certificate::{membership_digest_for_voters, ShardQuorumCertificate},
+    shard_vote::ShardVote,
     types::{BatchId, BatchRoute, RejectClass, RejectRecord},
 };
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct JournalCandidate {
-    pub batch_id: BatchId,
-    pub route: BatchRoute,
-    pub state_root: SettlementStateRoot,
-    pub journal_lineage: [u8; 32],
-    pub version: u64,
-    pub root_generation: u8,
-    pub proof_version: u16,
-    pub bucket_policy_generation: u32,
-    pub bucket_policy_id: [u8; 32],
-}
-
-impl JournalCandidate {
-    pub fn from_record(record: &ShardRecoveryRecord) -> Result<Self, RejectRecord> {
-        let recovery = &record.recovery;
-        if recovery.version != 0 {
-            let Some(route) = recovery.route else {
-                return Err(reject(
-                    RejectClass::PolicyReject,
-                    "candidate recovery route is missing",
-                ));
-            };
-            if route.shard_id() != record.placement.route.shard_id.as_u32()
-                || route.routing_generation() != record.placement.route.routing_generation
-            {
-                return Err(reject(
-                    RejectClass::PolicyReject,
-                    "candidate recovery route drifted from shard placement",
-                ));
-            }
-            if route.batch_id() != record.batch_id.into_bytes() {
-                return Err(reject(
-                    RejectClass::PolicyReject,
-                    "candidate recovery batch id drifted from the recovery record",
-                ));
-            }
-        }
-
-        Ok(Self {
-            batch_id: record.batch_id,
-            route: record.placement.route,
-            state_root: recovery.state_root,
-            journal_lineage: recovery.journal_lineage,
-            version: recovery.version,
-            root_generation: recovery.root_generation,
-            proof_version: recovery.proof_version,
-            bucket_policy_generation: recovery.bucket_policy_generation,
-            bucket_policy_id: recovery.bucket_policy_id,
-        })
-    }
-
-    #[must_use]
-    pub fn conflicts_with(&self, other: &Self) -> bool {
-        self.route == other.route
-            && (self.batch_id != other.batch_id
-                || self.state_root != other.state_root
-                || self.journal_lineage != other.journal_lineage
-                || self.version != other.version
-                || self.root_generation != other.root_generation
-                || self.proof_version != other.proof_version
-                || self.bucket_policy_generation != other.bucket_policy_generation
-                || self.bucket_policy_id != other.bucket_policy_id)
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConsensusCommit {
@@ -84,7 +20,8 @@ pub struct ConsensusCommit {
     pub route: BatchRoute,
     pub state_root: SettlementStateRoot,
     pub journal_lineage: [u8; 32],
-    pub voter_ids: Vec<AggregatorId>,
+    pub subject: CommitSubject,
+    pub certificate: ShardQuorumCertificate,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -100,7 +37,8 @@ pub enum MembershipChange {
 pub struct ConsensusAdapter {
     route: BatchRoute,
     term: u64,
-    active_ids: BTreeSet<AggregatorId>,
+    primary_id: AggregatorId,
+    active_secondary_ids: BTreeSet<AggregatorId>,
     retired_ids: BTreeSet<AggregatorId>,
     frozen_term: Option<u64>,
     committed: Option<ConsensusCommit>,
@@ -109,24 +47,38 @@ pub struct ConsensusAdapter {
 impl ConsensusAdapter {
     pub fn new(
         route: BatchRoute,
-        active_ids: impl IntoIterator<Item = AggregatorId>,
+        primary_id: AggregatorId,
+        active_secondary_ids: impl IntoIterator<Item = AggregatorId>,
     ) -> Result<Self, RejectRecord> {
-        let active_ids = active_ids.into_iter().collect::<BTreeSet<_>>();
-        if active_ids.is_empty() {
+        let active_secondary_ids = active_secondary_ids.into_iter().collect::<BTreeSet<_>>();
+        if active_secondary_ids.contains(&primary_id) {
             return Err(reject(
                 RejectClass::PolicyReject,
-                "consensus member set must not be empty",
+                "consensus membership cannot list the primary as a secondary member",
             ));
         }
 
         Ok(Self {
             route,
             term: 0,
-            active_ids,
+            primary_id,
+            active_secondary_ids,
             retired_ids: BTreeSet::new(),
             frozen_term: None,
             committed: None,
         })
+    }
+
+    pub fn from_placement(placement: &ShardPlacement) -> Result<Self, RejectRecord> {
+        Self::new(
+            placement.route,
+            placement.primary_id,
+            placement
+                .secondaries
+                .iter()
+                .filter(|secondary| secondary.is_ready)
+                .map(|secondary| secondary.aggregator_id),
+        )
     }
 
     #[must_use]
@@ -136,7 +88,18 @@ impl ConsensusAdapter {
 
     #[must_use]
     pub fn active_ids(&self) -> Vec<AggregatorId> {
-        self.active_ids.iter().copied().collect()
+        std::iter::once(self.primary_id)
+            .chain(self.active_secondary_ids.iter().copied())
+            .collect()
+    }
+
+    #[must_use]
+    pub fn membership_digest(&self) -> [u8; 32] {
+        membership_digest_for_voters(
+            self.route,
+            self.primary_id,
+            self.active_secondary_ids.iter().copied(),
+        )
     }
 
     #[must_use]
@@ -145,7 +108,7 @@ impl ConsensusAdapter {
     }
 
     pub fn bind_placement(
-        &self,
+        &mut self,
         placement_table: &ShardPlacementTable,
     ) -> Result<(), RejectRecord> {
         let Some(placement) = placement_table.placement(self.route) else {
@@ -155,71 +118,62 @@ impl ConsensusAdapter {
             ));
         };
 
-        let mut expected = BTreeSet::new();
-        expected.insert(placement.primary_id);
-        expected.extend(
-            placement
-                .standby
-                .iter()
-                .map(|standby| standby.aggregator_id),
-        );
-        if expected != self.active_ids {
+        let expected_secondaries = placement
+            .secondaries
+            .iter()
+            .filter(|secondary| secondary.is_ready)
+            .map(|secondary| secondary.aggregator_id)
+            .collect::<BTreeSet<_>>();
+        let current_members = self.active_ids().into_iter().collect::<BTreeSet<_>>();
+        let expected_members = std::iter::once(placement.primary_id)
+            .chain(expected_secondaries.iter().copied())
+            .collect::<BTreeSet<_>>();
+        if current_members != expected_members {
             return Err(reject(
                 RejectClass::PolicyReject,
-                "membership drift: consensus member set does not match shard placement",
+                "membership drift: consensus member set does not match ready shard placement members",
             ));
         }
+        self.primary_id = placement.primary_id;
+        self.active_secondary_ids = expected_secondaries;
         Ok(())
     }
 
     pub fn commit(
         &mut self,
-        term: u64,
-        candidate: &JournalCandidate,
-        votes: &[AggregatorId],
+        subject: &CommitSubject,
+        votes: &[ShardVote],
     ) -> Result<ConsensusCommit, RejectRecord> {
-        if candidate.route != self.route {
+        if subject.route() != self.route {
             return Err(reject(
                 RejectClass::PolicyReject,
-                "wrong generation: consensus candidate route drifted",
+                "wrong generation: consensus subject route drifted",
             ));
         }
-        if term < self.term {
+        if subject.term < self.term {
             return Err(reject(
                 RejectClass::PolicyReject,
                 "stale term: consensus term regressed",
             ));
         }
-        if self.frozen_term == Some(term) {
+        if subject.membership_digest != self.membership_digest() {
+            return Err(reject(
+                RejectClass::PolicyReject,
+                "membership drift: consensus subject membership digest drifted from active placement members",
+            ));
+        }
+        if self.frozen_term == Some(subject.term) {
             return Err(reject(
                 RejectClass::PolicyReject,
                 "split-brain: same-term quorum is frozen after a divergent root",
             ));
         }
 
-        let voter_ids = self.unique_votes(votes)?;
-        if voter_ids.len() < self.quorum_count() {
-            return Err(reject(
-                RejectClass::DeferredRetry,
-                "no quorum: same-shard root does not have a majority term",
-            ));
-        }
-
+        let subject_digest = subject.digest();
         if let Some(committed) = &self.committed {
-            if committed.term == term {
-                let current = JournalCandidate {
-                    batch_id: committed.batch_id,
-                    route: committed.route,
-                    state_root: committed.state_root,
-                    journal_lineage: committed.journal_lineage,
-                    version: candidate.version,
-                    root_generation: candidate.root_generation,
-                    proof_version: candidate.proof_version,
-                    bucket_policy_generation: candidate.bucket_policy_generation,
-                    bucket_policy_id: candidate.bucket_policy_id,
-                };
-                if current.conflicts_with(candidate) {
-                    self.frozen_term = Some(term);
+            if committed.term == subject.term {
+                if committed.subject.digest() != subject_digest {
+                    self.frozen_term = Some(subject.term);
                     return Err(reject(
                         RejectClass::PolicyReject,
                         "split-brain: divergent root reached the same quorum term",
@@ -229,15 +183,23 @@ impl ConsensusAdapter {
             }
         }
 
-        self.term = term;
+        let certificate = ShardQuorumCertificate::new(
+            subject,
+            self.primary_id,
+            self.active_secondary_ids.iter().copied(),
+            votes,
+        )?;
+        self.term = subject.term;
         self.frozen_term = None;
+
         let commit = ConsensusCommit {
-            term,
-            batch_id: candidate.batch_id,
-            route: candidate.route,
-            state_root: candidate.state_root,
-            journal_lineage: candidate.journal_lineage,
-            voter_ids,
+            term: subject.term,
+            batch_id: subject.batch_id,
+            route: subject.route(),
+            state_root: subject.new_state_root,
+            journal_lineage: subject.journal_lineage,
+            subject: subject.clone(),
+            certificate,
         };
         self.committed = Some(commit.clone());
         Ok(commit)
@@ -255,10 +217,16 @@ impl ConsensusAdapter {
                 "stale member: membership change routing_generation regressed",
             ));
         }
+        if member == self.primary_id {
+            return Err(reject(
+                RejectClass::PolicyReject,
+                "membership change cannot rewrite the primary role through the secondary membership seam",
+            ));
+        }
 
         match change {
             MembershipChange::Join => {
-                if self.active_ids.contains(&member) {
+                if self.active_secondary_ids.contains(&member) {
                     return Err(reject(
                         RejectClass::PolicyReject,
                         "member already active in the consensus set",
@@ -271,44 +239,32 @@ impl ConsensusAdapter {
                     ));
                 }
                 self.bump_generation(routing_generation);
-                self.active_ids.insert(member);
+                self.active_secondary_ids.insert(member);
             }
             MembershipChange::Leave => {
-                if !self.active_ids.contains(&member) {
+                if !self.active_secondary_ids.contains(&member) {
                     return Err(reject(
                         RejectClass::PolicyReject,
                         "stale member: cannot remove a non-member from the consensus set",
                     ));
                 }
-                if self.active_ids.len() == 1 {
-                    return Err(reject(
-                        RejectClass::PolicyReject,
-                        "membership change would remove the last active consensus member",
-                    ));
-                }
                 self.bump_generation(routing_generation);
-                self.active_ids.remove(&member);
+                self.active_secondary_ids.remove(&member);
                 self.retired_ids.remove(&member);
             }
             MembershipChange::Decommission => {
-                if !self.active_ids.contains(&member) {
+                if !self.active_secondary_ids.contains(&member) {
                     return Err(reject(
                         RejectClass::PolicyReject,
                         "stale member: cannot decommission a non-member",
                     ));
                 }
-                if self.active_ids.len() == 1 {
-                    return Err(reject(
-                        RejectClass::PolicyReject,
-                        "membership change would remove the last active consensus member",
-                    ));
-                }
                 self.bump_generation(routing_generation);
-                self.active_ids.remove(&member);
+                self.active_secondary_ids.remove(&member);
                 self.retired_ids.insert(member);
             }
             MembershipChange::Rejoin => {
-                if self.active_ids.contains(&member) {
+                if self.active_secondary_ids.contains(&member) {
                     return Err(reject(
                         RejectClass::PolicyReject,
                         "member already active in the consensus set",
@@ -328,7 +284,7 @@ impl ConsensusAdapter {
                 }
                 self.bump_generation(routing_generation);
                 self.retired_ids.remove(&member);
-                self.active_ids.insert(member);
+                self.active_secondary_ids.insert(member);
             }
         }
         Ok(())
@@ -341,24 +297,6 @@ impl ConsensusAdapter {
             self.frozen_term = None;
             self.committed = None;
         }
-    }
-
-    fn quorum_count(&self) -> usize {
-        (self.active_ids.len() / 2) + 1
-    }
-
-    fn unique_votes(&self, votes: &[AggregatorId]) -> Result<Vec<AggregatorId>, RejectRecord> {
-        let mut unique = BTreeSet::new();
-        for voter in votes {
-            if !self.active_ids.contains(voter) {
-                return Err(reject(
-                    RejectClass::PolicyReject,
-                    "stale member: quorum vote referenced a non-member",
-                ));
-            }
-            unique.insert(*voter);
-        }
-        Ok(unique.into_iter().collect())
     }
 }
 

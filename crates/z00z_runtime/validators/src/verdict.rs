@@ -4,6 +4,7 @@ use z00z_aggregators::{
     BatchId, OrderedBatch, PublicationBinding, PublishedBatch, RuntimeObjectPackageV1,
     ShardExecTicket, ShardPlacementView,
 };
+use z00z_crypto::{expert::traits::DomainSeparation, DomainHasher256};
 use z00z_storage::settlement::{ClaimNullifier, ObjectRejectCode, ObjectValidatorVerdict};
 use z00z_storage::{
     checkpoint::{
@@ -18,6 +19,20 @@ use z00z_wallets::tx::{
     asset_wire_to_leaf, build_tx_package_digest, verify_package_public_spend_contract,
     TxOutputWire, TxPackage, TxVerifier, TxVerifierImpl,
 };
+
+const SETTLEMENT_THEOREM_DIGEST_TAG: &[u8] = b"z00z.settlement_theorem.bundle";
+
+struct SettlementTheoremDigestDomain;
+
+impl DomainSeparation for SettlementTheoremDigestDomain {
+    fn version() -> u8 {
+        1
+    }
+
+    fn domain() -> &'static str {
+        "z00z.settlement_theorem.digest"
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SettlementTheoremBundle {
@@ -141,6 +156,11 @@ impl SettlementTheoremBundle {
     pub fn link(&self) -> &CheckpointLink {
         &self.link
     }
+
+    #[must_use]
+    pub fn theorem_digest(&self) -> [u8; 32] {
+        digest_settlement_theorem(&self.theorem())
+    }
 }
 
 impl ResolvedBatch {
@@ -195,6 +215,11 @@ impl ResolvedBatch {
 
     pub fn object_packages(&self) -> impl Iterator<Item = &RuntimeObjectPackageV1> {
         self.ordered.object_packages()
+    }
+
+    #[must_use]
+    pub fn theorem_digest(&self) -> [u8; 32] {
+        self.theorem.theorem_digest()
     }
 }
 
@@ -262,6 +287,41 @@ fn verify_tx_package(tx_package: &TxPackage) -> Result<(), SettlementError> {
     }
     verify_package_public_spend_contract(tx_package)
         .map_err(|err| SettlementError::TxTheorem(err.to_string()))
+}
+
+fn digest_settlement_theorem(theorem: &SettlementTheorem<'_>) -> [u8; 32] {
+    let tx_digest = hex::decode(&theorem.tx_package.tx_digest_hex)
+        .expect("validated theorem bundle tx digest must decode");
+    let tx_digest: [u8; 32] = tx_digest
+        .try_into()
+        .expect("validated theorem bundle tx digest must stay 32 bytes");
+    let checkpoint_id = derive_checkpoint_id(theorem.artifact)
+        .expect("validated theorem bundle checkpoint id must derive");
+    let exec_bytes = encode_exec_bin(theorem.exec_input)
+        .expect("validated theorem bundle exec input must encode");
+    let exec_id = derive_exec_id(&exec_bytes);
+    let link_bytes =
+        encode_link_bin(theorem.link).expect("validated theorem bundle link must encode");
+
+    let mut bytes = Vec::with_capacity(192 + link_bytes.len());
+    bytes.extend_from_slice(SETTLEMENT_THEOREM_DIGEST_TAG);
+    bytes.push(1);
+    push_len_prefixed(&mut bytes, &tx_digest);
+    bytes.extend_from_slice(checkpoint_id.as_bytes());
+    bytes.extend_from_slice(exec_id.as_bytes());
+    push_len_prefixed(&mut bytes, &link_bytes);
+
+    let digest = DomainHasher256::<SettlementTheoremDigestDomain>::new_with_label("digest")
+        .chain(bytes)
+        .finalize();
+    let mut out = [0u8; 32];
+    out.copy_from_slice(digest.as_ref());
+    out
+}
+
+fn push_len_prefixed(out: &mut Vec<u8>, bytes: &[u8]) {
+    out.extend_from_slice(&(bytes.len() as u64).to_be_bytes());
+    out.extend_from_slice(bytes);
 }
 
 fn tx_prev_root(tx_package: &TxPackage) -> Result<CheckRoot, SettlementError> {

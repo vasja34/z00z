@@ -426,7 +426,7 @@ fn test_cover_mixed_fixture_scope() {
         Some(true)
     );
     assert_eq!(
-        leaf_flow["topology_examples"][2]["removed_aggregator_absent_from_standby_tables"]
+        leaf_flow["topology_examples"][2]["removed_aggregator_absent_from_secondary_tables"]
             .as_bool(),
         Some(true)
     );
@@ -481,17 +481,17 @@ fn test_cover_mixed_fixture_scope() {
         Some(0)
     );
     assert!(
-        leaf_flow["topology_examples"][2]["transition_stages"][1]["standby_aggregator_ids"]
+        leaf_flow["topology_examples"][2]["transition_stages"][1]["secondary_aggregator_ids"]
             .as_array()
             .is_some_and(|rows| rows.iter().all(|value| value.as_u64() != Some(5)))
     );
     assert!(
-        leaf_flow["topology_examples"][2]["transition_stages"][2]["standby_aggregator_ids"]
+        leaf_flow["topology_examples"][2]["transition_stages"][2]["secondary_aggregator_ids"]
             .as_array()
             .is_some_and(|rows| rows.iter().all(|value| value.as_u64() != Some(5)))
     );
     assert_eq!(
-        leaf_flow["topology_examples"][2]["transition_stages"][2]["standby_aggregator_ids"]
+        leaf_flow["topology_examples"][2]["transition_stages"][2]["secondary_aggregator_ids"]
             .as_array()
             .map(Vec::len),
         Some(2)

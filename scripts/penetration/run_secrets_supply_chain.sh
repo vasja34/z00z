@@ -84,6 +84,17 @@ tool_timeout_seconds() {
 }
 
 TOOL_TIMEOUT_SECONDS="$(tool_timeout_seconds)"
+SECRET_SCAN_EXCLUDES_PATH="$ARTIFACT_DIR/normalized/secret-scan-excludes.regex"
+
+cat >"$SECRET_SCAN_EXCLUDES_PATH" <<'EOF'
+(^|/)\.git(/|$)
+(^|/)target(/|$)
+(^|/)reports(/|$)
+(^|/)\.cache(/|$)
+(^|/)tools/formal_verification(/|$)
+(^|/)crates/z00z_crypto/tari(/|$)
+(^|/)\.planning/graphs(/|$)
+EOF
 
 write_missing_tool() {
   local tool_name="$1"
@@ -136,8 +147,8 @@ else
     "$ARTIFACT_DIR/logs/secrets.trufflehog.err" \
     "$ARTIFACT_DIR/logs/secrets.trufflehog.exit" \
     "$ARTIFACT_DIR/normalized/secrets.trufflehog.status.json" \
-    "$trufflehog_path" filesystem --no-update --json --no-verification "$ROOT" >/dev/null
-fi
+    "$trufflehog_path" filesystem --no-update --json --no-verification --exclude-paths "$SECRET_SCAN_EXCLUDES_PATH" --force-skip-binaries --force-skip-archives "$ROOT" >/dev/null
+  fi
 
 trivy_path="$(pen_tool_field "$TOOL_STATUS" trivy resolved_path)"
 trivy_state="$(pen_tool_field "$TOOL_STATUS" trivy status)"
@@ -155,8 +166,8 @@ else
     "$ARTIFACT_DIR/logs/secrets.trivy.err" \
     "$ARTIFACT_DIR/logs/secrets.trivy.exit" \
     "$ARTIFACT_DIR/normalized/secrets.trivy.status.json" \
-    "$trivy_path" fs --quiet --format json --output "$raw_path" "$ROOT" >/dev/null
-fi
+    "$trivy_path" fs --quiet --format json --output "$raw_path" --skip-dirs "$ROOT/.git" --skip-dirs "$ROOT/.cache" --skip-dirs "$ROOT/target" --skip-dirs "$ROOT/reports" --skip-dirs "$ROOT/tools/formal_verification" --skip-dirs "$ROOT/crates/z00z_crypto/tari" --skip-dirs "$ROOT/.planning/graphs" "$ROOT" >/dev/null
+  fi
 
 mapfile -t secrets_statuses < <(python3 - "$ARTIFACT_DIR/normalized" <<'PY'
 import json

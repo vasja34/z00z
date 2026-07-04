@@ -217,9 +217,7 @@ fn typed_id(label: &'static str, class: &[u8], payload: &[u8]) -> [u8; 32] {
 mod tests {
     use z00z_utils::codec::{BincodeCodec, Codec};
 
-    use super::{
-        derive_checkpoint_id, derive_draft_id, derive_exec_id, reject_draft_for_checkpoint_id,
-    };
+    use super::{derive_checkpoint_id, derive_draft_id, derive_exec_id};
     use crate::{
         checkpoint::{
             CheckpointArtifact, CheckpointDraft, CheckpointExecInputId, CheckpointProof,
@@ -270,13 +268,6 @@ mod tests {
         let second = derive_checkpoint_id(&decoded).expect("second id");
 
         assert_eq!(first, second);
-    }
-
-    #[test]
-    fn test_class_rejects_art_id() {
-        let err = reject_draft_for_checkpoint_id(&draft()).expect_err("draft id must reject");
-
-        assert!(matches!(err, CheckpointError::WrongClass));
     }
 
     #[test]

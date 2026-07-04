@@ -209,6 +209,33 @@ This roadmap tracks the active GSD milestone and its executable phases.
   consecutive clean manual review passes; security verified 2026-07-03 on
   `066-SECURITY.md` with `threats_open: 0`; no active Phase 066 lane remains,
   and no duplicate directory or parallel authority path is allowed)
+- [ ] **Phase 067: Sharded Concensus** (added 2026-07-03; directory
+  pre-existing `.planning/phases/067-Sharded-Concensus/`; reuse the existing
+  folder only; `067-TODO.md` is the normative human-readable authority for
+  registration, planning, and execution scoping; its architecture-spec and
+  implementation-contract wording supersedes prior working notes; source code,
+  tests, and local configuration remain ground truth; future-only and
+  target-design wording in the Phase 067 corpus is live mandatory scope;
+  planning complete on `067-CONTEXT.md`, `067-COVERAGE.md`, and
+  `067-01-PLAN.md` through `067-09-PLAN.md`; `TASK-NNN` count is zero because
+  `067-TODO.md` contains no literal `TASK-NNN` identifiers; required groups
+  `PHASE-0` through `PHASE-8` map exactly once to `067-01` through `067-09`;
+  `067-01` through `067-05` are summary-backed complete on
+  `067-01-SUMMARY.md`, `067-02-SUMMARY.md`, `067-03-SUMMARY.md`,
+  `067-04-SUMMARY.md`, and `067-05-SUMMARY.md`, the repo-wide terminology
+  cleanup and permanent guard are landed, the first-class quorum artifact
+  layer and runtime-owned secondary replay verifier are landed, the
+  independent `scenario_11` harness plus route-bound publication seam are now
+  landed without new external crates for the `067-05` semantic slice, the
+  live adapter path now has dedicated quorum-certificate integration coverage,
+  the canonical checkpoint contract path remains
+  `crates/z00z_storage/src/checkpoint/checkpoint_contract.yaml`, the workspace
+  now treats `crates/z00z_extensions/` as a namespace directory rather than a
+  root crate, all `067-*.md` acceptance or task or verify cargo commands are
+  now release-only, the current-cycle `bootstrap_tests.sh` rerun, targeted
+  rename-guard and `scenario_11` release gates, and the broad
+  `cargo test --release` rerun are green, and `067-06` is now the active
+  lane)
 
 ### Phase 015: JMT Serialization And Visualization
 
@@ -2613,3 +2640,87 @@ execution-prompt, and documentation-or-migration lanes. Phase 066 completed on
 5. `066-02-SUMMARY.md` proves that `tools/penetration/` is now the only
    canonical pentest tool root, with repository-local wrappers and truthful
    status manifests that do not reuse `tools/formal_verification/`.
+
+## Phase 067: Sharded Concensus
+
+**Goal:** Plan the existing `.planning/phases/067-Sharded-Concensus/` folder as
+the canonical Phase 067 execution root for shard-local aggregator consensus
+hardening, secondary-aggregator quorum modeling, `scenario_11` end-to-end local
+simulation, downstream validator binding, and the later transport/BFT/Celestia
+layer without creating a duplicate phase directory or a parallel authority
+path.
+**Requirements**: `067-TODO.md` remains the normative human-readable Phase 067
+authority and implementation contract. It supersedes prior working notes,
+keeps scope local-codebase-only, treats source code or tests or local
+configuration as ground truth, preserves future-only or target-design wording
+in the Phase 067 corpus as live mandatory scope, records `TASK-NNN` count as
+zero because `067-TODO.md` contains no literal task identifiers, and maps the
+nine required groups `PHASE-0` through `PHASE-8` exactly once to
+`067-01-PLAN.md` through `067-09-PLAN.md`.
+**Depends on:** Phase 066 closeout; Phase 046 remains paused separately and is
+not advanced by Phase 067 planning.
+**Plans:** 9 planned packets:
+`.planning/phases/067-Sharded-Concensus/067-01-PLAN.md` through
+`.planning/phases/067-Sharded-Concensus/067-09-PLAN.md`.
+
+**Status**: Added 2026-07-03 on the existing
+`.planning/phases/067-Sharded-Concensus/` directory only. No new phase folder
+was created. Phase 067 planning is complete with `067-CONTEXT.md`,
+`067-COVERAGE.md`, and 9 executable GSD plan packets in the same canonical
+folder. `067-TODO.md` remains the sole normative human-readable authority; its
+architecture-spec and implementation-contract wording supersedes prior working
+notes, while source code, tests, and local configuration remain ground truth.
+`067-CONTEXT.md` records the planning fact that literal `TASK-NNN` rows are
+absent and the live required units are `PHASE-0` through `PHASE-8`.
+`067-COVERAGE.md` maps those nine required groups exactly once to
+`067-01` through `067-09`. The supporting `wiki -results.md` note remains
+non-canonical context only. The missing
+`.planning/phases/067-Sharded-Concensus/Agg-Concensus-Spec.md` reference is
+tracked as stale drift only and must not become a second authority path.
+Execution has now closed `067-03` on `067-03-SUMMARY.md`: the runtime-owned
+`SecondaryReplayVerifier` plus stable replay reject codes are now landed under
+`z00z_aggregators`, theorem-digest helpers are exposed through the existing
+validator surface, the independent `scenario_11` harness plus route-bound
+publication seam are now landed without new external crates for the `067-05`
+semantic slice, the canonical checkpoint contract path remains
+`crates/z00z_storage/src/checkpoint/checkpoint_contract.yaml` with no
+root-level parallel config lane, the intentional `crates/z00z_extensions/`
+reorganization remains reflected in workspace membership and inventory
+surfaces as a namespace directory rather than a root crate, and the
+current-cycle `./.github/skills/smart-tests-bootstrap/scripts/bootstrap_tests.sh`
+rerun, targeted rename-guard and `scenario_11` release gates, and broad
+workspace `cargo test --release` rerun including the default doc-test tail
+are green, and `067-06` is now the active lane.
+**Added**: 2026-07-03
+**Directory**: `.planning/phases/067-Sharded-Concensus/`
+(pre-existing; do not create a duplicate phase folder)
+
+**Canonical refs:**
+
+- `.planning/phases/067-Sharded-Concensus/067-TODO.md`
+- `.planning/phases/067-Sharded-Concensus/067-CONTEXT.md`
+- `.planning/phases/067-Sharded-Concensus/067-COVERAGE.md`
+- `.planning/phases/067-Sharded-Concensus/067-01-PLAN.md` through
+  `.planning/phases/067-Sharded-Concensus/067-09-PLAN.md`
+
+**Success Criteria**:
+
+1. Phase 067 is discoverable in the active milestone without creating a
+   second `067` directory.
+
+2. The existing `.planning/phases/067-Sharded-Concensus/` folder remains the
+   only canonical phase root, and Phase 067 registration does not create a
+   duplicate folder or a parallel authority layer.
+
+3. `067-TODO.md` remains the sole canonical human-readable Phase 067
+   authority, `TASK-NNN` count remains truthfully zero, and
+   `067-01-PLAN.md` through `067-09-PLAN.md` map `PHASE-0` through
+   `PHASE-8` exactly once with no dropped or duplicated required group.
+
+4. `067-CONTEXT.md` and `067-COVERAGE.md` preserve the single authority path,
+   record the missing `Agg-Concensus-Spec.md` reference as stale drift only,
+   and keep `wiki -results.md` supporting but non-canonical.
+
+5. `/gsd-plan-phase 067` completes locally against the existing folder only,
+   generating nine executable plan packets with coverage, simulation, evidence,
+   and anti-placeholder gates for every required Phase 067 unit.

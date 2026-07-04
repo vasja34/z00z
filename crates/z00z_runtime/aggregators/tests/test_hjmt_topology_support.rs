@@ -27,7 +27,7 @@ pub fn canonical_five_by_seven(base_port: u16) -> Vec<TestAgg> {
     ]
 }
 
-pub fn standby_join_six_by_seven(base_port: u16) -> Vec<TestAgg> {
+pub fn secondary_join_six_by_seven(base_port: u16) -> Vec<TestAgg> {
     vec![
         agg(0, base_port, &[(0, &[1, 5]), (5, &[2, 4])]),
         agg(1, base_port + 1, &[(1, &[0, 3])]),

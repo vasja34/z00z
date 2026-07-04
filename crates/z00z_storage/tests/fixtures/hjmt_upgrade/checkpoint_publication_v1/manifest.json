@@ -8,8 +8,8 @@
       "expected_digest_hex": "03b1b2993c8b5b8c23f77d27a03a1158b58cf5b476f2dc36f7be65f24a84e771",
       "prior_publication_hex": null,
       "prior_digest_hex": null,
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     },
     {
       "id": "CPP-G-002",
@@ -18,8 +18,8 @@
       "expected_digest_hex": "81e9c2667afaf81388c4a7a06c0f012f4a5318d73cde43f8f7a1ed23b680d93f",
       "prior_publication_hex": "010100000000000000654242424242424242424242424242424242424242424242424242424242424242011111111111111111111111111111111111111111111111111111111111111111000000020000000319191919191919191919191919191919191919191919191919191919191919190000000000000015000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000021000000000000002c00000000000000091b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b000000000000001f000000000000000742424242424242424242424242424242424242424242424242424242424242423382e0faa97bbd9e733201f109795b01ecccfe59a16180c93aac67d199f78d7c0000000000000029000000000000003400000000",
       "prior_digest_hex": "03b1b2993c8b5b8c23f77d27a03a1158b58cf5b476f2dc36f7be65f24a84e771",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     },
     {
       "id": "CPP-G-003",
@@ -28,8 +28,8 @@
       "expected_digest_hex": "81e9c2667afaf81388c4a7a06c0f012f4a5318d73cde43f8f7a1ed23b680d93f",
       "prior_publication_hex": "010100000000000000654242424242424242424242424242424242424242424242424242424242424242011111111111111111111111111111111111111111111111111111111111111111000000020000000319191919191919191919191919191919191919191919191919191919191919190000000000000015000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000021000000000000002c00000000000000091b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b000000000000001f000000000000000742424242424242424242424242424242424242424242424242424242424242423382e0faa97bbd9e733201f109795b01ecccfe59a16180c93aac67d199f78d7c0000000000000029000000000000003400000000",
       "prior_digest_hex": "03b1b2993c8b5b8c23f77d27a03a1158b58cf5b476f2dc36f7be65f24a84e771",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     },
     {
       "id": "CPP-G-004",
@@ -38,8 +38,8 @@
       "expected_digest_hex": "0cd8512edec81d4c6e779d794ec313c1a6184cd08aba58e5e14bfd303bd12658",
       "prior_publication_hex": "0101000000000000006642424242424242424242424242424242424242424242424242424242424242420103b1b2993c8b5b8c23f77d27a03a1158b58cf5b476f2dc36f7be65f24a84e771000000020000000319191919191919191919191919191919191919191919191919191919191919190000000000000015000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000021000000000000002c00000000000000092c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c0000000000000020000000000000000742424242424242424242424242424242424242424242424242424242424242423382e0faa97bbd9e733201f109795b01ecccfe59a16180c93aac67d199f78d7c000000000000002a000000000000003500000000",
       "prior_digest_hex": "81e9c2667afaf81388c4a7a06c0f012f4a5318d73cde43f8f7a1ed23b680d93f",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     },
     {
       "id": "CPP-G-005",
@@ -48,8 +48,8 @@
       "expected_digest_hex": "81e9c2667afaf81388c4a7a06c0f012f4a5318d73cde43f8f7a1ed23b680d93f",
       "prior_publication_hex": "010100000000000000654242424242424242424242424242424242424242424242424242424242424242011111111111111111111111111111111111111111111111111111111111111111000000020000000319191919191919191919191919191919191919191919191919191919191919190000000000000015000000000000000742424242424242424242424242424242424242424242424242424242424242428c79ead0196f9ae79060ffeb49b601c22b9e6685852c14267deb0e38b1bdff380000000000000021000000000000002c00000000000000091b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b000000000000001f000000000000000742424242424242424242424242424242424242424242424242424242424242423382e0faa97bbd9e733201f109795b01ecccfe59a16180c93aac67d199f78d7c0000000000000029000000000000003400000000",
       "prior_digest_hex": "03b1b2993c8b5b8c23f77d27a03a1158b58cf5b476f2dc36f7be65f24a84e771",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     }
   ],
   "tamper": [
@@ -62,8 +62,8 @@
       "mutation_point": "shard_leaves order",
       "expected_stage": "parser_reject",
       "expected_error": "PublicationOrderMix",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     },
     {
       "id": "CPP-T-002",
@@ -74,8 +74,8 @@
       "mutation_point": "shard_leaves missing shard_id=3",
       "expected_stage": "monotonicity_reject",
       "expected_error": "PublicationCountMix",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     },
     {
       "id": "CPP-T-003",
@@ -86,8 +86,8 @@
       "mutation_point": "shard_leaves[1].shard_id",
       "expected_stage": "parser_reject",
       "expected_error": "PublicationDupShard",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     },
     {
       "id": "CPP-T-004",
@@ -98,8 +98,8 @@
       "mutation_point": "route_table_digest",
       "expected_stage": "parser_reject",
       "expected_error": "PublicationRouteMix",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     },
     {
       "id": "CPP-T-005",
@@ -110,8 +110,8 @@
       "mutation_point": "prior_public_root",
       "expected_stage": "prior_root_reject",
       "expected_error": "PublicationPriorRootMix",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     },
     {
       "id": "CPP-T-006",
@@ -122,8 +122,8 @@
       "mutation_point": "root_generation_tag",
       "expected_stage": "parser_reject",
       "expected_error": "PublicationRootGenerationMix",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     },
     {
       "id": "CPP-T-007",
@@ -134,8 +134,8 @@
       "mutation_point": "shard_leaves[0].shard_root[0]",
       "expected_stage": "monotonicity_reject",
       "expected_error": "PublicationMonotonicityMix",
-      "regen_command": "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation print_checkpoint_publication_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::test_checkpoint_publication_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_root_generation publication_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_storage/tests/test_hjmt_root_generation.rs::publication_manifest_matches_contract"
     }
   ]
 }

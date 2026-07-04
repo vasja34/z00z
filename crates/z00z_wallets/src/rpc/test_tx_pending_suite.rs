@@ -349,16 +349,15 @@ async fn test_tx_import_reconcile_portable() {
         .deserialize(contents.as_bytes())
         .expect("portable tx package");
     wrong_version.package_version = 2;
-    wrong_version.metadata_hash_hex = hex::encode(
-        blake3::hash(
-            format!(
-                "{}:{}:{}",
-                wrong_version.package_version, wrong_version.chain_id, wrong_version.tx_hash_hex
-            )
-            .as_bytes(),
-        )
-        .as_bytes(),
-    );
+    let wrong_version_bytes = wrong_version.package_version.to_le_bytes();
+    wrong_version.metadata_hash_hex = hex::encode(z00z_crypto::blake2b_hash(
+        b"z00z.wallet.portable.metadata.v1",
+        &[
+            &wrong_version_bytes,
+            wrong_version.chain_id.as_bytes(),
+            wrong_version.tx_hash_hex.as_bytes(),
+        ],
+    ));
     let wrong_version = String::from_utf8(JsonCodec.serialize(&wrong_version).unwrap()).unwrap();
     let err = rpc
         .import_transaction(ctx.session.clone(), wrong_version)
@@ -385,16 +384,15 @@ async fn test_tx_import_reconcile_portable() {
         .deserialize(contents.as_bytes())
         .expect("portable tx package");
     wrong_chain.chain_id = "999".to_string();
-    wrong_chain.metadata_hash_hex = hex::encode(
-        blake3::hash(
-            format!(
-                "{}:{}:{}",
-                wrong_chain.package_version, wrong_chain.chain_id, wrong_chain.tx_hash_hex
-            )
-            .as_bytes(),
-        )
-        .as_bytes(),
-    );
+    let wrong_chain_bytes = wrong_chain.package_version.to_le_bytes();
+    wrong_chain.metadata_hash_hex = hex::encode(z00z_crypto::blake2b_hash(
+        b"z00z.wallet.portable.metadata.v1",
+        &[
+            &wrong_chain_bytes,
+            wrong_chain.chain_id.as_bytes(),
+            wrong_chain.tx_hash_hex.as_bytes(),
+        ],
+    ));
     let wrong_chain = String::from_utf8(JsonCodec.serialize(&wrong_chain).unwrap()).unwrap();
     let err = rpc
         .import_transaction(ctx.session.clone(), wrong_chain)

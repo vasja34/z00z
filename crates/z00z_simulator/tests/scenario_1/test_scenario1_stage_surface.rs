@@ -1303,7 +1303,7 @@ fn assert_s4_rpc_path() {
         ),
         (
             "config_defaults",
-            source_text("src/config/config_defaults.rs"),
+            source_text("src/config_defaults.rs"),
             [
                 "fn default_build_transaction_method() -> String",
                 "\"wallet.tx.build_transaction\"",

@@ -4,14 +4,6 @@ use crate::metrics::{MetricsSink, NoopMetrics};
 use std::sync::Arc;
 use std::thread;
 
-#[test]
-fn test_noop_metrics_basic() {
-    let metrics = NoopMetrics;
-    // Should not panic
-    metrics.inc_counter("test_counter", 1);
-    metrics.observe_histogram("test_histogram", 42.5);
-    metrics.set_gauge("test_gauge", 100.0);
-}
 /// Test trait object safety
 #[test]
 fn test_metrics_object_safety() {

@@ -15,12 +15,12 @@ Each case:
 - reloads from durable storage and rechecks the same final root and row set.
 
 The checked owner home is
-`crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_compat_equivalence_manifest_matches_live_contract`.
+`crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_manifest_matches_contract`.
 
 Regenerate with:
 
 ```bash
-cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence print_compat_equivalence_manifest_json -- --ignored --nocapture
+Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence test_manifest_matches_contract -- --exact --nocapture
 ```
 
 This is a conformance lane, not a throughput claim. It exists to prove semantic

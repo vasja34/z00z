@@ -22,7 +22,7 @@ documentation.
 | --- | --- |
 | positive shared proof vectors | `crates/z00z_storage/tests/fixtures/hjmt_upgrade/batch_proof_v1_positive/manifest.json` with `BPB-G-001..005` |
 | negative shared proof vectors | `crates/z00z_storage/tests/fixtures/hjmt_upgrade/batch_proof_v1_negative/manifest.json` with `BPB-T-001..008` |
-| positive owner home | `crates/z00z_storage/tests/test_hjmt_batch_proof.rs::test_positive_fixtures_match_live_builders` |
+| positive owner home | `crates/z00z_storage/tests/test_hjmt_batch_proof.rs::test_positive_fixtures_match_builders` |
 | negative owner home | `crates/z00z_storage/tests/test_hjmt_batch_proof_negative.rs::test_negative_fixtures_reject_with_expected_error` |
 | benchmark vocabulary home | `crates/z00z_storage/benches/settlement_benches.md` |
 | benchmark wording guard | `crates/z00z_storage/tests/test_bench_lanes.rs` |

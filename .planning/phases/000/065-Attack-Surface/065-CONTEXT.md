@@ -687,7 +687,7 @@ Every `PLAN-065-GNN` `<verify>` block must preserve this exact contract:
 | `WS-06` | Asset mutation RPCs route through shared submission and tx-journal helpers, restore and retry semantics are exercised through journal-backed rollback tests, and rotate-master-key wording plus receipt checks now track the persisted lifecycle contract instead of the retired placeholder claim. |
 | `WS-07` | `SettlementStore::new()` is now a managed local non-panicking constructor, `try_new()` or `load()` own the fallible operator boundary, wasm transport logging emits redacted shape summaries only, and panic or redaction meta-gates are enforced by executable audit scripts. |
 | `WS-08` | Public chain RPCs are narrowed to explicitly wallet-local `start_local_scan` / `stop_local_scan` / `get_local_scan_status` / `get_local_scan_tip` surfaces, route and doc tests keep the old production-looking names retired, and receipt serialization omits placeholder proof fields from production DTO defaults. |
-| `WS-09` | Narrowed historical wording is fenced to explicit planning references only, stale compatibility-bootstrap claims are rejected by `scripts/audit_phase065_narrowed_wording.sh`, and human-readable docs no longer re-promote the retired Phase 065 leftovers as live current-tree truth. |
+| `WS-09` | Narrowed historical wording is fenced to explicit planning references only, stale compatibility-bootstrap claims are rejected by `scripts/audit/audit_narrowed_wording.sh`, and human-readable docs no longer re-promote the retired Phase 065 leftovers as live current-tree truth. |
 
 </normative_mirror>
 

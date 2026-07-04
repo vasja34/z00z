@@ -627,9 +627,11 @@ impl TxRpcImpl {
     }
 
     fn portable_metadata_hash(version: u16, chain_id: &str, tx_hash_hex: &str) -> String {
-        hex::encode(
-            blake3::hash(format!("{version}:{chain_id}:{tx_hash_hex}").as_bytes()).as_bytes(),
-        )
+        let version_bytes = version.to_le_bytes();
+        hex::encode(z00z_crypto::blake2b_hash(
+            b"z00z.wallet.portable.metadata.v1",
+            &[&version_bytes, chain_id.as_bytes(), tx_hash_hex.as_bytes()],
+        ))
     }
 
     fn same_tx_package_ignoring_status(

@@ -9,7 +9,7 @@ source "$ROOT/scripts/penetration/common.sh"
 MODE="standard"
 PROFILE="generic"
 ARTIFACT_DIR=""
-SCOPE_PATH="$ROOT/.security/scope.yaml"
+SCOPE_PATH="$ROOT/scripts/penetration/scope.yaml"
 TOOL_STATUS=""
 SKIP_REASON=""
 
@@ -163,7 +163,7 @@ fi
 set +e
 python3 "$ROOT/scripts/penetration/validate_scope.py" \
   "$SCOPE_PATH" \
-  --denylist "$ROOT/.security/denied-tools.txt" \
+  --denylist "$ROOT/scripts/penetration/denied-tools.txt" \
   --require-dast-targets \
   --json >"$ARTIFACT_DIR/dast/scope-validation.json"
 scope_exit=$?

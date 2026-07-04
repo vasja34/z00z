@@ -22,6 +22,10 @@ fn local_adapter_publish_resolve_contract() {
     assert_eq!(published.batch_id, request.batch_id);
     assert_eq!(published.da_provider, "local-bridge");
     assert!(published.blob_ref.starts_with("local-da://local-bridge/"));
+    assert_eq!(published.publication_route, request.publication_route);
+    assert!(
+        published.publication_checkpoint >= request.publication_route.activation_checkpoint
+    );
 
     let resolved = adapter.resolve(&published).expect("resolve");
 

@@ -156,7 +156,7 @@ fn publication_yaml_topology_metadata() {
     assert_eq!(example.old_topology, "5x7");
     assert_eq!(example.new_topology, "6x7");
     assert_eq!(example.owner_aggregator_id, 5);
-    assert_eq!(example.standby_aggregator_ids, vec![0, 4]);
+    assert_eq!(example.secondary_aggregator_ids, vec![0, 4]);
     assert_eq!(example.old_aggregator_count, 5);
     assert_eq!(example.old_shard_count, 7);
     assert_eq!(example.new_aggregator_count, 6);
@@ -186,7 +186,7 @@ fn publication_yaml_topology_metadata() {
     assert_eq!(staged.route_generation_to, 3);
     assert_eq!(staged.removed_aggregator_ids, vec![5]);
     assert!(staged.removed_aggregator_absent_from_owner_tables);
-    assert!(staged.removed_aggregator_absent_from_standby_tables);
+    assert!(staged.removed_aggregator_absent_from_secondary_tables);
     assert!(staged.all_shards_owned_across_stages);
     assert!(staged.prior_lineage_preserved);
     assert!(staged.publication_continuity_preserved);
@@ -197,7 +197,7 @@ fn publication_yaml_topology_metadata() {
     assert_eq!(staged.transition_stages[1].owner_aggregator_id, 0);
     assert_eq!(staged.transition_stages[2].topology, "5x7");
     assert_eq!(
-        staged.transition_stages[2].standby_aggregator_ids,
+        staged.transition_stages[2].secondary_aggregator_ids,
         vec![2, 4]
     );
 }

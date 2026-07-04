@@ -398,7 +398,7 @@ fn listen_addr_updates_digest() {
 }
 
 #[test]
-fn standby_set_updates_digest() {
+fn secondary_set_updates_digest() {
     let temp = tempdir().expect("tempdir");
     let home = temp.path().join("sim_3a2s");
     write_hjmt_home(
@@ -414,8 +414,8 @@ fn standby_set_updates_digest() {
 
     replace_text(
         &home.join("aggregators/agg-0/aggregator-config.yaml"),
-        "standby_ids: [1]",
-        "standby_ids: [1, 2]",
+        "secondary_ids: [1]",
+        "secondary_ids: [1, 2]",
     );
 
     let after = agg_digest(&NodeConfig::from_hjmt_home(&home).expect("load after"), 0);
@@ -465,7 +465,7 @@ fn non_aggregator_role_rejects() {
 }
 
 #[test]
-fn unknown_standby_rejects_at_load() {
+fn unknown_secondary_rejects_at_load() {
     let temp = tempdir().expect("tempdir");
     let home = temp.path().join("sim_2a2s");
     write_hjmt_home(
@@ -475,14 +475,14 @@ fn unknown_standby_rejects_at_load() {
     );
     replace_text(
         &home.join("aggregators/agg-0/aggregator-config.yaml"),
-        "standby_ids: [1]",
-        "standby_ids: [9]",
+        "secondary_ids: [1]",
+        "secondary_ids: [9]",
     );
 
-    let err = NodeConfig::from_hjmt_home(&home).expect_err("unknown standby must reject");
+    let err = NodeConfig::from_hjmt_home(&home).expect_err("unknown secondary must reject");
     assert!(err
         .to_string()
-        .contains("standby 9 is not a declared aggregator"));
+        .contains("secondary 9 is not a declared aggregator"));
 }
 
 #[test]

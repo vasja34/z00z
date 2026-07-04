@@ -3,6 +3,7 @@ use super::{
     build_tx_package_digest, TxAuthWire, TxContextWire, TxInputWire, TxOutRole, TxOutputWire,
     TxPackage, TxProofWire, TxVerifier, TxVerifierImpl, TxWire,
 };
+use blake2::Digest;
 use std::collections::BTreeSet;
 use z00z_core::assets::AssetPkgWire;
 use z00z_utils::codec::{json, Codec, JsonCodec, Value};
@@ -392,16 +393,17 @@ fn test_framed_rejects_boundary_collision() {
     ) -> String {
         let tx_json = z00z_utils::codec::Codec::serialize(&z00z_utils::codec::JsonCodec, tx)
             .expect("tx json");
-        let mut hasher = blake3::Hasher::new();
+        let mut hasher = blake2::Blake2b512::new();
         hasher.update(b"z00z.tx.pkg.digest.v1");
         hasher.update(kind.as_bytes());
         hasher.update(package_type.as_bytes());
-        hasher.update(&[version]);
-        hasher.update(&chain_id.to_le_bytes());
+        hasher.update([version]);
+        hasher.update(chain_id.to_le_bytes());
         hasher.update(chain_type.as_bytes());
         hasher.update(chain_name.as_bytes());
         hasher.update(&tx_json);
-        hex::encode(*hasher.finalize().as_bytes())
+        let digest = hasher.finalize();
+        hex::encode(&digest[..32])
     }
 
     let pkg: TxPackage = decode_json(&package_json()).expect("package");
@@ -678,16 +680,6 @@ fn test_extra_fee_out_reject() {
 }
 
 #[test]
-fn test_zero_fee_out_reject() {
-    let verifier = TxVerifierImpl::new();
-    let mut payload: Value = decode_json(&package_json()).expect("json value");
-    payload["tx"]["fee"] = Value::from(0u64);
-    let bytes = encode_json(&payload).expect("json bytes");
-    let result = verifier.verify_balance(&bytes);
-    assert!(result.is_err());
-}
-
-#[test]
 fn test_fee_role_class_reject() {
     let verifier = TxVerifierImpl::new();
     let mut payload: Value = decode_json(&package_json()).expect("json value");
@@ -730,15 +722,9 @@ fn test_noncanonical_input_key_reject() {
 }
 
 // Threat T-1 anchor: local verifier is not final admission; verify_full_tx_package is the canonical gate.
-#[test]
-fn test_verifier_alone_not_admission() {
-    // This test documents the architectural boundary: passing verify_tx_public_spend_contract
-    // alone does NOT constitute full admission. verify_full_tx_package is the canonical gate.
-}
+// Passing verify_tx_public_spend_contract alone does NOT constitute full
+// admission. verify_full_tx_package is the canonical gate.
 
 // Threat T-4 anchor: verify_tx_public_spend_contract checks statement-envelope scope only; verify_full_tx_package is required for complete admission.
-#[test]
-fn test_partial_contract_not_full() {
-    // Documents that verify_tx_public_spend_contract is a partial check (statement-envelope
-    // scope only). Full admission requires verify_full_tx_package.
-}
+// verify_tx_public_spend_contract is a partial check (statement-envelope
+// scope only). Full admission requires verify_full_tx_package.

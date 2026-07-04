@@ -249,7 +249,10 @@ impl LocalNodeSim {
                 }
                 package.tx_digest_hex
             }
-            Err(_) => hex::encode(blake3::hash(tx_bytes).as_bytes()),
+            Err(_) => hex::encode(z00z_crypto::blake2b_hash(
+                b"z00z.local_node.tx_fallback.v1",
+                &[tx_bytes],
+            )),
         };
         state
             .tx_statuses

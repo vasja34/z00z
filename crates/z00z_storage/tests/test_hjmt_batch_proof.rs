@@ -673,6 +673,23 @@ fn test_positive_manifest_covers_bpb() {
 #[test]
 fn test_positive_fixtures_match_builders() {
     let manifest = load_positive_manifest();
+    if std::env::var_os("Z00Z_REGEN_DUMP").is_some() {
+        let live = PositiveManifest {
+            version: 1,
+            cases: manifest
+                .cases
+                .iter()
+                .map(|case| render_positive_case(&case.id))
+                .collect(),
+        };
+        let json = JsonCodec
+            .serialize_pretty(&live)
+            .expect("serialize positive manifest");
+        println!(
+            "{}",
+            String::from_utf8(json).expect("utf8 positive manifest")
+        );
+    }
     assert_eq!(manifest.version, 1);
     for case in &manifest.cases {
         let rendered = render_positive_case(&case.id);
@@ -691,6 +708,16 @@ fn test_positive_fixtures_match_builders() {
 #[test]
 fn test_root_generation_contract() {
     let manifest = load_root_gen_manifest();
+    if std::env::var_os("Z00Z_REGEN_DUMP").is_some() {
+        let live = render_root_gen_manifest();
+        let json = JsonCodec
+            .serialize_pretty(&live)
+            .expect("serialize root-generation manifest");
+        println!(
+            "{}",
+            String::from_utf8(json).expect("utf8 root-generation manifest")
+        );
+    }
     assert_eq!(manifest.version, 1);
     for case in &manifest.cases {
         let bytes = decode_hex(&case.canonical_bytes_hex);
@@ -901,8 +928,8 @@ fn render_positive_case(case_id: &str) -> PositiveCase {
         canonical_bytes_hex: encode_hex(&bytes),
         witness_count: live.batch.witness_dag.len() as u32,
         reference_count: live.batch.reference_table.len() as u32,
-        regen_command: "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof print_positive_manifest_json -- --ignored --nocapture".to_string(),
-        evidence_pointer: "crates/z00z_storage/tests/test_hjmt_batch_proof.rs::test_positive_fixtures_match_live_builders".to_string(),
+        regen_command: "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof test_positive_fixtures_match_builders -- --exact --nocapture".to_string(),
+        evidence_pointer: "crates/z00z_storage/tests/test_hjmt_batch_proof.rs::test_positive_fixtures_match_builders".to_string(),
     }
 }
 
@@ -925,8 +952,8 @@ fn render_root_gen_manifest() -> RootGenManifest {
                 )),
                 expected_error: None,
                 canonical_bytes_hex: encode_hex(&accept_bytes),
-                regen_command: "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof print_root_gen_manifest_json -- --ignored --nocapture".to_string(),
-                evidence_pointer: "crates/z00z_storage/tests/test_hjmt_batch_proof.rs::test_root_generation_migration_manifest_matches_live_contract".to_string(),
+                regen_command: "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof test_root_generation_contract -- --exact --nocapture".to_string(),
+                evidence_pointer: "crates/z00z_storage/tests/test_hjmt_batch_proof.rs::test_root_generation_contract".to_string(),
             },
             RootGenCase {
                 id: "RGM-T-001".to_string(),
@@ -936,8 +963,8 @@ fn render_root_gen_manifest() -> RootGenManifest {
                 expected_root_hex: None,
                 expected_error: Some("BatchRootGenerationMix".to_string()),
                 canonical_bytes_hex: encode_hex(&reject_bytes),
-                regen_command: "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof print_root_gen_manifest_json -- --ignored --nocapture".to_string(),
-                evidence_pointer: "crates/z00z_storage/tests/test_hjmt_batch_proof.rs::test_root_generation_migration_manifest_matches_live_contract".to_string(),
+                regen_command: "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_proof test_root_generation_contract -- --exact --nocapture".to_string(),
+                evidence_pointer: "crates/z00z_storage/tests/test_hjmt_batch_proof.rs::test_root_generation_contract".to_string(),
             },
         ],
     }
@@ -1040,41 +1067,6 @@ fn delete_paths(store: &mut SettlementStore, paths: &[SettlementPath]) {
     store
         .apply_settlement_ops(paths.iter().copied().map(StoreOp::Delete).collect())
         .expect("delete fixture paths");
-}
-
-#[test]
-#[ignore = "fixture regeneration helper"]
-fn print_positive_manifest_json() {
-    let manifest = PositiveManifest {
-        version: 1,
-        cases: vec![
-            render_positive_case("BPB-G-001"),
-            render_positive_case("BPB-G-002"),
-            render_positive_case("BPB-G-003"),
-            render_positive_case("BPB-G-004"),
-            render_positive_case("BPB-G-005"),
-        ],
-    };
-    let json = JsonCodec
-        .serialize_pretty(&manifest)
-        .expect("serialize positive manifest");
-    println!(
-        "{}",
-        String::from_utf8(json).expect("utf8 positive manifest")
-    );
-}
-
-#[test]
-#[ignore = "fixture regeneration helper"]
-fn print_root_gen_manifest_json() {
-    let manifest = render_root_gen_manifest();
-    let json = JsonCodec
-        .serialize_pretty(&manifest)
-        .expect("serialize root-generation manifest");
-    println!(
-        "{}",
-        String::from_utf8(json).expect("utf8 root-generation manifest")
-    );
 }
 
 fn encode_hex(bytes: &[u8]) -> String {

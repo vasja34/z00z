@@ -34,4 +34,5 @@ test-params-fast = [
   "z00z_storage/test-params-fast",
   "z00z_utils/test-params-fast",
   "z00z_wallets/test-params-fast",
+  "z00z_wallets/wallet_debug_tools",
 ]

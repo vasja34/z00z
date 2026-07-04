@@ -11,8 +11,8 @@
       "new_table_hex": null,
       "new_digest_hex": null,
       "activation_checkpoint": 11,
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     },
     {
       "id": "SRT-G-002",
@@ -24,8 +24,8 @@
       "new_table_hex": null,
       "new_digest_hex": null,
       "activation_checkpoint": 42,
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     },
     {
       "id": "SRT-G-003",
@@ -37,8 +37,8 @@
       "new_table_hex": "0000000000000001000000030000000000000001000000020000000300000000000000000000000000000000000000000000000000000000000000005555555555555555555555555555555555555555555555555555555555555555000000005555555555555555555555555555555555555555555555555555555555555556aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000201b6e2c378ce137405ea2b2283dc7eb04241464cdf57a0c0db1a02ec668b1e7a82000000000000002a",
       "new_digest_hex": "c6f78bca1dd639dd9c45114abc850d3050a0ca8a8ccee256d98cfe7c0dff5b10",
       "activation_checkpoint": 42,
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     },
     {
       "id": "SRT-G-004",
@@ -50,8 +50,8 @@
       "new_table_hex": null,
       "new_digest_hex": null,
       "activation_checkpoint": 42,
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     }
   ],
   "tamper": [
@@ -65,8 +65,8 @@
       "claimed_digest_hex": null,
       "expected_stage": "parser_reject",
       "expected_error": "route table shard_set must stay sorted ascending",
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     },
     {
       "id": "SRT-T-002",
@@ -78,8 +78,8 @@
       "claimed_digest_hex": null,
       "expected_stage": "parser_reject",
       "expected_error": "route table shard_set must stay unique",
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     },
     {
       "id": "SRT-T-003",
@@ -91,8 +91,8 @@
       "claimed_digest_hex": null,
       "expected_stage": "parser_reject",
       "expected_error": "route table range_rules must stay sorted by start_hash",
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     },
     {
       "id": "SRT-T-004",
@@ -104,8 +104,8 @@
       "claimed_digest_hex": null,
       "expected_stage": "parser_reject",
       "expected_error": "route table range_rules must not overlap",
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     },
     {
       "id": "SRT-T-005",
@@ -117,8 +117,8 @@
       "claimed_digest_hex": null,
       "expected_stage": "parser_reject",
       "expected_error": "route table range_rules must stay gap-free over the full hash domain",
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     },
     {
       "id": "SRT-T-006",
@@ -130,8 +130,8 @@
       "claimed_digest_hex": null,
       "expected_stage": "parser_reject",
       "expected_error": "route table range_rules must reference declared shard_set ids",
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     },
     {
       "id": "SRT-T-007",
@@ -143,8 +143,8 @@
       "claimed_digest_hex": null,
       "expected_stage": "migration_reject",
       "expected_error": "route table previous_generation_digest linkage is invalid",
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     },
     {
       "id": "SRT-T-008",
@@ -156,8 +156,8 @@
       "claimed_digest_hex": "0000000000000000000000000000000000000000000000000000000000000000",
       "expected_stage": "digest_reject",
       "expected_error": "route table digest mismatch",
-      "regen_command": "cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing print_route_manifest_json -- --ignored --nocapture",
-      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_live_contract"
+      "regen_command": "Z00Z_REGEN_DUMP=1 cargo test -p z00z_aggregators --release --features test-params-fast --test test_hjmt_shard_routing test_route_manifest_matches_contract -- --exact --nocapture",
+      "evidence_pointer": "crates/z00z_runtime/aggregators/tests/test_hjmt_shard_routing.rs::test_route_manifest_matches_contract"
     }
   ]
 }

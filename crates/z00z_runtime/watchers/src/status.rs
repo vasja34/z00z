@@ -110,7 +110,7 @@ mod tests {
                 routing_generation: generation,
             },
             primary_id: AggregatorId::new(aggregator),
-            standby: Vec::new(),
+            secondaries: Vec::new(),
             expected_journal_lineage: [0u8; 32],
         }
     }

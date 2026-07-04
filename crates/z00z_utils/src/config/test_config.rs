@@ -164,12 +164,6 @@ fn test_layered_config_env_only() {
 }
 
 #[test]
-fn test_layered_config_env_constructor() {
-    let config = LayeredConfig::env_only();
-    let _ = config.get("NONEXISTENT").unwrap();
-}
-
-#[test]
 fn test_closed_missing_default_yaml() {
     let _guard = cwd_lock().lock().unwrap();
     let original = env::current_dir().unwrap();

@@ -11,7 +11,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use blake3::Hasher;
 use z00z_utils::io::{
     create_dir_all, current_exe_run_root, prune_scope_alias_dirs, read_dir, read_link,
     read_to_string, remove_dir_all, remove_file, rename_file, stable_current_exe_scope, write_file,
@@ -746,10 +745,7 @@ fn cache_ready(
 }
 
 pub(crate) fn cache_content_fingerprint(cache_dir: &Path) -> String {
-    let mut hasher = Hasher::new();
-    hasher.update(CONTENT_FINGERPRINT_SCHEMA.as_bytes());
-    hasher.update(b"\n");
-
+    let mut parts = vec![CONTENT_FINGERPRINT_SCHEMA.as_bytes().to_vec()];
     let mut entries = Vec::new();
     collect_case_files(cache_dir, &mut entries);
     entries.sort();
@@ -760,10 +756,14 @@ pub(crate) fn cache_content_fingerprint(cache_dir: &Path) -> String {
             .unwrap_or(path.as_path())
             .to_string_lossy()
             .to_string();
-        hash_file(&mut hasher, &rel, &path);
+        parts.push(file_fingerprint(&rel, &path).to_vec());
     }
 
-    hasher.finalize().to_hex().to_string()
+    let refs = parts.iter().map(Vec::as_slice).collect::<Vec<_>>();
+    hex::encode(z00z_crypto::blake2b_hash(
+        b"z00z.fixture_cache.content.v1",
+        &refs,
+    ))
 }
 
 fn prepare_scope_root(scope_dir: &Path, want_fingerprint: &str) {
@@ -846,16 +846,20 @@ fn local_case_fingerprint() -> String {
     static LOCAL: OnceLock<String> = OnceLock::new();
     LOCAL
         .get_or_init(|| {
-            let mut hasher = Hasher::new();
-            hasher.update(FINGERPRINT_SCHEMA.as_bytes());
-            hasher.update(b"\n");
-            hasher.update(b"scope=local\n");
-            hash_feature_flags(&mut hasher);
+            let mut parts = vec![
+                FINGERPRINT_SCHEMA.as_bytes().to_vec(),
+                b"scope=local".to_vec(),
+            ];
+            hash_feature_flags(&mut parts);
             if let Ok(exe_path) = std::env::current_exe() {
-                hash_file(&mut hasher, "current_exe", &exe_path);
+                parts.push(file_fingerprint("current_exe", &exe_path).to_vec());
             }
-            hash_runtime_inputs(&mut hasher);
-            hasher.finalize().to_hex().to_string()
+            hash_runtime_inputs(&mut parts);
+            let refs = parts.iter().map(Vec::as_slice).collect::<Vec<_>>();
+            hex::encode(z00z_crypto::blake2b_hash(
+                b"z00z.fixture_cache.local_scope.v1",
+                &refs,
+            ))
         })
         .clone()
 }
@@ -864,25 +868,29 @@ fn shared_case_fingerprint() -> String {
     static SHARED: OnceLock<String> = OnceLock::new();
     SHARED
         .get_or_init(|| {
-            let mut hasher = Hasher::new();
-            hasher.update(FINGERPRINT_SCHEMA.as_bytes());
-            hasher.update(b"\n");
-            hasher.update(b"scope=shared\n");
-            hash_feature_flags(&mut hasher);
+            let mut parts = vec![
+                FINGERPRINT_SCHEMA.as_bytes().to_vec(),
+                b"scope=shared".to_vec(),
+            ];
+            hash_feature_flags(&mut parts);
             for rel in SHARED_FINGERPRINT_FILES {
                 let abs = repo_root().join(rel);
-                hash_file(&mut hasher, rel, &abs);
+                parts.push(file_fingerprint(rel, &abs).to_vec());
             }
             for rel in SHARED_FINGERPRINT_CORE_TREES {
                 let abs = repo_root().join(rel);
-                hash_tree(&mut hasher, rel, &abs);
+                hash_tree(&mut parts, rel, &abs);
             }
             for rel in SHARED_FINGERPRINT_TEST_TREES {
                 let abs = repo_root().join(rel);
-                hash_tree(&mut hasher, rel, &abs);
+                hash_tree(&mut parts, rel, &abs);
             }
-            hash_runtime_inputs(&mut hasher);
-            hasher.finalize().to_hex().to_string()
+            hash_runtime_inputs(&mut parts);
+            let refs = parts.iter().map(Vec::as_slice).collect::<Vec<_>>();
+            hex::encode(z00z_crypto::blake2b_hash(
+                b"z00z.fixture_cache.shared_scope.v1",
+                &refs,
+            ))
         })
         .clone()
 }
@@ -891,56 +899,66 @@ fn shared_precise_case_fingerprint() -> String {
     static SHARED_PRECISE: OnceLock<String> = OnceLock::new();
     SHARED_PRECISE
         .get_or_init(|| {
-            let mut hasher = Hasher::new();
-            hasher.update(FINGERPRINT_SCHEMA.as_bytes());
-            hasher.update(b"\n");
-            hasher.update(b"scope=shared-precise\n");
-            hash_feature_flags(&mut hasher);
+            let mut parts = vec![
+                FINGERPRINT_SCHEMA.as_bytes().to_vec(),
+                b"scope=shared-precise".to_vec(),
+            ];
+            hash_feature_flags(&mut parts);
             for rel in SHARED_FINGERPRINT_FILES {
                 let abs = repo_root().join(rel);
-                hash_file(&mut hasher, rel, &abs);
+                parts.push(file_fingerprint(rel, &abs).to_vec());
             }
             for rel in SHARED_FINGERPRINT_CORE_TREES {
                 let abs = repo_root().join(rel);
-                hash_tree(&mut hasher, rel, &abs);
+                hash_tree(&mut parts, rel, &abs);
             }
             for rel in SHARED_FINGERPRINT_TEST_TREES {
                 let abs = repo_root().join(rel);
-                hash_tree(&mut hasher, rel, &abs);
+                hash_tree(&mut parts, rel, &abs);
             }
-            hash_runtime_inputs(&mut hasher);
-            hasher.finalize().to_hex().to_string()
+            hash_runtime_inputs(&mut parts);
+            let refs = parts.iter().map(Vec::as_slice).collect::<Vec<_>>();
+            hex::encode(z00z_crypto::blake2b_hash(
+                b"z00z.fixture_cache.shared_precise_scope.v1",
+                &refs,
+            ))
         })
         .clone()
 }
 
-fn hash_feature_flags(hasher: &mut Hasher) {
-    hasher.update(
+fn hash_feature_flags(parts: &mut Vec<Vec<u8>>) {
+    parts.push(
         format!(
-            "feature:test-params-fast={}\n",
+            "feature:test-params-fast={}",
             cfg!(feature = "test-params-fast")
         )
-        .as_bytes(),
+        .into_bytes(),
     );
-    hasher.update(
+    parts.push(
         format!(
-            "feature:wallet_debug_tools={}\n",
+            "feature:wallet_debug_tools={}",
             cfg!(feature = "wallet_debug_tools")
         )
-        .as_bytes(),
+        .into_bytes(),
     );
 }
 
-fn hash_runtime_inputs(hasher: &mut Hasher) {
+fn hash_runtime_inputs(parts: &mut Vec<Vec<u8>>) {
     for rel in RUNTIME_INPUTS {
         let abs = repo_root().join(rel);
-        hash_file(hasher, rel, &abs);
+        parts.push(file_fingerprint(rel, &abs).to_vec());
     }
 }
 
-fn hash_tree(hasher: &mut Hasher, rel_root: &str, abs_root: &Path) {
+fn hash_tree(parts: &mut Vec<Vec<u8>>, rel_root: &str, abs_root: &Path) {
     if !abs_root.exists() {
-        hasher.update(format!("missing-tree:{rel_root}\n").as_bytes());
+        parts.push(
+            z00z_crypto::blake2b_hash(
+                b"z00z.fixture_cache.missing_tree.v1",
+                &[rel_root.as_bytes()],
+            )
+            .to_vec(),
+        );
         return;
     }
 
@@ -953,7 +971,7 @@ fn hash_tree(hasher: &mut Hasher, rel_root: &str, abs_root: &Path) {
             .unwrap_or(path.as_path())
             .to_string_lossy()
             .to_string();
-        hash_file(hasher, &rel, &path);
+        parts.push(file_fingerprint(&rel, &path).to_vec());
     }
 }
 
@@ -1000,32 +1018,32 @@ fn collect_case_files(root: &Path, files: &mut Vec<PathBuf>) {
     }
 }
 
-fn hash_file(hasher: &mut Hasher, label: &str, path: &Path) {
-    hasher.update(label.as_bytes());
-    hasher.update(b"\n");
+fn file_fingerprint(label: &str, path: &Path) -> [u8; 32] {
     match File::open(path) {
         Ok(mut file) => {
-            let size = file.metadata().map(|meta| meta.len()).unwrap_or_default();
-            hasher.update(size.to_string().as_bytes());
-            hasher.update(b"\n");
-
-            let mut buf = [0u8; 8 * 1024];
-            loop {
-                let read = file.read(&mut buf).unwrap_or_else(|err| {
-                    panic!(
-                        "read fixture fingerprint file {} failed: {err}",
-                        path.display()
-                    )
-                });
-                if read == 0 {
-                    break;
-                }
-                hasher.update(&buf[..read]);
-            }
-            hasher.update(b"\n");
+            let size_bytes = file
+                .metadata()
+                .map(|meta| meta.len())
+                .unwrap_or_default()
+                .to_le_bytes();
+            let mut content = Vec::new();
+            file.read_to_end(&mut content).unwrap_or_else(|err| {
+                panic!(
+                    "read fixture fingerprint file {} failed: {err}",
+                    path.display()
+                )
+            });
+            z00z_crypto::blake2b_hash(
+                b"z00z.fixture_cache.file.v1",
+                &[label.as_bytes(), &size_bytes, content.as_slice()],
+            )
         }
         Err(err) => {
-            hasher.update(format!("missing:{err}\n").as_bytes());
+            let err_text = err.to_string();
+            z00z_crypto::blake2b_hash(
+                b"z00z.fixture_cache.missing_file.v1",
+                &[label.as_bytes(), err_text.as_bytes()],
+            )
         }
     }
 }

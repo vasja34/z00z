@@ -10,9 +10,9 @@ use z00z_storage::fixture_support::settlement_corpus::{
 use z00z_storage::settlement::{RightActionCtx, SettlementLeaf, SettlementStore};
 use z00z_utils::codec::{Codec, JsonCodec};
 
-const COMPAT_EQ_REGEN_CMD: &str = "cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence print_compat_equivalence_manifest_json -- --ignored --nocapture";
+const COMPAT_EQ_REGEN_CMD: &str = "Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_compat_equivalence test_manifest_matches_contract -- --exact --nocapture";
 const COMPAT_EQ_EVIDENCE_PTR: &str =
-    "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_compat_equivalence_manifest_matches_live_contract";
+    "crates/z00z_storage/tests/test_hjmt_compat_equivalence.rs::test_manifest_matches_contract";
 const COMPAT_SEEDS: [u64; 8] = [0, 7, 13, 29, 41, 53, 61, 63];
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -70,7 +70,14 @@ fn seeded_right(seed: u64) -> RightSeed {
 #[test]
 fn test_manifest_matches_contract() {
     let manifest = load_manifest();
-    assert_eq!(manifest, build_manifest());
+    let live = build_manifest();
+    if std::env::var_os("Z00Z_REGEN_DUMP").is_some() {
+        let rendered = JsonCodec
+            .serialize_pretty(&live)
+            .expect("encode compat manifest");
+        println!("{}", String::from_utf8(rendered).expect("utf8 manifest"));
+    }
+    assert_eq!(manifest, live);
 }
 
 #[test]
@@ -81,16 +88,6 @@ fn test_seeded_ops_match_oracle() -> Result<(), Box<dyn std::error::Error>> {
         assert!(case.reload_roundtrip);
     }
     Ok(())
-}
-
-#[test]
-#[ignore]
-fn print_compat_equivalence_manifest_json() {
-    let manifest = build_manifest();
-    let rendered = JsonCodec
-        .serialize_pretty(&manifest)
-        .expect("encode compat manifest");
-    println!("{}", String::from_utf8(rendered).expect("utf8 manifest"));
 }
 
 fn load_manifest() -> CompatManifest {

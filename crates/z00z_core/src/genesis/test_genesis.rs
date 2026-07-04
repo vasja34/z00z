@@ -56,12 +56,6 @@ mod tests {
     }
 
     #[test]
-    fn test_accumulator_total_count() {
-        let acc = GenesisAssetAccumulator::new();
-        assert_eq!(acc.total_count(), 0);
-    }
-
-    #[test]
     fn test_accumulator_flatten_empty() {
         let acc = GenesisAssetAccumulator::new();
         let flat = acc.flatten();

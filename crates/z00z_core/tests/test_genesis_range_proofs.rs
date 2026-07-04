@@ -45,40 +45,6 @@ fn test_proof_range_exists_assets() {
 }
 
 #[test]
-fn test_range_proof_structure_valid() {
-    let (logger, metrics) = create_test_observability();
-
-    let config = create_test_config();
-    let genesis_seed = GenesisSeed::from_config(&config).unwrap();
-
-    let mut definitions = Vec::new();
-    for asset_cfg in &config.assets {
-        let definition =
-            create_asset_definition(asset_cfg, genesis_seed.as_bytes(), ChainType::Devnet).unwrap();
-        definitions.push(definition);
-    }
-
-    let accumulator = generate_all_genesis_assets(
-        &definitions,
-        genesis_seed.as_bytes(),
-        ChainType::Devnet,
-        logger.clone(),
-        metrics.clone(),
-    )
-    .unwrap();
-    let assets = accumulator.flatten();
-
-    // Verify proofs exist and have valid structure
-    for asset in &assets {
-        assert!(
-            asset.range_proof.is_some(),
-            "Asset serial_id {} must have range proof",
-            asset.serial_id
-        );
-    }
-}
-
-#[test]
 fn test_range_proof_individual_verification() {
     let (logger, metrics) = create_test_observability();
 

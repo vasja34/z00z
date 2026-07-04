@@ -200,12 +200,12 @@ mod tests {
                             shards: vec![
                                 crate::config::ShardOwn {
                                     shard_id: ShardId::new(0),
-                                    standby_ids: vec![AggregatorId::new(1)],
+                                    secondary_ids: vec![AggregatorId::new(1)],
                                     expected_journal_lineage: [0u8; 32],
                                 },
                                 crate::config::ShardOwn {
                                     shard_id: ShardId::new(1),
-                                    standby_ids: vec![AggregatorId::new(2)],
+                                    secondary_ids: vec![AggregatorId::new(2)],
                                     expected_journal_lineage: [0u8; 32],
                                 },
                             ],
@@ -255,7 +255,7 @@ mod tests {
                             execution: crate::config::AggExecutionCfg::default(),
                             shards: vec![crate::config::ShardOwn {
                                 shard_id: ShardId::new(2),
-                                standby_ids: vec![AggregatorId::new(0)],
+                                secondary_ids: vec![AggregatorId::new(0)],
                                 expected_journal_lineage: [0u8; 32],
                             }],
                             network: crate::config::NetCfg {
@@ -453,7 +453,7 @@ mod tests {
                 routing_generation: generation,
             },
             primary_id: AggregatorId::new(aggregator),
-            standby: Vec::new(),
+            secondaries: Vec::new(),
             expected_journal_lineage: [0u8; 32],
         }
     }

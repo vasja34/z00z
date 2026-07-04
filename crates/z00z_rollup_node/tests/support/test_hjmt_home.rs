@@ -16,7 +16,7 @@ pub struct TestAgg {
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct TestShard {
     shard_id: u16,
-    standby_ids: Vec<u16>,
+    secondary_ids: Vec<u16>,
 }
 
 pub fn agg(id: u16, port: u16, shards: &[(u16, &[u16])]) -> TestAgg {
@@ -25,9 +25,9 @@ pub fn agg(id: u16, port: u16, shards: &[(u16, &[u16])]) -> TestAgg {
         port,
         shards: shards
             .iter()
-            .map(|(shard_id, standby_ids)| TestShard {
+            .map(|(shard_id, secondary_ids)| TestShard {
                 shard_id: *shard_id,
-                standby_ids: standby_ids.to_vec(),
+                secondary_ids: secondary_ids.to_vec(),
             })
             .collect(),
     }
@@ -97,10 +97,10 @@ pub fn write_hjmt_home_with_mapping(
             .iter()
             .map(|shard| {
                 format!(
-                    "  - shard_id: {}\n    standby_ids: [{}]\n    expected_journal_lineage: \"{ZERO_LINEAGE}\"\n",
+                    "  - shard_id: {}\n    secondary_ids: [{}]\n    expected_journal_lineage: \"{ZERO_LINEAGE}\"\n",
                     shard.shard_id,
                     shard
-                        .standby_ids
+                        .secondary_ids
                         .iter()
                         .map(std::string::ToString::to_string)
                         .collect::<Vec<_>>()

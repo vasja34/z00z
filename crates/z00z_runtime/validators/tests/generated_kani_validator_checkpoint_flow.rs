@@ -13,7 +13,7 @@ fn placement_view(shard_id: u16, generation: u64, aggregator_id: u16) -> ShardPl
             routing_generation: generation,
         },
         primary_id: AggregatorId::new(aggregator_id),
-        standby: Vec::new(),
+        secondaries: Vec::new(),
         expected_journal_lineage: [0x61; 32],
     }
 }
@@ -41,7 +41,7 @@ fn assert_placement_matches(
     assert_eq!(placement.route.shard_id, ShardId::new(shard_id));
     assert_eq!(placement.route.routing_generation, generation);
     assert_eq!(placement.primary_id, AggregatorId::new(aggregator_id));
-    assert!(placement.standby.is_empty());
+    assert!(placement.secondaries.is_empty());
     assert_eq!(placement.expected_journal_lineage, [0x61; 32]);
 }
 

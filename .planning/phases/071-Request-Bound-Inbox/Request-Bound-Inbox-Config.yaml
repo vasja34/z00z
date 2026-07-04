@@ -1,0 +1,380 @@
+# Canonical runtime/planning gate for Request-Bound Inbox.
+# This file defines the wallet.receiver.inbox architecture contract.
+# It lives under phase 071 for planning hygiene only; it is not a phase-wide
+# config file.
+# Runtime implementation must load, mirror, or mechanically validate these keys.
+
+config:
+  id: "request-inbox"
+  feature: "request-bound-inbox"
+  artifact_type: "wallet.receiver.inbox.normative-gate"
+  version: "1.1.0"
+  status: "normative-planning-gate"
+  updated_at: "2026-07-04"
+  canonical_runtime_key: "wallet.receiver.inbox"
+  env_prefix: "Z00Z_WALLET_RECEIVER_INBOX_"
+  source_spec: ".planning/phases/071-Request-Bound-Inbox/071-Request-Bound-Inbox-Spec.md"
+
+provenance:
+  planning_phase: "071-Request-Bound-Inbox"
+  stored_under: ".planning/phases/071-Request-Bound-Inbox/"
+  fused_from:
+    - "pre-fusion Request-Bound-Inbox-Config.yaml"
+    - "Request-Bound-Inbox-Config-1.yaml"
+
+scope:
+  artifact_scope: "request-bound inbox only"
+  runtime_surface:
+    - "wallet.receiver.inbox"
+  not_a_phase_wide_config: true
+
+repo_rules:
+  artifact_language: "english"
+  use_z00z_utils: true
+  config_loader: "z00z_utils::config"
+  yaml_codec: "z00z_utils::codec::YamlCodec"
+  protected_paths:
+    - "crates/z00z_crypto/tari/"
+  forbidden_shortcuts:
+    - "raw std::fs config reads"
+    - "ad hoc YAML parsing"
+    - "new crypto outside z00z_crypto or wallet domain wrappers"
+    - "plaintext wallet-local recipient artifacts in logs or exports"
+
+module_ownership:
+  wallet:
+    owner_crate: "crates/z00z_wallets"
+    receiver_module: "crates/z00z_wallets/src/receiver/request_inbox.rs"
+    receive_service: "crates/z00z_wallets/src/services/wallet_actions_receive.rs"
+    runtime_config: "crates/z00z_wallets/src/services/wallet_runtime_config.rs"
+    owns:
+      - "payment request validation"
+      - "wallet-local request inbox policy"
+      - "request ordering before scan"
+      - "wallet scan state mutation through recv_range only"
+      - "encrypted wallet-local inbox persistence"
+    must_not_own:
+      - "settlement roots"
+      - "checkpoint proof truth"
+      - "runtime batch planning authority"
+      - "rollup theorem authority"
+  storage:
+    owner_crate: "crates/z00z_storage"
+    owns:
+      - "settlement HJMT roots"
+      - "checkpoint range evidence"
+      - "storage-owned proof envelopes"
+    must_not_own:
+      - "request validation policy"
+      - "wallet ownership classification"
+      - "request inbox records"
+  runtime:
+    owner_crate: "crates/z00z_runtime/aggregators"
+    owns:
+      - "package ingress digest rebinding"
+      - "batch planning"
+      - "publication binding"
+    must_not_own:
+      - "request inbox records"
+      - "receiver ownership decisions"
+  rollup:
+    owner_crate: "crates/z00z_rollup_node"
+    owns:
+      - "settlement theorem bundle consumption"
+    must_not_own:
+      - "wallet-local inbox semantics"
+      - "request validation state"
+  networks:
+    onionnet_boundary: "crates/z00z_networks/onionnet"
+    owns:
+      - "future transport privacy adapters"
+    must_not_own:
+      - "wallet ownership checks"
+      - "request-bound receive mutation"
+
+runtime_config:
+  canonical_key: "wallet.receiver.inbox"
+  env_prefix: "Z00Z_WALLET_RECEIVER_INBOX_"
+  mirror_or_validate_required: true
+  fail_closed_on_malformed_explicit_key: true
+  missing_optional_uses_spec_defaults: true
+  release_build_must_reject_insecure_debug: true
+
+inbox:
+  enabled: true
+  mode: "wallet_local_advisory"
+  authoritative_receive_api: "WalletService::recv_range"
+  advisory_receive_api: "WalletService::recv_range_with_inbox"
+  remote_scan_api: "WalletService::recv_range_from_worker"
+  mutation_authority: "recv_range_only"
+  current_legacy_shape:
+    source: "crates/z00z_wallets/src/receiver/request_inbox.rs"
+    stores_recipient_binding: true
+    fields:
+      - "owner_handle"
+      - "view_pk"
+      - "identity_pk"
+    allowed_scope: "transitional_in_memory_only"
+    durable_persistence_allowed: false
+    export_allowed: false
+    migration_required: true
+  target_record:
+    name: "RequestInboxRecordV1"
+    storage_profile: "encrypted_wlt_sanitized"
+    export_profile: "redacted_route_hint_v1"
+    forbidden_plaintext_fields:
+      - "owner_handle"
+      - "view_pk"
+      - "identity_pk"
+      - "stable_receiver_id"
+      - "raw_req_id"
+      - "amount"
+      - "asset_id"
+      - "sender_identity"
+      - "plaintext_memo"
+      - "decrypted_pack_fields"
+    allowed_plaintext_fields:
+      - "version"
+      - "chain_id"
+      - "route_epoch"
+      - "route_bucket"
+      - "request_id_hash"
+      - "range_hint"
+      - "expiry_bucket"
+      - "validation_state"
+      - "created_at_ms"
+      - "updated_at_ms"
+      - "defer_until_ms"
+      - "abuse_score"
+    encrypted_hint_allowed_fields:
+      - "request_id"
+      - "memo_hash"
+      - "payment_id_hash"
+      - "scan_priority"
+      - "wallet_local_notes"
+  order:
+    - "range_hint.start_height asc"
+    - "range_hint.end_height asc nulls_last"
+    - "route_epoch asc"
+    - "created_at_ms asc"
+    - "request_id_hash asc"
+  validation:
+    allow_only_approved_for_receive: true
+    record_reject_class: true
+    fail_closed_if_no_approved_request: true
+    fail_closed_error_class: "WalletError::InvalidParams"
+  lifecycle:
+    max_records_per_wallet: 4096
+    max_records_per_route_bucket: 64
+    max_records_per_request_id_hash: 1
+    route_epoch_seconds: 86400
+    ttl_seconds_after_expiry: 86400
+    prune_expired_on_insert: true
+    prune_expired_on_startup: true
+    revoke_consumed_after_success: false
+
+crypto:
+  live_payment_request_context: "z00z.payment.request.v1"
+  live_tag16_context: "z00z.consensus.tag16.v1"
+  live_receiver_secret_domain: "z00z.wallet.receiver_secret.v1"
+  live_pack_contract: "ZkPack_v1"
+  live_pack_aead: "ChaCha20Poly1305"
+  field_native_pack_status: "future_migration_only"
+  new_wallet_domains:
+    route_bucket: "z00z.wallet.request_inbox.route_bucket.v1"
+    request_id_hash: "z00z.wallet.request_inbox.request_id_hash.v1"
+    hint_aad: "z00z.wallet.request_inbox.hint_aad.v1"
+    record_id: "z00z.wallet.request_inbox.record_id.v1"
+    export_checksum: "z00z.wallet.request_inbox.export_checksum.v1"
+  route_bucket_inputs:
+    v1_local_compat:
+      - "req_id"
+      - "chain_id"
+      - "route_epoch"
+    v2_network_helper:
+      - "route_secret"
+      - "chain_id"
+      - "route_epoch"
+  v2_network_helper_requires_route_secret: true
+  constant_time_compare_required:
+    - "route_bucket"
+    - "request_id_hash"
+    - "tag16 candidate check"
+    - "hint checksum"
+  forbid_custom_crypto: true
+
+storage:
+  mode: "wallet_encrypted_wlt"
+  plaintext_sidecar_allowed: false
+  dev_fixture_sidecar_allowed: true
+  dev_fixture_sidecar_release_allowed: false
+  redb_object_kind: "RequestInboxRecord"
+  payload_version: 1
+  proposed_indexes:
+    - "RequestInboxByRouteBucket"
+    - "RequestInboxByExpiry"
+    - "RequestInboxByValidationState"
+    - "RequestInboxByRangeStart"
+  aad:
+    bind_wallet_id: true
+    bind_object_id: true
+    bind_payload_version: true
+    bind_route_bucket: true
+    bind_route_epoch: true
+  backup_export:
+    default: "encrypted_only"
+    plaintext_debug_export_allowed: false
+    redacted_helper_export_allowed: true
+
+scan:
+  tag16:
+    role: "prefilter_only"
+    strict_mode_requires_complete_contexts: true
+    add_request_authorizes_tag_only_scan: false
+    collision_behavior: "maybe_mine_then_direct_or_defer"
+    max_contexts_per_tag16: 32
+    max_false_positive_ratio: 0.25
+  dos:
+    enabled: true
+    max_candidates_per_checkpoint: 4096
+    max_decrypt_per_checkpoint: 512
+    defer_threshold: 1024
+    backoff_ms:
+      - 250
+      - 1000
+      - 5000
+      - 30000
+  fallback_order:
+    - "inbox_ordered_recv_range"
+    - "direct_recv_range"
+    - "remote_worker_evidence_then_local_recv_range"
+    - "full_scan_rescue"
+    - "manual_repair_scan"
+
+remote_scan:
+  enabled: true
+  authority: "evidence_only"
+  worker_mutates_wallet_state: false
+  wallet_revalidates_all_chunks_locally: true
+  validation:
+    require_contiguous_range: true
+    reject_stale_resume_hint: true
+    reject_empty_proof_hint_bytes: true
+    reject_range_shape_mismatch: true
+    reject_checkpoint_lineage_mismatch: true
+  fallback:
+    local_scan_on_worker_error: true
+    never_advance_cursor_from_rejected_evidence: true
+
+storage_hjmt:
+  enabled: true
+  authority: "checkpoint_and_settlement_evidence"
+  integration_env:
+    settlement_backend_mode: "Z00Z_SETTLEMENT_BACKEND_MODE"
+    settlement_bucket_bits: "Z00Z_SETTLEMENT_BUCKET_BITS"
+  use_for_inbox_authority: false
+  use_for_scan_range_evidence: true
+  accepted_root_generation: "SettlementV1"
+  proof_envelope_policy: "storage_owned"
+  forbidden_public_fields:
+    - "owner_handle"
+    - "view_pk"
+    - "identity_pk"
+    - "request_id_hash"
+    - "route_bucket"
+    - "helper_record"
+
+transport_privacy:
+  package_bytes_are_sensitive: true
+  request_compact_is_sensitive: true
+  receiver_card_is_sensitive_routing_material: true
+  plaintext_logging_allowed: false
+  exported_helper_records_must_be_redacted: true
+  onionnet_boundary: "crates/z00z_networks/onionnet"
+  onionnet_is_shipped_anonymity_layer: false
+  state_unlinkability_is_not_transport_anonymity: true
+
+paths:
+  canonical_spec: ".planning/phases/071-Request-Bound-Inbox/071-Request-Bound-Inbox-Spec.md"
+  gate_config_file: ".planning/phases/071-Request-Bound-Inbox/Request-Bound-Inbox-Config.yaml"
+  wallet_config_source: "crates/z00z_wallets/src/config/wallet_config.yaml"
+  wallet_runtime_config_source: "crates/z00z_wallets/src/services/wallet_runtime_config.rs"
+  request_inbox_source: "crates/z00z_wallets/src/receiver/request_inbox.rs"
+  receive_service_source: "crates/z00z_wallets/src/services/wallet_actions_receive.rs"
+  remote_scan_source: "crates/z00z_wallets/src/chain/scan_engine.rs"
+  storage_settlement_source: "crates/z00z_storage/src/settlement/"
+  runtime_aggregator_source: "crates/z00z_runtime/aggregators/"
+  rollup_node_source: "crates/z00z_rollup_node/"
+
+tests:
+  required_static_checks:
+    - "target inbox record has no forbidden plaintext fields"
+    - "debug output redacts route and request material"
+    - "config rejects plaintext sidecar in release"
+    - "runtime config mirrors this gate"
+  unit:
+    - "request inbox ordering is deterministic"
+    - "request inbox reject classes are stable and redacted"
+    - "route bucket changes with req_id or route_secret"
+    - "route bucket changes with chain_id"
+    - "route bucket changes with epoch"
+    - "request id hash is domain-separated"
+    - "tag16 strict mode requires complete contexts"
+    - "legacy record migration drops recipient binding"
+    - "exported helper profile strips sensitive recipient fields"
+  integration:
+    - "invalid requests do not mutate wallet state"
+    - "approved requests re-enter recv_range"
+    - "encrypted wlt persistence roundtrip"
+    - "backup export encrypts or redacts inbox records"
+    - "remote worker evidence cannot bypass wallet-local scan"
+    - "stale resume hints reject fail-closed"
+  negative:
+    - "wrong chain request"
+    - "expired request"
+    - "bad request signature"
+    - "identity pin mismatch"
+    - "route bucket collision"
+    - "tag16 collision storm"
+    - "stale worker resume hint"
+    - "HJMT range mismatch"
+    - "plaintext log regression"
+  simulation:
+    - "many active requests across epochs"
+    - "expired request flood"
+    - "wrong-chain request replay"
+    - "worker partition and restart"
+    - "checkpoint reorg with stale resume hint"
+    - "checkpoint history pruned"
+    - "request rotation under repeated sender retries"
+  e2e:
+    - "request-bound inbox assisted receive"
+    - "offline package handoff remains sensitive"
+    - "worker-assisted scan stays advisory"
+
+dependencies:
+  prefer_existing_workspace_crates: true
+  use_existing:
+    - "serde"
+    - "thiserror"
+    - "tokio"
+    - "rayon"
+    - "redb"
+    - "chacha20poly1305"
+    - "blake2"
+    - "hkdf"
+    - "sha2"
+    - "subtle"
+    - "zeroize"
+    - "proptest"
+    - "criterion"
+    - "tempfile"
+    - "tracing"
+  add_now: []
+  research_only:
+    - "OPRF/PIR helper crates for a later network-helper phase"
+  rejected_for_now:
+    - "new database engines"
+    - "network overlay crates inside wallet receiver"
+    - "alternate AEAD crates for ZkPack_v1"
+    - "custom crypto primitives"

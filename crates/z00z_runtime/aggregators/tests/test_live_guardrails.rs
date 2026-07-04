@@ -92,8 +92,8 @@ fn test_surface_keeps_lineage() {
     assert!(
         README_DOC.contains("`ShardPlacement.expected_journal_lineage` binds runtime placement")
     );
-    assert!(README_DOC.contains("Same-lineage standby takeover is lawful only when shard id, routing generation, journal lineage, and live local root metadata all match."));
-    assert!(README_DOC.contains("Wrong lineage, wrong generation, stale local root, stale restart, standby down, and split-brain states reject fail-closed without silent reroute."));
+    assert!(README_DOC.contains("Same-lineage secondary-aggregator takeover is lawful only when shard id, routing generation, journal lineage, and live local root metadata all match."));
+    assert!(README_DOC.contains("Wrong lineage, wrong generation, stale local root, stale restart, secondary aggregator down, and split-brain states reject fail-closed without silent reroute."));
     assert!(
         README_DOC.contains("A shared cross-aggregator WAL is not runtime or protocol truth in v1")
     );

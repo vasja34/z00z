@@ -154,7 +154,7 @@ automated path was green when it was not.
   `.planning/phases/profiling-comprehensive.md`,
   `crates/z00z_storage/src/settlement/root_types.md`,
   `crates/z00z_core/tests/test_live_guardrails.rs`, and
-  `scripts/audit_phase065_narrowed_wording.sh`.
+  `scripts/audit/audit_narrowed_wording.sh`.
 - `065-T10` closes `VR-10` through
   `.github/skills/z00z-verification-orchestrator/scripts/orchestrate.sh`,
   `.github/skills/z00z-l0-spec-gate/scripts/check-docs.sh`,
@@ -282,7 +282,7 @@ automated path was green when it was not.
   `crates/z00z_wallets/tests/test_stub_behavior.rs`
 - `065-T09` narrowed-claim sweep:
   `crates/z00z_core/tests/test_live_guardrails.rs`,
-  `scripts/audit_phase065_narrowed_wording.sh`
+  `scripts/audit/audit_narrowed_wording.sh`
 - `065-T10` orchestrator entry paths:
   `.github/skills/z00z-verification-orchestrator/scripts/orchestrate.sh`,
   `.github/skills/z00z-l0-spec-gate/scripts/check-docs.sh`,
@@ -348,7 +348,7 @@ already present on the current tree and must stay canonical:
 - `scripts/audit/audit_log_redaction_hygiene.sh`
 - `scripts/audit/audit_secret_eq_hygiene.sh`
 - `scripts/audit/audit_secret_type_hygiene.sh`
-- `scripts/audit_phase065_narrowed_wording.sh`
+- `scripts/audit/audit_narrowed_wording.sh`
 - `crates/z00z_networks/rpc/tests/test_wasm_client_redaction.rs`
 - `.github/workflows/security-hygiene-guards.yml`
 
@@ -364,7 +364,7 @@ already present on the current tree and must stay canonical:
 | `065-T06` | `crates/z00z_wallets/tests/test_asset_rpc_mutations.rs`<br>`crates/z00z_wallets/tests/test_wallet_restore_atomic.rs`<br>`crates/z00z_wallets/tests/test_chain_broadcast_retry.rs`<br>`crates/z00z_wallets/tests/test_tx_store_integration.rs`<br>`crates/z00z_wallets/tests/test_chain_client_sim.rs`<br>`crates/z00z_wallets/tests/test_tx_digest_framing.rs` | Extend | These files prove one canonical mutation owner, durable restore semantics, coherent broadcast lifecycle, and stable tx digest truth. |
 | `065-T07` | `crates/z00z_networks/rpc/tests/test_wasm_client_redaction.rs`<br>`crates/z00z_wallets/tests/test_rpc_logging_acceptance.rs`<br>`crates/z00z_wallets/tests/test_rpc_logging_risk_policy.rs`<br>`crates/z00z_storage/tests/test_live_guardrails.rs`<br>`crates/z00z_storage/tests/test_hjmt_adaptive_policy_proofs.rs`<br>`scripts/audit/audit_secret_type_hygiene.sh`<br>`scripts/audit/audit_secret_eq_hygiene.sh`<br>`scripts/audit/audit_crypto_rng_hygiene.sh`<br>`scripts/audit/audit_boundary_panic_hygiene.sh`<br>`scripts/audit/audit_log_redaction_hygiene.sh` | Extend + create landed | This is the phase-owned fail-closed and redaction bundle spanning runtime assertions and CI-owned source audits. |
 | `065-T08` | `crates/z00z_wallets/tests/test_rpc_truth.rs`<br>`crates/z00z_wallets/tests/test_rpc_types_serialization.rs`<br>`crates/z00z_wallets/tests/test_rpc_wiring_spec_a.rs`<br>`crates/z00z_wallets/tests/test_runtime_validation_result.rs`<br>`crates/z00z_wallets/tests/test_stub_behavior.rs` | Extend | These files define the production-facing chain and transaction RPC contract and reject placeholder DTO truth. |
-| `065-T09` | `crates/z00z_core/tests/test_live_guardrails.rs`<br>`scripts/audit_phase065_narrowed_wording.sh` | Extend + create landed | The narrowed-claim sweep closes only when docs, guardrails, and audit script agree on the surviving current-tree wording. |
+| `065-T09` | `crates/z00z_core/tests/test_live_guardrails.rs`<br>`scripts/audit/audit_narrowed_wording.sh` | Extend + create landed | The narrowed-claim sweep closes only when docs, guardrails, and audit script agree on the surviving current-tree wording. |
 | `065-T10` | `.github/skills/z00z-verification-orchestrator/scripts/orchestrate.sh`<br>`.github/skills/z00z-l0-spec-gate/scripts/check-docs.sh`<br>`.github/skills/z00z-l3-rust-implementation-gate/scripts/verify-fast.sh`<br>`.github/skills/z00z-l4-security-engineering-gate/scripts/audit-supply-chain.sh` | Extend | This is the canonical dispatch surface for residual gate-entry-path repair; no parallel wrapper layer is allowed. |
 | `065-T11` | `scripts/install-verification-tools.sh`<br>`scripts/verify-env.sh`<br>`scripts/verification-tools/versions.env`<br>`.github/skills/z00z-l3-rust-implementation-gate/scripts/verify-kani.sh`<br>`.github/skills/z00z-l3-rust-implementation-gate/scripts/verify-miri.sh`<br>`.github/skills/z00z-l3-rust-implementation-gate/scripts/verify-verus.sh`<br>`.github/skills/z00z-l2-crypto-protocol-gate/scripts/run-hax.sh`<br>`.github/skills/z00z-l2-crypto-protocol-gate/scripts/run-tamarin.sh`<br>`.github/skills/z00z-l4-security-engineering-gate/scripts/run-fuzz-short.sh` | Extend | Managed verification recovery is owned by the install, env, and gate scripts themselves; a separate harness would hide the real bootstrap truth. |
 | `065-T12` | `crates/z00z_runtime/aggregators/tests/test_hjmt_consensus.rs`<br>`crates/z00z_runtime/aggregators/tests/test_hjmt_route_rollout.rs`<br>`crates/z00z_runtime/aggregators/tests/test_hjmt_failover_same_lineage.rs`<br>`crates/z00z_runtime/aggregators/tests/test_live_guardrails.rs`<br>`crates/z00z_storage/tests/test_checkpoint_finalization.rs`<br>`crates/z00z_storage/tests/test_hjmt_root_generation.rs`<br>`crates/z00z_storage/tests/test_live_guardrails.rs`<br>`scripts/audit/audit_release_feature_guards.sh` | Extend | This bundle proves release-safe lineage, route rollout, root generation, and the absence of invalid feature-edge leakage into wallet release guards. |
@@ -550,7 +550,7 @@ cargo test --release
 - `bash scripts/audit/audit_boundary_panic_hygiene.sh`
 - `bash scripts/audit/audit_log_redaction_hygiene.sh`
 - `cargo test --release -p z00z_wallets --test test_rpc_truth --test test_rpc_types_serialization --test test_rpc_wiring_spec_a --test test_runtime_validation_result --test test_stub_behavior -- --nocapture`
-- `bash scripts/audit_phase065_narrowed_wording.sh`
+- `bash scripts/audit/audit_narrowed_wording.sh`
 - `./.github/skills/z00z-verification-orchestrator/scripts/orchestrate.sh report project --dry-run`
 - `Z00Z_L0_STRICT=1 ./.github/skills/z00z-l0-spec-gate/scripts/check-docs.sh`
 - `RUSTUP_TOOLCHAIN=stable ./.github/skills/z00z-l3-rust-implementation-gate/scripts/verify-fast.sh --dry-run`

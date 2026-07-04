@@ -23,9 +23,9 @@ The manifest freezes:
 Regenerate with:
 
 ```bash
-cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_commit print_bucket_commit_manifest_json -- --ignored --nocapture
+Z00Z_REGEN_DUMP=1 cargo test -p z00z_storage --release --features test-params-fast --test test_hjmt_batch_commit test_bucket_manifest_matches -- --exact --nocapture
 ```
 
 The live evidence owner is
-`crates/z00z_storage/tests/test_hjmt_batch_commit.rs::test_bucket_commit_manifest_matches_live_contract`.
+`crates/z00z_storage/tests/test_hjmt_batch_commit.rs::test_bucket_manifest_matches`.
 

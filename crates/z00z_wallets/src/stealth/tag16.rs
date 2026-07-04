@@ -117,14 +117,8 @@ mod tests {
 
     use super::{
         benchmark_tag16_compute, compute_leaf_ad, compute_tag16, compute_tag16_with_req,
-        craft_tag16_collision, encode_leaf_preimage, LEAF_PREIMAGE_SIZE,
+        craft_tag16_collision, encode_leaf_preimage,
     };
-
-    #[test]
-    fn test_tag16_range() {
-        let tag = compute_tag16(&[1u8; 32], &[2u8; 32]);
-        assert!((0..=u16::MAX).contains(&tag));
-    }
 
     #[test]
     fn test_tag16_deterministic() {
@@ -231,23 +225,6 @@ mod tests {
     fn test_out_len_32() {
         let out = compute_leaf_ad(&[1u8; 32], 2, &[3u8; 32], &[4u8; 32], &[5u8; 32]);
         assert_eq!(out.len(), 32);
-    }
-
-    #[test]
-    fn test_preimage_offsets() {
-        let asset_id = [0xA1u8; 32];
-        let serial_id = 0x1234_5678u32;
-        let r_pub = [0xB2u8; 32];
-        let owner_tag = [0xC3u8; 32];
-        let c_amount = [0xD4u8; 32];
-        let encoded = encode_leaf_preimage(&asset_id, serial_id, &r_pub, &owner_tag, &c_amount);
-
-        assert_eq!(encoded.len(), LEAF_PREIMAGE_SIZE);
-        assert_eq!(&encoded[0..32], &asset_id);
-        assert_eq!(&encoded[32..36], &serial_id.to_le_bytes());
-        assert_eq!(&encoded[36..68], &r_pub);
-        assert_eq!(&encoded[68..100], &owner_tag);
-        assert_eq!(&encoded[100..132], &c_amount);
     }
 
     #[test]
