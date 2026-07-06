@@ -254,7 +254,9 @@ async fn mk_req_compact(rpc: &AssetRpcImpl, wallet_id: &PersistWalletId, amount:
             memo: Some("send-flow".to_string()),
             payment_id: None,
         },
-        wallet_chain_id().expect("wallet chain id"),
+        wallet_chain_id(&rpc.service, wallet_id)
+            .await
+            .expect("wallet chain id"),
     )
     .expect("request");
 
@@ -2342,6 +2344,27 @@ async fn test_asset_send_limits_10() {
         .send_asset(session, [1u8; 32], recipient, 1)
         .await
         .unwrap();
+}
+
+#[tokio::test]
+async fn test_asset_send_ignores_env_drift() {
+    let time = Arc::new(MockTimeProvider::default());
+    let rpc = AssetRpcImpl::with_dependencies(time);
+    let (wallet_id, session) = create_unlocked_session(&rpc).await;
+    let recipient = mk_recv_card_compact(&rpc, &wallet_id).await;
+
+    let _lock = crate::rpc::logging::RpcLoggingConfig::__lock_wallet_config_env_async().await;
+    let _restore = WalletConfigEnvRestore::capture();
+    let missing_dir = tempfile::tempdir().unwrap();
+    let missing_cfg = missing_dir.path().join("missing-wallet-config.yaml");
+    std::env::set_var("Z00Z_WALLET_CONFIG_PATH", &missing_cfg);
+
+    let response = rpc
+        .send_asset(session, [1u8; 32], recipient, 1)
+        .await
+        .unwrap();
+
+    assert!(!response.tx_id.0.is_empty());
 }
 
 #[tokio::test]

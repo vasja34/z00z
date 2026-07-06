@@ -53,8 +53,8 @@ impl<'a> LocalMutationExec<'a> {
         digest_seed
     }
 
-    fn build_package(&self) -> RpcResult<TxPackage> {
-        let chain_id = wallet_chain_id()?;
+    async fn build_package(&self) -> RpcResult<TxPackage> {
+        let chain_id = wallet_chain_id(&self.rpc.service, self.wallet_id).await?;
         let (_, chain_type, chain_name) = AssetRpcImpl::chain_meta_from_id(chain_id);
         let digest_seed = self.digest_seed();
         let digest = z00z_crypto::blake2b_hash(
@@ -113,8 +113,8 @@ impl<'a> LocalMutationExec<'a> {
         })
     }
 
-    pub(super) fn submit(&self) -> RpcResult<PersistTxId> {
-        let package = self.build_package()?;
+    pub(super) async fn submit(&self) -> RpcResult<PersistTxId> {
+        let package = self.build_package().await?;
         let tx_id = PersistTxId::new(format!("tx_{}", package.tx_digest_hex));
         let tx_bytes = JsonCodec.serialize(&package).map_err(|error| {
             ErrorObjectOwned::owned(
@@ -427,7 +427,7 @@ impl AssetRpcImpl {
             .map_err(Self::send_tofu_rejected)?;
 
         let flow = request
-            .validate_all(&mut pins, wallet_chain_id()?)
+            .validate_all(&mut pins, wallet_chain_id(&self.service, wallet_id).await?)
             .map_err(|_| {
                 ErrorObjectOwned::owned(-32602, "SEND_REQUEST_INVALID".to_string(), None::<()>)
             })?;

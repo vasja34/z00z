@@ -101,8 +101,13 @@ mod asset_rpc_server;
 #[path = "test_asset_impl.rs"]
 mod test_asset_impl;
 
-fn wallet_chain_id() -> Result<u32, ErrorObjectOwned> {
-    let chain = crate::services::wallet_runtime_config::resolve_wallet_chain_type_checked()
+async fn wallet_chain_id(
+    service: &WalletService,
+    wallet_id: &PersistWalletId,
+) -> Result<u32, ErrorObjectOwned> {
+    let chain = service
+        .resolve_persisted_wallet_chain_type(wallet_id)
+        .await
         .map_err(|e| ErrorObjectOwned::owned(-32603, e.to_string(), None::<()>))?;
     Ok(AssetRpcImpl::chain_meta(chain).0)
 }

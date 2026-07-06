@@ -212,21 +212,26 @@ impl<S: VoteSigner> ReplayVerifiedVoteService<S> {
 
         if let TransportPayloadStatus::Missing { detail } = &envelope.payload_status {
             self.seen_message_ids.insert(envelope.message_id);
-            let evidence =
-                self.evidence_tracker
-                    .record_payload_withholding(
-                        PayloadWithholdingEvidence::new(
-                            envelope.to_id,
-                            envelope.from_id,
-                            envelope.subject.shard_id,
-                            envelope.subject.term,
-                            envelope.subject.membership_digest,
-                            envelope.subject.digest(),
-                            envelope.subject.payload_digest,
-                            detail.clone(),
-                        )
-                        .expect("payload withholding evidence requires live subject digests"),
-                    );
+            let evidence = match PayloadWithholdingEvidence::new(
+                envelope.to_id,
+                envelope.from_id,
+                envelope.subject.shard_id,
+                envelope.subject.term,
+                envelope.subject.membership_digest,
+                envelope.subject.digest(),
+                envelope.subject.payload_digest,
+                detail.clone(),
+            ) {
+                Ok(evidence) => self.evidence_tracker.record_payload_withholding(evidence),
+                Err(reject) => {
+                    return VoteExchangeResult {
+                        message_id: envelope.message_id,
+                        outcome: VoteExchangeOutcome::ReplayRejected(
+                            malformed_payload_withholding_reject(&reject.detail),
+                        ),
+                    };
+                }
+            };
             return VoteExchangeResult {
                 message_id: envelope.message_id,
                 outcome: VoteExchangeOutcome::Evidence(evidence),
@@ -300,5 +305,22 @@ fn replay_reject(detail: &str) -> SecondaryReplayReject {
         code: crate::secondary_replay::SecondaryReplayRejectCode::MembershipDrift,
         class: crate::types::RejectClass::PolicyReject,
         detail: detail.to_string(),
+    }
+}
+
+fn malformed_payload_withholding_reject(detail: &str) -> SecondaryReplayReject {
+    use crate::secondary_replay::SecondaryReplayRejectCode;
+
+    let code = if detail.contains("membership digest") {
+        SecondaryReplayRejectCode::MembershipDrift
+    } else if detail.contains("payload digest") || detail.contains("subject digest") {
+        SecondaryReplayRejectCode::WrongPlanDigest
+    } else {
+        SecondaryReplayRejectCode::ShapeInvalid
+    };
+    SecondaryReplayReject {
+        code,
+        class: crate::types::RejectClass::PolicyReject,
+        detail: format!("payload withholding envelope malformed: {detail}"),
     }
 }

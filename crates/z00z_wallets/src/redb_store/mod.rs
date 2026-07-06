@@ -71,6 +71,7 @@ pub use self::crypto_ops::{
     reveal_seed_phrase, reveal_seed_phrase_once, verify_password_for_session,
 };
 #[cfg(feature = "wallet_debug_tools")]
+#[rustfmt::skip]
 pub(crate) use self::debug::{debug_export_wallet};
 #[allow(unused_imports)]
 pub(crate) use self::meta::REQUIRED_META_POINTER_KEYS_OPEN;

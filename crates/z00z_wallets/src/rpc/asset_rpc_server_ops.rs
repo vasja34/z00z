@@ -67,7 +67,8 @@ impl AssetRpcImpl {
             .collect::<Result<Vec<_>, _>>()?;
         let tx_id = self
             .local_mutation_exec(&wallet_id, "split_asset", &[original.clone()], &split_outputs)
-            .submit()?;
+            .submit()
+            .await?;
 
         Ok(RuntimeSplitAssetResponse {
             original_asset_id,
@@ -128,7 +129,8 @@ impl AssetRpcImpl {
         )?;
         let _tx_id = self
             .local_mutation_exec(&wallet_id, "stake_assets", &[asset.clone()], &[stake_output])
-            .submit()?;
+            .submit()
+            .await?;
 
         Ok(RuntimeStakeAssetsResponse {
             stake_id,
@@ -212,7 +214,8 @@ impl AssetRpcImpl {
                 &[from_asset.clone()],
                 &[swap_output],
             )
-            .submit()?;
+            .submit()
+            .await?;
 
         Ok(RuntimeSwapAssetsResponse {
             from_asset_id: canonical_from_id,
@@ -283,7 +286,8 @@ impl AssetRpcImpl {
                 &[asset.clone()],
                 &[unstake_output],
             )
-            .submit()?;
+            .submit()
+            .await?;
 
         Ok(RuntimeUnstakeAssetsResponse {
             stake_id,

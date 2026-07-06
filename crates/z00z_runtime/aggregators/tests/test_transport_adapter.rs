@@ -148,3 +148,43 @@ fn test_payload_evidence() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn test_payload_evidence_rejects_zero_digest_subject() -> Result<(), Box<dyn std::error::Error>> {
+    let fixture = transport_fixture()?;
+    let mut service = ReplayVerifiedVoteService::local();
+    let mut malformed_subject = fixture.subject.clone();
+    malformed_subject.payload_digest = [0u8; 32];
+    let envelope = VoteTransportEnvelope::missing_payload(
+        fixture.primary,
+        fixture.ready_secondaries[0].aggregator_id,
+        malformed_subject,
+        ShardVoteKind::LocalCommit,
+        "payload missing before replay",
+    );
+
+    let result = service.process_envelope(
+        &envelope,
+        vote_exchange_context(
+            &fixture,
+            fixture.ready_secondaries[0].aggregator_id,
+            &fixture.subject,
+        ),
+    );
+    match result.outcome {
+        VoteExchangeOutcome::ReplayRejected(reject) => {
+            assert!(matches!(
+                reject.code,
+                z00z_aggregators::SecondaryReplayRejectCode::WrongPlanDigest
+            ));
+            assert!(reject
+                .detail
+                .contains("payload withholding envelope malformed"));
+            assert!(reject.detail.contains("payload digest"));
+        }
+        other => panic!("expected replay rejection, got {other:?}"),
+    }
+    assert!(service.evidence_records().is_empty());
+
+    Ok(())
+}

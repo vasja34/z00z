@@ -240,7 +240,7 @@ impl AssetRpcImpl {
             .load_tofu(&wallet_id)
             .await
             .map_err(map_wallet_error_to_rpc)?;
-        let chain_id = wallet_chain_id()?;
+        let chain_id = wallet_chain_id(&self.service, &wallet_id).await?;
 
         let (card, stealth) = match &target {
             SendTarget::Card(card) => {

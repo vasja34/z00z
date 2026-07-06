@@ -437,7 +437,8 @@ impl AssetRpcImpl {
                 &selection.inputs,
                 &[merged_output.clone()],
             )
-            .submit()?;
+            .submit()
+            .await?;
 
         Ok(RuntimeMergeAssetsResponse {
             asset: Self::runtime_asset_ref(&merged_output),
