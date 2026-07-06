@@ -214,16 +214,19 @@ impl<S: VoteSigner> ReplayVerifiedVoteService<S> {
             self.seen_message_ids.insert(envelope.message_id);
             let evidence =
                 self.evidence_tracker
-                    .record_payload_withholding(PayloadWithholdingEvidence::new(
-                        envelope.to_id,
-                        envelope.from_id,
-                        envelope.subject.shard_id,
-                        envelope.subject.term,
-                        envelope.subject.membership_digest,
-                        envelope.subject.digest(),
-                        envelope.subject.payload_digest,
-                        detail.clone(),
-                    ));
+                    .record_payload_withholding(
+                        PayloadWithholdingEvidence::new(
+                            envelope.to_id,
+                            envelope.from_id,
+                            envelope.subject.shard_id,
+                            envelope.subject.term,
+                            envelope.subject.membership_digest,
+                            envelope.subject.digest(),
+                            envelope.subject.payload_digest,
+                            detail.clone(),
+                        )
+                        .expect("payload withholding evidence requires live subject digests"),
+                    );
             return VoteExchangeResult {
                 message_id: envelope.message_id,
                 outcome: VoteExchangeOutcome::Evidence(evidence),
@@ -246,7 +249,7 @@ impl<S: VoteSigner> ReplayVerifiedVoteService<S> {
                 if let Err(evidence) = self.evidence_tracker.record_vote(vote.clone()) {
                     return VoteExchangeResult {
                         message_id: envelope.message_id,
-                        outcome: VoteExchangeOutcome::Evidence(evidence),
+                        outcome: VoteExchangeOutcome::Evidence(*evidence),
                     };
                 }
                 VoteExchangeResult {

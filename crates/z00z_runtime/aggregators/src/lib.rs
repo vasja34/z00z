@@ -11,6 +11,7 @@ mod dist_dispatch;
 mod dist_scheduler;
 mod dist_sim;
 mod evidence;
+mod hotstuff_local;
 mod ingress;
 mod ordering;
 mod placement;
@@ -43,8 +44,15 @@ pub use dist_dispatch::{
 pub use dist_scheduler::{BatchWave, DistScheduler, ScheduledBatch, SchedulerWave};
 pub use dist_sim::{DistNode, DistSim, FrameStage, FrameVerdict, JournalFrame};
 pub use evidence::{
-    EquivocationEvidence, PayloadWithholdingEvidence, VoteEvidence, VoteEvidenceKind,
-    VoteEvidenceTracker,
+    ArtifactKind, ArtifactRef, EvidenceKind, EvidenceRecord, EquivocationEvidence,
+    MissingBlobEvidence, PayloadWithholdingEvidence, SplitBrainEvidence,
+    StaleMemberEvidence, TransportFaultEvidence, TransportFaultEvidenceKind,
+    VoteArtifactRef, VoteEvidence, VoteEvidenceKind, VoteEvidenceTracker,
+    WrongRootEvidence, WrongRouteDigestEvidence,
+};
+pub use hotstuff_local::{
+    HotstuffCommit, HotstuffLeaderConflict, HotstuffLocal, HotstuffProposal, HotstuffQc,
+    HotstuffTimeout, HotstuffViewChange,
 };
 pub use ingress::IngressBoundary;
 pub use ordering::OrderingBoundary;
@@ -75,7 +83,8 @@ pub use signature::{
     VoteSignatureVerifier, VoteSigner,
 };
 pub use transport::{
-    InMemoryVoteTransport, TransportPayloadStatus, VoteTransport, VoteTransportEnvelope,
+    InMemoryVoteTransport, TransportDeliveryPlan, TransportPayloadStatus, VoteTransport,
+    VoteTransportEnvelope,
 };
 pub use types::{
     BatchId, BatchPlanned, BatchRoute, IntakeId, ObjectWitnessBundleV1, OrderedBatch, PlanDigest,

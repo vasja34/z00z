@@ -43,6 +43,14 @@ pub enum DaError {
     CertificateMismatch,
     #[error("data-availability unanchored height exceeded the local safety limit")]
     UnanchoredHeightExceeded,
+    #[error("data-availability blob bytes drifted from the published checkpoint contract")]
+    BlobBytesMismatch,
+    #[error(
+        "data-availability inclusion reference drifted from the published checkpoint contract"
+    )]
+    InclusionReferenceMismatch,
+    #[error("data-availability blob retention window expired before retrieval")]
+    BlobRetentionExpired,
 }
 
 pub trait DaAdapter {
@@ -331,6 +339,40 @@ pub(crate) fn artifact_for_request(
     draft.finalize(proof).map_err(|_| DaError::PublishFailed)
 }
 
+pub(crate) fn request_payload_bytes(request: &PublicationRequest) -> Result<Vec<u8>, DaError> {
+    let pub_in = request.draft.pub_in();
+    let pub_in_bytes = JsonCodec
+        .serialize(&pub_in)
+        .map_err(|_| DaError::PublishFailed)?;
+    let publication_route_bytes = JsonCodec
+        .serialize(&request.publication_route)
+        .map_err(|_| DaError::PublishFailed)?;
+    let nullifier_bytes = nullifier_bytes(&request.nullifiers);
+    let tx_package_bytes = JsonCodec
+        .serialize(&request.tx_package)
+        .map_err(|_| DaError::PublishFailed)?;
+    let exec_input_bytes =
+        encode_exec_bin(&request.exec_input).map_err(|_| DaError::PublishFailed)?;
+    let link_bytes = JsonCodec
+        .serialize(&request.link)
+        .map_err(|_| DaError::PublishFailed)?;
+    let subject_bytes = request.subject.encode();
+    let certificate_bytes = request.certificate.encode();
+    let mut payload = Vec::new();
+    payload.extend_from_slice(b"z00z.rollup.celestia-local.payload.v1");
+    append_payload_part(&mut payload, &request.batch_id.into_bytes());
+    append_payload_part(&mut payload, request.idempotency_key.as_bytes());
+    append_payload_part(&mut payload, &publication_route_bytes);
+    append_payload_part(&mut payload, &pub_in_bytes);
+    append_payload_part(&mut payload, &tx_package_bytes);
+    append_payload_part(&mut payload, &exec_input_bytes);
+    append_payload_part(&mut payload, &link_bytes);
+    append_payload_part(&mut payload, &nullifier_bytes);
+    append_payload_part(&mut payload, &subject_bytes);
+    append_payload_part(&mut payload, &certificate_bytes);
+    Ok(payload)
+}
+
 pub(crate) fn request_payload_digest(request: &PublicationRequest) -> Result<[u8; 32], DaError> {
     let pub_in = request.draft.pub_in();
     let pub_in_bytes = JsonCodec
@@ -400,6 +442,11 @@ pub(crate) fn verify_request_quorum_binding(
         .verify_subject(&request.subject)
         .map_err(|_| DaError::PublishFailed)?;
     Ok(())
+}
+
+fn append_payload_part(payload: &mut Vec<u8>, part: &[u8]) {
+    payload.extend_from_slice(&(part.len() as u64).to_le_bytes());
+    payload.extend_from_slice(part);
 }
 
 fn nullifier_bytes(nullifiers: &[ClaimNullifier]) -> Vec<u8> {

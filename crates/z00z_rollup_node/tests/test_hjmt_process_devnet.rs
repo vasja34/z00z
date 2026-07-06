@@ -1,7 +1,7 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
-    io::Read,
+    io::{ErrorKind, Read},
     path::{Path, PathBuf},
     process::{Child, Command, Output, Stdio},
     thread,
@@ -11,8 +11,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tempfile::{tempdir, TempDir};
 use z00z_rollup_node::{
-    hjmt_process_ready_path, hjmt_process_stale_marker_path, hjmt_process_state_path,
-    AggProc, AggRunArgs, HjmtProcessPersistedState, HjmtProcessReadyEvidence, NodeConfig,
+    hjmt_process_ready_path, hjmt_process_stale_marker_path, hjmt_process_state_path, AggProc,
+    AggRunArgs, HjmtProcessPersistedState, HjmtProcessReadyEvidence, NodeConfig,
     HJMT_PROCESS_HOLD_SECS_ENV, HJMT_PROCESS_MODE_ENV, HJMT_PROCESS_MODE_HOLD,
     HJMT_PROCESS_REJECT_STALE_ENV, HJMT_PROCESS_RUN_DIR_ENV, HJMT_PROCESS_RUN_ID_ENV,
     HJMT_PROCESS_STOP_ALL_FILE,
@@ -66,7 +66,14 @@ fn sim_5a7s_process_devnet_smoke() {
 
     let mut guard = ProcessGuard::default();
     for agg in &hjmt.aggs {
-        guard.insert(spawn_process(&binary, agg, &run_root, Some(&run_id), timeout_secs, false));
+        guard.insert(spawn_process(
+            &binary,
+            agg,
+            &run_root,
+            Some(&run_id),
+            timeout_secs,
+            false,
+        ));
     }
 
     let mut ready_by_id = BTreeMap::<u16, HjmtProcessReadyEvidence>::new();
@@ -91,10 +98,7 @@ fn sim_5a7s_process_devnet_smoke() {
         assert!(ready.state_file.is_file());
     }
 
-    let first_ready = ready_by_id
-        .get(&0)
-        .cloned()
-        .expect("agg-0 ready evidence");
+    let first_ready = ready_by_id.get(&0).cloned().expect("agg-0 ready evidence");
     let killed = guard
         .child_mut(0)
         .kill_and_collect()
@@ -168,10 +172,7 @@ fn duplicate_ports_reject_before_devnet() {
     write_hjmt_home_with_mapping(
         &home,
         1,
-        &[
-            agg(0, 7300, &[(0, &[1])]),
-            agg(1, 7300, &[(1, &[0])]),
-        ],
+        &[agg(0, 7300, &[(0, &[1])]), agg(1, 7300, &[(1, &[0])])],
         Some("aggregator_owned"),
     );
 
@@ -220,15 +221,33 @@ fn stale_process_data_dir_rejects_on_restart() {
     let run_root = temp.path().join("run");
     fs::create_dir_all(&run_root).expect("create run root");
 
-    let mut first = spawn_process(&binary_path(), &agg, &run_root, Some("stale-restart"), 4, false);
+    let mut first = spawn_process(
+        &binary_path(),
+        &agg,
+        &run_root,
+        Some("stale-restart"),
+        4,
+        false,
+    );
     first
         .wait_for_ready(&run_root, 1, Duration::from_secs(10))
         .expect("wait for ready");
     fs::write(run_root.join(HJMT_PROCESS_STOP_ALL_FILE), b"stop-all").expect("stop-all");
     first.wait_success().expect("first stop cleanly");
 
-    fs::write(hjmt_process_stale_marker_path(&agg.paths.data_dir), b"stale").expect("stale marker");
-    let mut second = spawn_process(&binary_path(), &agg, &run_root, Some("stale-restart"), 4, true);
+    fs::write(
+        hjmt_process_stale_marker_path(&agg.paths.data_dir),
+        b"stale",
+    )
+    .expect("stale marker");
+    let mut second = spawn_process(
+        &binary_path(),
+        &agg,
+        &run_root,
+        Some("stale-restart"),
+        4,
+        true,
+    );
     let output = second.wait_output().expect("wait for stale restart output");
     assert!(!output.status.success());
     let stderr = String::from_utf8(output.stderr).expect("stderr utf8");
@@ -391,7 +410,10 @@ fn spawn_process_with_binary(
         .env(HJMT_PROCESS_MODE_ENV, HJMT_PROCESS_MODE_HOLD)
         .env(HJMT_PROCESS_RUN_DIR_ENV, run_root)
         .env(HJMT_PROCESS_HOLD_SECS_ENV, timeout_secs.to_string())
-        .env(HJMT_PROCESS_REJECT_STALE_ENV, if reject_stale { "1" } else { "0" })
+        .env(
+            HJMT_PROCESS_REJECT_STALE_ENV,
+            if reject_stale { "1" } else { "0" },
+        )
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     if let Some(run_id) = run_id {
@@ -484,7 +506,10 @@ impl ManagedChild {
                 ));
             }
             let Some(child) = self.child.as_mut() else {
-                return Err(format!("aggregator {} child already consumed", self.aggregator_id));
+                return Err(format!(
+                    "aggregator {} child already consumed",
+                    self.aggregator_id
+                ));
             };
             if let Some(status) = child
                 .try_wait()
@@ -504,13 +529,19 @@ impl ManagedChild {
 
     fn kill_and_collect(&mut self) -> Result<Output, String> {
         let mut child = self.child.take().expect("child");
-        child
-            .kill()
-            .map_err(|err| format!("kill child {}: {err}", self.aggregator_id))?;
+        let kill_error = match child.kill() {
+            Ok(()) => None,
+            Err(err) if err.kind() == ErrorKind::InvalidInput => None,
+            Err(err) => Some(err),
+        };
         let status = child
             .wait()
             .map_err(|err| format!("wait child {}: {err}", self.aggregator_id))?;
-        collect_output(child, status)
+        let output = collect_output(child, status)?;
+        if let Some(err) = kill_error {
+            return Err(format!("kill child {}: {err}", self.aggregator_id));
+        }
+        Ok(output)
     }
 
     fn wait_success(&mut self) -> Result<(), String> {
@@ -584,7 +615,14 @@ fn persisted_state_file_tracks_boot_count() {
     let run_root = temp.path().join("run");
     fs::create_dir_all(&run_root).expect("run root");
 
-    let mut first = spawn_process(&binary_path(), &agg, &run_root, Some("state-track"), 4, false);
+    let mut first = spawn_process(
+        &binary_path(),
+        &agg,
+        &run_root,
+        Some("state-track"),
+        4,
+        false,
+    );
     first
         .wait_for_ready(&run_root, 1, Duration::from_secs(10))
         .expect("ready");
@@ -597,7 +635,14 @@ fn persisted_state_file_tracks_boot_count() {
     assert_eq!(first_state.boot_count, 1);
 
     let run_root2 = temp.path().join("run-2");
-    let mut second = spawn_process(&binary_path(), &agg, &run_root2, Some("state-track"), 4, false);
+    let mut second = spawn_process(
+        &binary_path(),
+        &agg,
+        &run_root2,
+        Some("state-track"),
+        4,
+        false,
+    );
     second
         .wait_for_ready(&run_root2, 2, Duration::from_secs(10))
         .expect("restart ready");

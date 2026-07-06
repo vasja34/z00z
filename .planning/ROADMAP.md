@@ -209,7 +209,7 @@ This roadmap tracks the active GSD milestone and its executable phases.
   consecutive clean manual review passes; security verified 2026-07-03 on
   `066-SECURITY.md` with `threats_open: 0`; no active Phase 066 lane remains,
   and no duplicate directory or parallel authority path is allowed)
-- [ ] **Phase 067: Sharded Concensus** (added 2026-07-03; directory
+- [x] **Phase 067: Sharded Concensus** (added 2026-07-03; directory
   pre-existing `.planning/phases/067-Sharded-Concensus/`; reuse the existing
   folder only; `067-TODO.md` is the normative human-readable authority for
   registration, planning, and execution scoping; its architecture-spec and
@@ -217,18 +217,17 @@ This roadmap tracks the active GSD milestone and its executable phases.
   tests, and local configuration remain ground truth; future-only and
   target-design wording in the Phase 067 corpus is live mandatory scope;
   expanded planning complete on `067-CONTEXT.md`, `067-COVERAGE.md`,
-  `067-verdict.md`, and `067-01-PLAN.md` through `067-19-PLAN.md`;
+  `067-verdict.md`, and `067-01-PLAN.md` through `067-21-PLAN.md`;
   `TASK-NNN` count is zero because `067-TODO.md` and `067-verdict.md` contain
   no literal `TASK-NNN` identifiers; required groups `PHASE-0` through
   `PHASE-8` map exactly once to `067-01` through `067-09`, and
   `VERDICT-LCS-01` through `VERDICT-LCS-10` map exactly once to `067-10`
-  through `067-19`;
-  `067-01` through `067-13` are summary-backed complete on
-  `067-01-SUMMARY.md`, `067-02-SUMMARY.md`, `067-03-SUMMARY.md`,
-  `067-04-SUMMARY.md`, `067-05-SUMMARY.md`, `067-06-SUMMARY.md`, and
-  `067-07-SUMMARY.md`, `067-08-SUMMARY.md`, `067-09-SUMMARY.md`,
-  `067-10-SUMMARY.md`, `067-11-SUMMARY.md`, `067-12-SUMMARY.md`, and
-  `067-13-SUMMARY.md`, the
+  through `067-19`, and `ADDENDUM-067-20` through `ADDENDUM-067-21` map
+  exactly once to `067-20` through `067-21`;
+  all `21/21` plan packets are now summary-backed complete on
+  `067-01-SUMMARY.md` through `067-18-SUMMARY.md`, `067-20-SUMMARY.md`,
+  `067-21-SUMMARY.md`, and the post-addendum final-rerun closeout
+  `067-19-SUMMARY.md`, the
   repo-wide terminology
   cleanup and permanent guard are landed, the first-class quorum artifact
   layer and runtime-owned secondary replay verifier are landed, the
@@ -241,8 +240,9 @@ This roadmap tracks the active GSD milestone and its executable phases.
   runtime-owned signer or verifier seam plus in-memory vote transport plus
   replay-verified vote service are now landed, structured equivocation or
   payload-withholding evidence is now emitted on the local vote path, exact
-  `3f+1` committee math plus `2f+1` quorum proof and the Celestia-compatible
-  local blob-binding path are now landed, the manifest-driven multi-process
+  `3f+1` committee math plus `2f+1` quorum proof and the Celestia-local
+  artifact path with raw blob-byte or inclusion-reference or retention or
+  degraded-state verification are now landed, the manifest-driven multi-process
   devnet harness plus canonical process hold-mode contract are now landed, the
   grouped crate-private wallet debug-export hardening guard is restored,
   the canonical checkpoint contract path remains
@@ -254,10 +254,26 @@ This roadmap tracks the active GSD milestone and its executable phases.
   `z00z_rollup_node` binary plus canonical release-only manifest command
   contract are now landed, the durable consensus store plus restart recovery
   path are now landed, the deterministic replicated planner-authority path
-  plus planner claim-honesty registry are now landed, the final broad
-  `cargo test --release` rerun plus
-  `bash scripts/audit/audit_release_feature_guards.sh` are green on the
-  current `067-13` tree, and `067-14` is now the active lane)
+  plus planner claim-honesty registry are now landed, the deterministic
+  transport-fault scheduler plus transport evidence registry are now landed,
+  the canonical local HotStuff-like backend state machine plus
+  validator-binding guard are now landed, the grouped crate-private wallet
+  `redb_store` debug-export hardening guard required by the broad rerun was
+  restored on the current tree, the captured broad `cargo test --release`
+  rerun is green on the final `067-19` or `067-21` tree, the final
+  `cargo clippy --release --all-targets --all-features -- -D warnings`,
+  `bash scripts/audit/audit_release_feature_guards.sh`, and
+  `git diff --check` closeout gates are green, the glossary claim registry
+  plus report-honesty audit path now bind governed terms to one mechanical
+  claim-level contract, the dedicated
+  `old_primary_restart_after_takeover` simulator row plus explicit runtime
+  anti-failback tests now keep one canonical failback proof path, the exact
+  final rerun artifact roots are recorded under
+  `reports/phase-067/20260706T120602Z/` and
+  `reports/hjmt-local-devnet/20260706T120602Z/`, the required
+  `/GSD-Review-Tasks-Execution` attempts were captured with consecutive clean
+  manual-review fallback after final sync, no active `067-*` lane remains,
+  and Phase 046 stays paused after `046-04`)
 
 ### Phase 015: JMT Serialization And Visualization
 
@@ -2679,38 +2695,47 @@ configuration as ground truth, preserve future-only or target-design wording in
 the Phase 067 corpus as live mandatory scope, record `TASK-NNN` count as zero
 because `067-TODO.md` and `067-verdict.md` contain no literal task identifiers,
 map the nine base groups `PHASE-0` through `PHASE-8` exactly once to
-`067-01-PLAN.md` through `067-09-PLAN.md`, and map the ten verdict groups
+`067-01-PLAN.md` through `067-09-PLAN.md`, map the ten verdict groups
 `VERDICT-LCS-01` through `VERDICT-LCS-10` exactly once to `067-10-PLAN.md`
-through `067-19-PLAN.md`.
+through `067-19-PLAN.md`, and map `ADDENDUM-067-20` plus
+`ADDENDUM-067-21` exactly once to `067-20-PLAN.md` and `067-21-PLAN.md`.
 **Depends on:** Phase 066 closeout; Phase 046 remains paused separately and is
 not advanced by Phase 067 planning.
-**Plans:** 19 planned packets:
+**Plans:** 21/21 plans executed:
 `.planning/phases/067-Sharded-Concensus/067-01-PLAN.md` through
-`.planning/phases/067-Sharded-Concensus/067-19-PLAN.md`.
+`.planning/phases/067-Sharded-Concensus/067-21-PLAN.md`.
 
-**Status**: Added 2026-07-03 on the existing
+**Status**: Completed 2026-07-06 on the existing
 `.planning/phases/067-Sharded-Concensus/` directory only. No new phase folder
 was created. Phase 067 expanded planning is complete with `067-CONTEXT.md`,
-`067-COVERAGE.md`, `067-verdict.md`, and 19 executable GSD plan packets in the
+`067-COVERAGE.md`, `067-verdict.md`, and 21 executable GSD plan packets in the
 same canonical folder. `067-TODO.md` plus `067-verdict.md` remain the
 normative human-readable authority; their architecture-spec,
 implementation-contract, and Local-Conformance-Simulation wording supersede
 prior working notes, while source code, tests, and local configuration remain
 ground truth. `067-CONTEXT.md` records the planning fact that literal
 `TASK-NNN` rows are absent, the base required units are `PHASE-0` through
-`PHASE-8`, and the verdict expansion units are `VERDICT-LCS-01` through
-`VERDICT-LCS-10`. `067-COVERAGE.md` maps those nineteen required groups
-exactly once to `067-01` through `067-19`. The supporting `wiki -results.md`
+`PHASE-8`, the verdict expansion units are `VERDICT-LCS-01` through
+`VERDICT-LCS-10`, and the addendum closure units are `ADDENDUM-067-20`
+through `ADDENDUM-067-21`. `067-COVERAGE.md` maps the `19` required groups
+exactly once and records `067-20` plus `067-21` as explicit addendum overlays
+on the current branch packet. The supporting `wiki -results.md`
 note remains
 non-canonical context only. Legacy non-canonical aggregator-consensus
 references are tracked as stale drift only and must not become a second
-authority path. Execution has now closed `067-13` on `067-13-SUMMARY.md`: the
-live subject path still carries exact `3f+1` committee sizing and `2f+1` quorum
-proof through `BftCommittee` and `BftEngine`, the `SIM-7A7S` runtime profile
-still records truthful local BFT-valid topology, `CelestiaLocalAdapter` still
-preserves namespace or commitment or payload or theorem or certificate binding
-on the local blob path, the validator still rejects detached artifact drift on
-the resolved batch path, the canonical checkpoint contract path remains
+authority path. Execution has now closed all `21/21` packets, including
+`067-21-SUMMARY.md` and the post-addendum rerun closeout
+`067-19-SUMMARY.md`: the
+live subject path still carries exact `3f+1` committee sizing and `2f+1`
+quorum proof through `BftCommittee` and `BftEngine`, the `SIM-7A7S` runtime
+profile still records truthful local BFT-valid topology, `CelestiaLocalAdapter`
+now stores and verifies namespace or raw blob bytes or commitment or theorem
+or certificate binding plus inclusion-reference or retention-horizon or
+degraded-state metadata on the local blob path, the validator still rejects
+detached artifact drift on the resolved batch path, `scenario_11` now records
+the executable Celestia-local artifact contract as `simulated-full` while
+keeping real Celestia finality on the explicit `live-claim-removed` path, the
+canonical checkpoint contract path remains
 `crates/z00z_storage/src/checkpoint/checkpoint_contract.yaml` with no
 root-level parallel config lane, the intentional `crates/z00z_extensions/`
 reorganization remains reflected in workspace membership and inventory
@@ -2723,12 +2748,36 @@ now owns the canonical local hold-mode process contract, `scripts/hjmt_local_dev
 and `docker/compose.hjmt-local.yaml` route to that same manifest-driven runtime
 seam, release tests now prove five-process startup plus persisted restart or
 stale-dir or missing-run-id rejection, `scenario_11` now records honest local
-process-devnet claim boundaries, and the current-cycle
+process-devnet claim boundaries, the live `InMemoryVoteTransport` seam now owns
+the canonical deterministic delay or reorder or duplicate or replay or drop or
+partition or heal or restart or reconnect scheduler plus digest-bound
+`TransportFaultEvidence`, `scenario_11` now records honest duplicate or replay
+or payload-withholding or restart-reconnect transport evidence rows, the
+`hotstuff_local.rs` backend now owns the canonical local view or leader or
+timeout or view-change or backend-QC state machine while preserving the live
+commit-subject or replay or validator seams, the grouped crate-private wallet
+`redb_store` debug-export re-export required by `test_production_hardening`
+was restored before the final broad rerun, the structured evidence registry
+now binds runtime records or fault-matrix rows or replay-vote evidence rows to
+one digest-backed canonical path, the glossary claim registry and
+`report_honesty.json` path now bind every governed term to one executable owner
+or artifact or test or claim-level row, unsupported external-production wording
+now fails through the live `scenario_11` report test path, and the current-cycle
 `./.github/skills/smart-tests-bootstrap/scripts/bootstrap_tests.sh` rerun,
-focused rollup-node or simulator release gates, the final broad workspace
-`cargo test --release` rerun, and
-`bash scripts/audit/audit_release_feature_guards.sh` are green on the current
-tree; `067-14` is now the active lane.
+focused addendum release gates, `python3 scripts/audit/audit_067_claims.py`,
+`cargo clippy --release --all-targets --all-features -- -D warnings`,
+the captured broad workspace `cargo test --release` rerun,
+`bash scripts/audit/audit_release_feature_guards.sh`, and
+`git diff --check` are green on the current tree. The required
+`/GSD-Review-Tasks-Execution` attempts were captured with consecutive clean
+manual-review fallback after the final doc sync.
+The packet now carries the dedicated
+`old_primary_restart_after_takeover` fault row plus explicit runtime
+anti-failback tests on one canonical proof path, the exact final rerun artifact
+roots are recorded under `reports/phase-067/20260706T120602Z/` and
+`reports/hjmt-local-devnet/20260706T120602Z/`, the final claim and conformance
+packet is frozen in `067-CLAIM-AUDIT.md` and `067-FINAL-CONFORMANCE.md`, no
+active `067-*` lane remains, and Phase 046 stays paused after `046-04`.
 **Added**: 2026-07-03
 **Directory**: `.planning/phases/067-Sharded-Concensus/`
 (pre-existing; do not create a duplicate phase folder)
@@ -2739,7 +2788,7 @@ tree; `067-14` is now the active lane.
 - `.planning/phases/067-Sharded-Concensus/067-CONTEXT.md`
 - `.planning/phases/067-Sharded-Concensus/067-COVERAGE.md`
 - `.planning/phases/067-Sharded-Concensus/067-01-PLAN.md` through
-  `.planning/phases/067-Sharded-Concensus/067-19-PLAN.md`
+  `.planning/phases/067-Sharded-Concensus/067-21-PLAN.md`
 
 **Success Criteria**:
 
@@ -2752,14 +2801,17 @@ tree; `067-14` is now the active lane.
 
 3. `067-TODO.md` plus `067-verdict.md` remain the canonical human-readable
    Phase 067 authority, `TASK-NNN` count remains truthfully zero, and
-   `067-01-PLAN.md` through `067-19-PLAN.md` map `PHASE-0` through
-   `PHASE-8` plus `VERDICT-LCS-01` through `VERDICT-LCS-10` exactly once with
-   no dropped or duplicated required group.
+   `067-01-PLAN.md` through `067-21-PLAN.md` map `PHASE-0` through
+   `PHASE-8` plus `VERDICT-LCS-01` through `VERDICT-LCS-10` plus
+   `ADDENDUM-067-20` and `ADDENDUM-067-21` exactly once with no dropped or
+   duplicated required group.
 
 4. `067-CONTEXT.md` and `067-COVERAGE.md` preserve the single authority path,
    record legacy non-canonical aggregator-consensus references as stale drift
    only, and keep `wiki -results.md` supporting but non-canonical.
 
 5. `/gsd-plan-phase 067` completes locally against the existing folder only,
-   generating nineteen executable plan packets with coverage, simulation,
-   evidence, and anti-placeholder gates for every required Phase 067 unit.
+   generating the full current-branch `067-01-PLAN.md` through
+   `067-21-PLAN.md` packet with coverage, simulation, evidence, and
+   anti-placeholder gates for every required Phase 067 unit plus the explicit
+   late addendum overlays.

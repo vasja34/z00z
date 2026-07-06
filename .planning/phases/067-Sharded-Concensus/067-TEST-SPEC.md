@@ -1,14 +1,14 @@
 ---
 phase: 067
 artifact: test-spec
-status: fallback-ready
+status: late-addendum-reviewed
 source: context-todo-plans-and-live-test-anchors
-updated: 2026-07-05
+updated: 2026-07-06
 ---
 
 # Phase 067 Test Specification
 
-This document defines the phase-local verification contract for Phase 067. It is derived from `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-VERDICT-ITEM-AUDIT.md`, `067-01-PLAN.md` through `067-19-PLAN.md`, the locked Scenario 11 source row in `.planning/phases/090-New-Scenarios/90-TODO.md`, and the live boundary document `crates/z00z_runtime/aggregators/README.md`.
+This document defines the phase-local verification contract for Phase 067. It is derived from `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-VERDICT-ITEM-AUDIT.md`, `067-01-PLAN.md` through `067-21-PLAN.md`, the locked Scenario 11 source row in `.planning/phases/090-New-Scenarios/90-TODO.md`, and the live boundary document `crates/z00z_runtime/aggregators/README.md`.
 
 ## 📌 Purpose
 
@@ -18,16 +18,18 @@ This document defines the phase-local verification contract for Phase 067. It is
 
 ## 🧾 Workflow Status
 
-- Mode: `fallback-ready`.
-- Completion artifacts are still missing for the `067-10` through `067-19` verdict expansion because those slices define implementation work that has not landed yet.
-- Runtime Rust tests must be created slice by slice as each owning implementation plan lands; this document intentionally does not add non-compiling test files ahead of the required APIs.
-- The source corpus is locked to `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-VERDICT-ITEM-AUDIT.md`, `067-01-PLAN.md` through `067-19-PLAN.md`, `.planning/phases/090-New-Scenarios/90-TODO.md` section `15`, and `crates/z00z_runtime/aggregators/README.md`.
+- Mode: `late-addendum-reviewed`.
+- Many late verdict and addendum test homes are now present in the workspace; presence alone is not closure until the owning commands, positive cases, and negative cases pass.
+- `.planning/phases/067-Sharded-Concensus/067-FINAL-CONFORMANCE.md` now exists as a pre-execution closeout contract, but its final rerun evidence remains the outstanding closeout execution gap; `TS-19` MUST consume `067-20` and `067-21` before any final closure claim is made.
+- Runtime Rust tests must still be exercised slice by slice; this document remains a verification contract, not an execution report.
+- The source corpus is locked to `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-VERDICT-ITEM-AUDIT.md`, `067-01-PLAN.md` through `067-21-PLAN.md`, `.planning/phases/090-New-Scenarios/90-TODO.md` section `15`, and `crates/z00z_runtime/aggregators/README.md`.
 - A slice is not complete until its tests use the existing project owners for routing, placement, replay, certificates, DA or Celestia-local binding, validators, storage, crypto, evidence, and reporting.
 
 ## 🎯 Scope
 
 - Prove the shard-local quorum-certificate workflow end to end with real project primitives.
 - Treat the Phase 067 planning packet as normative. There are no `TASK-NNN` rows in this phase; the required verification slices are `PHASE-0` through `PHASE-8` plus `VERDICT-LCS-01` through `VERDICT-LCS-10`.
+- `067-20` and `067-21` are late closeout addenda. They do not create new verification-slice ids, but `TS-19` MUST consume their runtime and packet-level outputs before closure.
 - Keep one implementation authority. Do not create a parallel consensus layer, duplicate DTO family, duplicate report writer, or alternate validator gate.
 - Keep `scenario_11` independent from `scenario_1`, but follow the existing simulator test layout where it helps reuse repository patterns without reusing scenario logic.
 - Allow simulation only for external transport, external DA transport, remote-process boundaries, and deterministic fault scheduling. Routing, placement, replay, certificate validation, publication binding, validator checks, lineage, and state paths must stay real.
@@ -58,6 +60,8 @@ This document defines the phase-local verification contract for Phase 067. It is
 - `.planning/phases/067-Sharded-Concensus/067-17-PLAN.md`
 - `.planning/phases/067-Sharded-Concensus/067-18-PLAN.md`
 - `.planning/phases/067-Sharded-Concensus/067-19-PLAN.md`
+- `.planning/phases/067-Sharded-Concensus/067-20-PLAN.md`
+- `.planning/phases/067-Sharded-Concensus/067-21-PLAN.md`
 
 ### 🔒 Coverage and drift guards
 
@@ -136,16 +140,16 @@ This `/gsd-add-tests 067` pass is a planning-artifact pass. It must not add runt
 | `TS-08` | `crates/z00z_runtime/aggregators/tests/test_signature_adapter.rs` | present in current workspace | project signature verification cannot be replaced by string equality or fixture labels |
 | `TS-08` | `crates/z00z_runtime/aggregators/tests/test_transport_adapter.rs` | present in current workspace | transport envelopes cannot bypass replay and signature gates |
 | `TS-08` | `crates/z00z_runtime/aggregators/tests/test_equivocation_evidence.rs` | present in current workspace | conflicting signed material produces structured equivocation evidence |
-| `TS-09` | `crates/z00z_runtime/aggregators/tests/test_bft_committee_rules.rs` | missing | BFT mode rejects below `3f+1` membership and below `2f+1` quorum |
-| `TS-09`/`TS-16` | `crates/z00z_rollup_node/tests/test_celestia_local_binding.rs` | missing | Celestia-local artifacts are complete, validator-facing, and fail closed on detached data |
-| `TS-11` | `crates/z00z_runtime/aggregators/tests/test_consensus_store.rs` | missing | votes, QCs, anchors, indexes, and cursors are durable records, not logs or regenerated fixtures |
-| `TS-11` | `crates/z00z_runtime/aggregators/tests/test_consensus_recovery_restart.rs` | missing | fresh runtime restart resumes exact stored consensus evidence or fails closed |
-| `TS-12` | `crates/z00z_runtime/aggregators/tests/test_planner_authority.rs` | missing | every aggregator recomputes planner truth from canonical local inputs and rejects drift |
-| `TS-13` | `crates/z00z_rollup_node/tests/test_hjmt_process_devnet.rs` | missing | multi-process local identities, ports, dirs, logs, kill, restart, and partition evidence are executable |
-| `TS-14` | `crates/z00z_runtime/aggregators/tests/test_transport_fault_matrix.rs` | missing | deterministic delay, reorder, duplicate, replay, partition, heal, restart, and reconnect cannot manufacture votes |
-| `TS-15` | `crates/z00z_runtime/aggregators/tests/test_hotstuff_local_backend.rs` | missing | HotStuff-like local backend has real view, leader, timeout, view-change, backend-QC, and validator-binding behavior |
-| `TS-17` | `crates/z00z_runtime/aggregators/tests/test_structured_evidence_registry.rs` | missing | every safety failure emits structured digest-bound evidence and rejects malformed rows |
-| `TS-18` | `scripts/audit/audit_067_claims.py` | missing | glossary/report claims are machine-auditable and unsupported live claims fail |
+| `TS-09` | `crates/z00z_runtime/aggregators/tests/test_bft_committee_rules.rs` | present in current workspace | BFT mode rejects below `3f+1` membership and below `2f+1` quorum |
+| `TS-09`/`TS-16` | `crates/z00z_rollup_node/tests/test_celestia_local_binding.rs` | present in current workspace | Celestia-local artifacts are complete, validator-facing, and fail closed on detached data |
+| `TS-11` | `crates/z00z_runtime/aggregators/tests/test_consensus_store.rs` | present in current workspace | votes, QCs, anchors, indexes, and cursors are durable records, not logs or regenerated fixtures |
+| `TS-11` | `crates/z00z_runtime/aggregators/tests/test_consensus_recovery_restart.rs` | present in current workspace | fresh runtime restart resumes exact stored consensus evidence or fails closed |
+| `TS-12` | `crates/z00z_runtime/aggregators/tests/test_planner_authority.rs` | present in current workspace | every aggregator recomputes planner truth from canonical local inputs and rejects drift |
+| `TS-13` | `crates/z00z_rollup_node/tests/test_hjmt_process_devnet.rs` | present in current workspace | multi-process local identities, ports, dirs, logs, kill, restart, and partition evidence are executable |
+| `TS-14` | `crates/z00z_runtime/aggregators/tests/test_transport_fault_matrix.rs` | present in current workspace | deterministic delay, reorder, duplicate, replay, partition, heal, restart, and reconnect cannot manufacture votes |
+| `TS-15` | `crates/z00z_runtime/aggregators/tests/test_hotstuff_local_backend.rs` | present in current workspace | HotStuff-like local backend has real view, leader, timeout, view-change, backend-QC, and validator-binding behavior |
+| `TS-17` | `crates/z00z_runtime/aggregators/tests/test_structured_evidence_registry.rs` | present in current workspace | every safety failure emits structured digest-bound evidence and rejects malformed rows |
+| `TS-18` | `scripts/audit/audit_067_claims.py` | present in current workspace | glossary/report claims are machine-auditable and unsupported live claims fail |
 
 ## 🎯 Required End-To-End Behaviors
 
@@ -683,7 +687,7 @@ Every strong acceptance gate from `067-verdict.md` must be directly testable. Th
 | Gate 12 Crash Recovery | votes, QC, publication state, DA/Celestia-local anchor, and validator decision recover or explicitly downgrade after restart | `TS-11`/`TT-11`, `TS-13`/`TT-13`, `TS-19`/`TT-19` | `crates/z00z_runtime/aggregators/tests/test_consensus_store.rs`, `crates/z00z_runtime/aggregators/tests/test_consensus_recovery_restart.rs` | fresh runtime resumes exact stored digests or fails closed; regenerated, partial, corrupt, stale, or divergent records fail |
 | Gate 13 Membership Reconfiguration | observer, unready, removed, mixed-generation, and rotated members obey generation/checkpoint/lineage boundaries | `TS-06`/`TT-06`, `TS-12`/`TT-12`, final check in `TS-19`/`TT-19` | `crates/z00z_runtime/aggregators/tests/test_hjmt_join.rs`, `crates/z00z_runtime/aggregators/tests/test_hjmt_route_rollout.rs` | only active ready same-generation members vote; stale or removed participants cannot vote or take over |
 | Gate 14 Structured Evidence Artifacts | equivocation, payload withholding, missing blob, wrong root, wrong route, stale member, and split brain emit structured records | `TS-17`/`TT-17`, supported by `TS-08`, `TS-14`, `TS-16` | `crates/z00z_runtime/aggregators/tests/test_structured_evidence_registry.rs`, `crates/z00z_simulator/src/scenario_11/report.rs` | evidence has kind, id, digest refs, schema, and artifact paths; log-string-only or malformed evidence fails |
-| Gate 15 Report Honesty | final report marks every term as real implemented locally, simulated-full, not claimed, future external integration, or live-claim-removed | `TS-18`/`TT-18`, `TS-19`/`TT-19` | `067-GLOSSARY-CLAIMS.md`, `067-FINAL-CONFORMANCE.md`, `scenario_11/quorum/report_honesty.json` | unqualified BFT, Celestia, devnet, HotStuff, production signature, slashing, finality, or planner HA claims fail |
+| Gate 15 Report Honesty | final report marks every term as `live`, `simulated-full`, `live-claim-removed`, or `not-claimed` with executable evidence | `TS-18`/`TT-18`, `TS-19`/`TT-19` | `067-GLOSSARY-CLAIMS.md`, `067-CLAIM-AUDIT.md`, `067-FINAL-CONFORMANCE.md`, `scenario_11/quorum/report_honesty.json` | unqualified BFT, Celestia, devnet, HotStuff, production signature, slashing, finality, or planner HA claims fail |
 | Hard Blockers | QC optional, detached Celestia-local, injected votes, BFT-on-`2-of-3`, manifest-only process model, untested planner HA, or prose-only glossary must block closure | `TS-19`/`TT-19` | final `scenario_11`, claim audit, devnet smoke, targeted release tests, full release tests | every blocker has a negative scenario and expected reject/degraded status; any true blocker fails final conformance |
 
 ## 🌐 Scenario 11 E2E Matrix
@@ -781,10 +785,10 @@ Dependency installation for Phase 067 is test-gated. A crate import is not proof
 
 ## 🚩 Open Gaps
 
-- `TS-07` and `TS-08` have proposed test homes present in the current workspace, but they still require implementation-time validation against their owning code paths before closure.
-- `TS-09` through `TS-18` still require missing runtime test homes or audit scripts listed in `Proposed New Test Files`.
-- `TS-19` cannot close until every predecessor slice has executable positive tests, executable negative tests, evidence artifacts, and anti-placeholder proof.
-- This spec remains `fallback-ready`; it is not a claim that Phase 067 implementation or final local conformance has passed.
+- `TS-07` through `TS-18` now have live homes or audit scripts in the workspace, but each still requires execution-time validation against its owning code paths before closure.
+- `TS-19` cannot close until every predecessor slice has executable positive tests, executable negative tests, evidence artifacts, addendum flow-alias coverage, and anti-placeholder proof.
+- `.planning/phases/067-Sharded-Concensus/067-FINAL-CONFORMANCE.md` remains pre-execution only until the final rerun writes real command outcomes into it.
+- This spec is review-ready for late addenda; it is not a claim that Phase 067 implementation or final local conformance has passed.
 
 ## ✅ Exit Criteria
 

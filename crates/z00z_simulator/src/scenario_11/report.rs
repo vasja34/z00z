@@ -3,8 +3,11 @@
 use serde::{Deserialize, Serialize};
 
 pub const CLAIM_LEVEL_LIVE: &str = "live";
+pub const CLAIM_LEVEL_SIMULATED_FULL: &str = "simulated-full";
 pub const CLAIM_LEVEL_LIVE_CLAIM_REMOVED: &str = "live-claim-removed";
 pub const PLANNER_AUTHORITY_MODEL_DETERMINISTIC_REPLICATED: &str = "deterministic_replicated";
+pub const TERM_CELESTIA_FINALITY: &str = "Celestia finality";
+pub const TERM_CELESTIA_LOCAL_ARTIFACT: &str = "Celestia-local artifact contract";
 pub const TERM_DETERMINISTIC_REPLICATED_PLANNER: &str = "deterministic replicated planner";
 pub const TERM_PLANNER_HA: &str = "planner HA";
 
@@ -105,6 +108,9 @@ pub struct SecondaryReplayVoteReport {
     pub transport_verdict: String,
     pub signature_scheme: Option<String>,
     pub vote_digest_hex: Option<String>,
+    pub evidence_id_hex: Option<String>,
+    pub evidence_kind: Option<String>,
+    pub artifact_digests_hex: Vec<String>,
     pub reject_code: Option<String>,
     pub detail: String,
 }
@@ -145,6 +151,14 @@ pub struct LocalDaBindingReport {
     pub publication_binding_digest_hex: String,
     pub blob_ref: String,
     pub provider: String,
+    pub claim_level: String,
+    pub namespace_hex: String,
+    pub blob_commitment_hex: String,
+    pub inclusion_reference: String,
+    pub blob_height: u64,
+    pub retention_until_height: u64,
+    pub degraded_mode: bool,
+    pub payload_available: bool,
     pub certificate_digest_hex: String,
     pub resumed_by_secondary_id: u16,
     pub resumed_same_certificate: bool,
@@ -186,6 +200,7 @@ pub struct FaultMatrixEntry {
     pub observed_status: String,
     pub reject_code: Option<String>,
     pub evidence_refs: Vec<String>,
+    pub artifact_digests_hex: Vec<String>,
     pub detail: String,
     pub degraded_mode: bool,
 }
@@ -193,6 +208,19 @@ pub struct FaultMatrixEntry {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FaultMatrixReport {
     pub entries: Vec<FaultMatrixEntry>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EvidenceEntryReport {
+    pub evidence_id_hex: String,
+    pub evidence_kind: String,
+    pub artifact_digests_hex: Vec<String>,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EvidenceRegistryReport {
+    pub entries: Vec<EvidenceEntryReport>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -15,19 +15,21 @@ use z00z_aggregators::{
     bind_publication_contract, membership_digest_for_voters, persist_consensus_commit,
     persist_consensus_publication, persist_validator_decision, publication_record_for_published,
     validator_decision_snapshot, AggregatorId, BatchId, BatchPlanner, BatchRoute, CommitSubject,
-    ConsensusAdapter, ConsensusStore, DispatchStage, DistDispatch, DistSim, FrameStage,
-    InMemoryVoteTransport, JournalCandidate, JournalFrame, OrderedBatch, PlanDigest,
-    PlannerAuthority, PublicationBinding, PublicationRequest, PublicationState, RecoveryBoundary,
-    RecoveryIntent, ReplayVerifiedVoteService, SecondaryReplayRejectCode, SecondaryReplayRequest,
-    SecondaryState, ShardExecState, ShardExecTicket, ShardExecutor, ShardPlacement,
-    ShardPlacementTable, ShardQuorumCertificate, ShardRecoveryRecord, ShardRouteTable, ShardVote,
-    ShardVoteKind, ShardVoteRole, VoteExchangeContext, VoteExchangeOutcome, VoteTransport,
-    VoteTransportEnvelope, WorkItem, WorkPayload, CONSENSUS_STORE_BACKEND,
-    CONSENSUS_STORE_SCHEMA_VERSION,
+    ConsensusAdapter, ConsensusStore, DispatchStage, DistDispatch, DistSim, EvidenceRecord,
+    FrameStage, InMemoryVoteTransport, JournalCandidate, JournalFrame, MissingBlobEvidence,
+    OrderedBatch, PlanDigest, PlannerAuthority, PublicationBinding, PublicationRequest,
+    PublicationState, RecoveryBoundary, RecoveryIntent, ReplayVerifiedVoteService,
+    SecondaryReplayRejectCode, SecondaryReplayRequest, SecondaryState, ShardExecState,
+    ShardExecTicket, ShardExecutor, ShardPlacement, ShardPlacementTable,
+    ShardQuorumCertificate, ShardRecoveryRecord, ShardRouteTable, ShardVote, ShardVoteKind,
+    ShardVoteRole, SplitBrainEvidence, StaleMemberEvidence, TransportDeliveryPlan,
+    VoteEvidenceTracker, VoteExchangeContext, VoteExchangeOutcome, VoteTransport,
+    VoteTransportEnvelope, WorkItem, WorkPayload, WrongRootEvidence, WrongRouteDigestEvidence,
+    CONSENSUS_STORE_BACKEND, CONSENSUS_STORE_SCHEMA_VERSION,
 };
 use z00z_core::assets::{Asset, AssetClass, AssetDefinition, AssetPkgWire, AssetWire};
 use z00z_crypto::ZkPackEncrypted;
-use z00z_rollup_node::{DaAdapter, DaError, LocalDaAdapter, NodeCfgErr, NodeConfig};
+use z00z_rollup_node::{CelestiaLocalAdapter, DaAdapter, DaError, NodeCfgErr, NodeConfig};
 use z00z_storage::{
     checkpoint::{
         derive_checkpoint_id, derive_exec_id, encode_exec_bin, CheckpointArtifact, CheckpointDraft,
@@ -65,13 +67,14 @@ pub mod report;
 
 pub use report::{
     ClaimLevelReport, CommitSubjectReport, ConsensusStoreReport, DualPrimaryIsolationReport,
-    FaultMatrixEntry, FaultMatrixReport, LocalDaBindingReport, PackageIngressReport,
-    PlacementMembershipCaseReport, PlacementMembershipReport, PlannerAuthorityReplicaReport,
-    QuorumCertificateCaseReport, QuorumCertificateReport, ReportHonesty, RoutePlanCaseReport,
-    RoutePlanReport, SecondaryReplayVoteReport, SecondaryReplayVotesReport, ValidatorVerdictReport,
-    CLAIM_LEVEL_LIVE, CLAIM_LEVEL_LIVE_CLAIM_REMOVED,
-    PLANNER_AUTHORITY_MODEL_DETERMINISTIC_REPLICATED, TERM_DETERMINISTIC_REPLICATED_PLANNER,
-    TERM_PLANNER_HA,
+    EvidenceEntryReport, EvidenceRegistryReport, FaultMatrixEntry, FaultMatrixReport,
+    LocalDaBindingReport, PackageIngressReport, PlacementMembershipCaseReport,
+    PlacementMembershipReport, PlannerAuthorityReplicaReport, QuorumCertificateCaseReport,
+    QuorumCertificateReport, ReportHonesty, RoutePlanCaseReport, RoutePlanReport,
+    SecondaryReplayVoteReport, SecondaryReplayVotesReport, ValidatorVerdictReport,
+    CLAIM_LEVEL_LIVE, CLAIM_LEVEL_LIVE_CLAIM_REMOVED, CLAIM_LEVEL_SIMULATED_FULL,
+    PLANNER_AUTHORITY_MODEL_DETERMINISTIC_REPLICATED, TERM_CELESTIA_FINALITY,
+    TERM_DETERMINISTIC_REPLICATED_PLANNER, TERM_PLANNER_HA,
 };
 
 const SIM_5A7S_HOME: &str = "config/hjmt_runtime/sim_5a7s";
@@ -106,6 +109,327 @@ impl Scenario11Run {
     }
 }
 
+fn claim_level(term: &str, claim_level: &str, evidence_refs: &[&str]) -> ClaimLevelReport {
+    ClaimLevelReport {
+        term: term.to_string(),
+        claim_level: claim_level.to_string(),
+        evidence_refs: evidence_refs.iter().map(|item| (*item).to_string()).collect(),
+    }
+}
+
+fn report_claim_levels() -> Vec<ClaimLevelReport> {
+    vec![
+        claim_level(
+            "Active member",
+            CLAIM_LEVEL_LIVE,
+            &["quorum_certificate.json", "secondary_replay_votes.json"],
+        ),
+        claim_level(
+            "Aggregator",
+            CLAIM_LEVEL_LIVE,
+            &["route_plan_report.json", "commit_subject.json"],
+        ),
+        claim_level(
+            "Anti-equivocation evidence",
+            CLAIM_LEVEL_LIVE,
+            &["evidence_registry.json", "fault_matrix.json"],
+        ),
+        claim_level(
+            "Availability certificate",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["local_da_binding.json", "validator_verdict_report.json"],
+        ),
+        claim_level(
+            "Batch",
+            CLAIM_LEVEL_LIVE,
+            &["package_ingress_report.json", "commit_subject.json"],
+        ),
+        claim_level(
+            "`BatchPayload`",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["local_da_binding.json", "validator_verdict_report.json"],
+        ),
+        claim_level(
+            "BFT",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["quorum_certificate.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "CFT",
+            CLAIM_LEVEL_LIVE,
+            &["quorum_certificate.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Celestia",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["local_da_binding.json", "report_honesty.json"],
+        ),
+        claim_level(
+            TERM_CELESTIA_FINALITY,
+            CLAIM_LEVEL_LIVE_CLAIM_REMOVED,
+            &["local_da_binding.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Commit certificate",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["quorum_certificate.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "`CommitSubject`",
+            CLAIM_LEVEL_LIVE,
+            &["commit_subject.json", "quorum_certificate.json"],
+        ),
+        claim_level(
+            "Consensus adapter",
+            CLAIM_LEVEL_LIVE,
+            &["commit_subject.json", "quorum_certificate.json"],
+        ),
+        claim_level(
+            "DA",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["local_da_binding.json", "validator_verdict_report.json"],
+        ),
+        claim_level(
+            "DA adapter",
+            CLAIM_LEVEL_LIVE,
+            &["local_da_binding.json", "validator_verdict_report.json"],
+        ),
+        claim_level(
+            "DA-before-ordering",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["local_da_binding.json", "validator_verdict_report.json"],
+        ),
+        claim_level(
+            "Deterministic simulator signature",
+            CLAIM_LEVEL_LIVE,
+            &["secondary_replay_votes.json", "evidence_registry.json"],
+        ),
+        claim_level(
+            "Epoch",
+            CLAIM_LEVEL_LIVE_CLAIM_REMOVED,
+            &["route_plan_report.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Evidence",
+            CLAIM_LEVEL_LIVE,
+            &["evidence_registry.json", "fault_matrix.json"],
+        ),
+        claim_level(
+            "Failover",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["consensus_store_report.json", "fault_matrix.json"],
+        ),
+        claim_level(
+            "HotStuff",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["fault_matrix.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Ingress",
+            CLAIM_LEVEL_LIVE,
+            &["package_ingress_report.json", "commit_subject.json"],
+        ),
+        claim_level(
+            "`JournalCandidate`",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["commit_subject.json", "consensus_store_report.json"],
+        ),
+        claim_level(
+            "`LocalDaAdapter`",
+            CLAIM_LEVEL_LIVE,
+            &["local_da_binding.json", "validator_verdict_report.json"],
+        ),
+        claim_level(
+            "Local quorum certificate",
+            CLAIM_LEVEL_LIVE,
+            &["quorum_certificate.json", "commit_subject.json"],
+        ),
+        claim_level(
+            "Membership digest",
+            CLAIM_LEVEL_LIVE,
+            &["commit_subject.json", "quorum_certificate.json"],
+        ),
+        claim_level(
+            "Mixed-generation commit",
+            CLAIM_LEVEL_LIVE,
+            &["fault_matrix.json", "secondary_replay_votes.json"],
+        ),
+        claim_level(
+            "Placement generation",
+            CLAIM_LEVEL_LIVE,
+            &["placement_membership.json", "route_plan_report.json"],
+        ),
+        claim_level(
+            "Primary aggregator",
+            CLAIM_LEVEL_LIVE,
+            &["route_plan_report.json", "quorum_certificate.json"],
+        ),
+        claim_level(
+            "Production signature",
+            CLAIM_LEVEL_LIVE_CLAIM_REMOVED,
+            &["secondary_replay_votes.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Publication binding",
+            CLAIM_LEVEL_LIVE,
+            &["local_da_binding.json", "validator_verdict_report.json"],
+        ),
+        claim_level(
+            "Quorum",
+            CLAIM_LEVEL_LIVE,
+            &["quorum_certificate.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Quorum group",
+            CLAIM_LEVEL_LIVE,
+            &["placement_membership.json", "quorum_certificate.json"],
+        ),
+        claim_level(
+            "Recovery boundary",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["consensus_store_report.json", "fault_matrix.json"],
+        ),
+        claim_level(
+            "Route table digest",
+            CLAIM_LEVEL_LIVE,
+            &["route_plan_report.json", "commit_subject.json"],
+        ),
+        claim_level(
+            "Routing generation",
+            CLAIM_LEVEL_LIVE,
+            &["route_plan_report.json", "commit_subject.json"],
+        ),
+        claim_level(
+            "Runtime validator",
+            CLAIM_LEVEL_LIVE,
+            &["validator_verdict_report.json", "local_da_binding.json"],
+        ),
+        claim_level(
+            "Secondary replay",
+            CLAIM_LEVEL_LIVE,
+            &["secondary_replay_votes.json", "fault_matrix.json"],
+        ),
+        claim_level(
+            "Secondary aggregator",
+            CLAIM_LEVEL_LIVE,
+            &["secondary_replay_votes.json", "fault_matrix.json"],
+        ),
+        claim_level(
+            "Shard",
+            CLAIM_LEVEL_LIVE,
+            &["commit_subject.json", "quorum_certificate.json"],
+        ),
+        claim_level(
+            "`ShardBatchHeader`",
+            CLAIM_LEVEL_LIVE_CLAIM_REMOVED,
+            &["commit_subject.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "`ShardQuorumCertificate`",
+            CLAIM_LEVEL_LIVE,
+            &["quorum_certificate.json", "commit_subject.json"],
+        ),
+        claim_level(
+            "`ShardVote`",
+            CLAIM_LEVEL_LIVE,
+            &["secondary_replay_votes.json", "quorum_certificate.json"],
+        ),
+        claim_level(
+            "`sim_5a7s`",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["route_plan_report.json", "fault_matrix.json"],
+        ),
+        claim_level(
+            "Split brain",
+            CLAIM_LEVEL_LIVE,
+            &["fault_matrix.json", "evidence_registry.json"],
+        ),
+        claim_level(
+            "Stale secondary aggregator",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["secondary_replay_votes.json", "fault_matrix.json"],
+        ),
+        claim_level(
+            "Term",
+            CLAIM_LEVEL_LIVE,
+            &["commit_subject.json", "quorum_certificate.json"],
+        ),
+        claim_level(
+            "Theorem bundle",
+            CLAIM_LEVEL_LIVE,
+            &["validator_verdict_report.json", "local_da_binding.json"],
+        ),
+        claim_level(
+            "Validator boundary",
+            CLAIM_LEVEL_LIVE,
+            &["validator_verdict_report.json", "local_da_binding.json"],
+        ),
+        claim_level(
+            "Vote",
+            CLAIM_LEVEL_LIVE,
+            &["secondary_replay_votes.json", "quorum_certificate.json"],
+        ),
+        claim_level(
+            "Watcher boundary",
+            CLAIM_LEVEL_LIVE,
+            &[
+                "crates/z00z_runtime/watchers/tests/test_hjmt_publication_contract.rs::evidence_keeps_publication_story",
+                "crates/z00z_runtime/watchers/tests/test_hjmt_publication_contract.rs::watcher_rejects_binding_drift",
+            ],
+        ),
+        claim_level(
+            TERM_DETERMINISTIC_REPLICATED_PLANNER,
+            CLAIM_LEVEL_LIVE,
+            &["route_plan_report.json", "report_honesty.json"],
+        ),
+        claim_level(
+            TERM_PLANNER_HA,
+            CLAIM_LEVEL_LIVE_CLAIM_REMOVED,
+            &["route_plan_report.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "devnet",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["fault_matrix.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Transport",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["fault_matrix.json", "secondary_replay_votes.json"],
+        ),
+        claim_level(
+            "Validator certificate gate",
+            CLAIM_LEVEL_LIVE,
+            &["validator_verdict_report.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Production signature seam",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["secondary_replay_votes.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Slashing/economics",
+            CLAIM_LEVEL_LIVE_CLAIM_REMOVED,
+            &["evidence_registry.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Glossary terms",
+            CLAIM_LEVEL_LIVE,
+            &["067-GLOSSARY-CLAIMS.md", "report_honesty.json"],
+        ),
+        claim_level(
+            "BFT committee",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["quorum_certificate.json", "report_honesty.json"],
+        ),
+        claim_level(
+            "Failover/takeover",
+            CLAIM_LEVEL_SIMULATED_FULL,
+            &["consensus_store_report.json", "fault_matrix.json"],
+        ),
+    ]
+}
+
 pub fn run(output_root: &Path) -> Result<Scenario11Run, Scenario11Error> {
     let artifact_root = output_root.join("scenario_11").join("quorum");
     create_dir_all(&artifact_root)?;
@@ -114,7 +438,7 @@ pub fn run(output_root: &Path) -> Result<Scenario11Run, Scenario11Error> {
     let happy = run_happy_path(&topology, &artifact_root)?;
     let sweep = run_all_shard_sweep(&topology)?;
     let dual_primary = run_dual_primary_isolation(&topology, happy.theorem_digest)?;
-    let faults = run_fault_matrix(&topology, &happy)?;
+    let fault_outcome = run_fault_matrix(&topology, &happy)?;
     let planner_mode = topology.planner_mode()?;
     let planner_cfg_digest = topology.planner_cfg_digest()?;
     let planner_authority =
@@ -237,12 +561,10 @@ pub fn run(output_root: &Path) -> Result<Scenario11Run, Scenario11Error> {
             happy_path_votes: happy.happy_votes.clone(),
             offline_case_votes: happy.offline_votes.clone(),
             stale_case_votes: happy.stale_votes.clone(),
-            drift_case_votes: faults
+            drift_case_votes: fault_outcome
+                .faults
                 .iter()
-                .filter_map(|entry| match &entry.vote {
-                    Some(vote) => Some(vote.clone()),
-                    None => None,
-                })
+                .filter_map(|entry| entry.vote.as_ref().cloned())
                 .collect(),
         },
     )?;
@@ -296,6 +618,14 @@ pub fn run(output_root: &Path) -> Result<Scenario11Run, Scenario11Error> {
             publication_binding_digest_hex: hex::encode(happy.publication_binding.binding_digest()),
             blob_ref: happy.published.blob_ref.clone(),
             provider: happy.published.da_provider.clone(),
+            claim_level: CLAIM_LEVEL_SIMULATED_FULL.to_string(),
+            namespace_hex: happy.celestia_record.namespace_hex.clone(),
+            blob_commitment_hex: hex::encode(happy.celestia_record.blob_commitment),
+            inclusion_reference: happy.celestia_record.inclusion_reference.clone(),
+            blob_height: happy.celestia_record.blob_height,
+            retention_until_height: happy.celestia_record.retention_until_height,
+            degraded_mode: happy.celestia_record.degraded_mode,
+            payload_available: happy.celestia_record.payload_available,
             certificate_digest_hex: hex::encode(happy.commit.certificate.digest()),
             resumed_by_secondary_id: happy.resumed_by_secondary_id.as_u16(),
             resumed_same_certificate: happy.resumed_same_certificate,
@@ -335,8 +665,18 @@ pub fn run(output_root: &Path) -> Result<Scenario11Run, Scenario11Error> {
     save_json(
         artifact_root.join("fault_matrix.json"),
         &FaultMatrixReport {
-            entries: faults.into_iter().map(|entry| entry.entry).collect(),
+            entries: fault_outcome
+                .faults
+                .iter()
+                .cloned()
+                .map(|entry| entry.entry)
+                .collect(),
         },
+    )?;
+
+    save_json(
+        artifact_root.join("evidence_registry.json"),
+        &fault_outcome.evidence_registry.report(),
     )?;
 
     save_json(
@@ -347,12 +687,15 @@ pub fn run(output_root: &Path) -> Result<Scenario11Run, Scenario11Error> {
                 "planner truth is deterministic replicated local computation over canonical planner config and route-table digest".to_string(),
                 "secondary replay uses live ingress, planner, placement, recovery, and subject builders".to_string(),
                 "local DA publish and resolve preserve the live route snapshot carried by PublicationRequest".to_string(),
+                "Celestia-local artifact contract is simulated-full over live publication and validator bindings".to_string(),
                 "validator verdict is produced from the live theorem and publication path".to_string(),
             ],
             forbidden_claims: vec![
                 "network BFT".to_string(),
-                "Celestia finality".to_string(),
+                TERM_CELESTIA_FINALITY.to_string(),
+                "production HotStuff".to_string(),
                 TERM_PLANNER_HA.to_string(),
+                "unqualified devnet".to_string(),
                 "production signatures".to_string(),
                 "slashing".to_string(),
                 "public finality".to_string(),
@@ -360,27 +703,16 @@ pub fn run(output_root: &Path) -> Result<Scenario11Run, Scenario11Error> {
             deferred_claims: vec![
                 "network, production-signature, and evidence expansion beyond deterministic local signers stays planned for 067-08 and later".to_string(),
                 "a separate planner primary/secondary HA service with durable plan state remains out of scope for 067-12".to_string(),
+                "real Celestia finality stays unclaimed until real provider dependencies are installed and exercised".to_string(),
+                "production HotStuff stays unclaimed until a real backend crate is installed and exercised".to_string(),
             ],
             simulated_markers: vec![
                 "external transport is simulated".to_string(),
                 "remote process crash or resume is simulated through DistSim and DistDispatch".to_string(),
                 "cryptography, theorem bundle, route table, placement, recovery state, and checkpoint artifacts are live project primitives".to_string(),
+                "local process/devnet orchestration is simulated-full over the manifest-driven harness".to_string(),
             ],
-            claim_levels: vec![
-                ClaimLevelReport {
-                    term: TERM_DETERMINISTIC_REPLICATED_PLANNER.to_string(),
-                    claim_level: CLAIM_LEVEL_LIVE.to_string(),
-                    evidence_refs: vec!["route_plan_report.json".to_string()],
-                },
-                ClaimLevelReport {
-                    term: TERM_PLANNER_HA.to_string(),
-                    claim_level: CLAIM_LEVEL_LIVE_CLAIM_REMOVED.to_string(),
-                    evidence_refs: vec![
-                        "route_plan_report.json".to_string(),
-                        "report_honesty.json".to_string(),
-                    ],
-                },
-            ],
+            claim_levels: report_claim_levels(),
         },
     )?;
 
@@ -546,8 +878,10 @@ struct HappyPathOutcome {
     subject: CommitSubject,
     theorem_digest: [u8; 32],
     publication_binding: PublicationBinding,
+    publication_request: PublicationRequest,
     commit: z00z_aggregators::ConsensusCommit,
     published: z00z_aggregators::PublishedBatch,
+    celestia_record: z00z_rollup_node::CelestiaLocalRecord,
     verdict: Verdict,
     dispatch_owner_id: AggregatorId,
     dispatch_stage: DispatchStage,
@@ -603,6 +937,198 @@ struct VoteReplayBatchOutcome {
 struct DriftFault {
     entry: FaultMatrixEntry,
     vote: Option<SecondaryReplayVoteReport>,
+}
+
+#[derive(Debug, Default, Clone)]
+struct EvidenceRegistry {
+    records: BTreeMap<[u8; 32], EvidenceRecord>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+struct EvidenceRefs {
+    ids: Vec<String>,
+    artifact_digests_hex: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+struct FaultMatrixOutcome {
+    faults: Vec<DriftFault>,
+    evidence_registry: EvidenceRegistry,
+}
+
+impl EvidenceRegistry {
+    fn insert(&mut self, record: EvidenceRecord) -> EvidenceRefs {
+        let digest = record.digest();
+        let artifact_digests_hex = artifact_digests_hex(&record);
+        self.records.entry(digest).or_insert(record);
+        EvidenceRefs {
+            ids: vec![hex::encode(digest)],
+            artifact_digests_hex,
+        }
+    }
+
+    fn insert_many(
+        &mut self,
+        records: impl IntoIterator<Item = EvidenceRecord>,
+    ) -> EvidenceRefs {
+        let mut ids = Vec::new();
+        let mut artifact_digests = BTreeSet::new();
+        for record in records {
+            let refs = self.insert(record);
+            ids.extend(refs.ids);
+            artifact_digests.extend(refs.artifact_digests_hex);
+        }
+        ids.sort();
+        ids.dedup();
+        EvidenceRefs {
+            ids,
+            artifact_digests_hex: artifact_digests.into_iter().collect(),
+        }
+    }
+
+    fn contains_id(&self, raw: &str) -> bool {
+        let Ok(bytes) = hex::decode(raw) else {
+            return false;
+        };
+        if bytes.len() != 32 {
+            return false;
+        }
+        let mut digest = [0u8; 32];
+        digest.copy_from_slice(&bytes);
+        self.records.contains_key(&digest)
+    }
+
+    fn has_kind(&self, kind: &str) -> bool {
+        self.records
+            .values()
+            .any(|record| record.kind().as_str() == kind)
+    }
+
+    fn report(&self) -> EvidenceRegistryReport {
+        let entries = self
+            .records
+            .values()
+            .map(|record| EvidenceEntryReport {
+                evidence_id_hex: hex::encode(record.digest()),
+                evidence_kind: record.kind().as_str().to_string(),
+                artifact_digests_hex: artifact_digests_hex(record),
+                detail: record.detail().unwrap_or(record.kind().as_str()).to_string(),
+            })
+            .collect();
+        EvidenceRegistryReport { entries }
+    }
+}
+
+fn artifact_digests_hex(record: &EvidenceRecord) -> Vec<String> {
+    let mut digests = record
+        .artifact_refs()
+        .into_iter()
+        .map(|artifact| hex::encode(artifact.digest))
+        .collect::<Vec<_>>();
+    digests.sort();
+    digests.dedup();
+    digests
+}
+
+fn validate_fault_evidence(
+    faults: &[DriftFault],
+    evidence_registry: &EvidenceRegistry,
+) -> Result<(), Scenario11Error> {
+    for kind in [
+        "equivocation",
+        "payload_withholding",
+        "missing_blob",
+        "wrong_root",
+        "wrong_route_digest",
+        "stale_member",
+        "split_brain",
+    ] {
+        if !evidence_registry.has_kind(kind) {
+            return Err(Scenario11Error::Message(format!(
+                "structured evidence registry missing required kind {kind}"
+            )));
+        }
+    }
+
+    for fault_id in [
+        "equivocation_same_voter",
+        "transport_payload_withholding",
+        "celestia_missing_blob",
+        "wrong_route_digest",
+        "wrong_state_root",
+        "removed_member_vote",
+        "restart_reconnect_old_membership",
+        "same_term_divergent_root_freeze",
+    ] {
+        let entry = faults
+            .iter()
+            .find(|fault| fault.entry.fault_id == fault_id)
+            .ok_or_else(|| {
+                Scenario11Error::Message(format!("missing fault-matrix entry {fault_id}"))
+            })?;
+        if entry.entry.evidence_refs.is_empty() {
+            return Err(Scenario11Error::Message(format!(
+                "fault {fault_id} must reference structured evidence ids"
+            )));
+        }
+        if entry.entry.artifact_digests_hex.is_empty() {
+            return Err(Scenario11Error::Message(format!(
+                "fault {fault_id} must reference artifact digests"
+            )));
+        }
+        if entry
+            .entry
+            .evidence_refs
+            .iter()
+            .any(|raw| !evidence_registry.contains_id(raw))
+        {
+            return Err(Scenario11Error::Message(format!(
+                "fault {fault_id} referenced a non-registry evidence id"
+            )));
+        }
+    }
+
+    for fault in faults {
+        let Some(vote) = &fault.vote else {
+            continue;
+        };
+        let Some(evidence_id_hex) = vote.evidence_id_hex.as_deref() else {
+            continue;
+        };
+        if !evidence_registry.contains_id(evidence_id_hex) {
+            return Err(Scenario11Error::Message(format!(
+                "vote report {} referenced a non-registry evidence id",
+                vote.case_id
+            )));
+        }
+        if vote.evidence_kind.is_none() {
+            return Err(Scenario11Error::Message(format!(
+                "vote report {} emitted evidence without kind metadata",
+                vote.case_id
+            )));
+        }
+        if vote.artifact_digests_hex.is_empty() {
+            return Err(Scenario11Error::Message(format!(
+                "vote report {} emitted evidence without artifact digests",
+                vote.case_id
+            )));
+        }
+    }
+
+    Ok(())
+}
+
+fn decode_namespace_hex(raw: &str) -> Result<[u8; 8], Scenario11Error> {
+    let bytes = hex::decode(raw)?;
+    if bytes.len() != 8 {
+        return Err(Scenario11Error::Message(format!(
+            "invalid Celestia-local namespace length: expected 8 bytes, got {}",
+            bytes.len()
+        )));
+    }
+    let mut namespace = [0u8; 8];
+    namespace.copy_from_slice(&bytes);
+    Ok(namespace)
 }
 
 fn run_happy_path(
@@ -731,8 +1257,12 @@ fn run_happy_path(
         )
         .map_err(reject_record_to_error)?;
 
-    let mut da = LocalDaAdapter::new("scenario_11_local_da");
+    let mut da = CelestiaLocalAdapter::new("scenario_11_local_da");
     let published = da.publish(request.clone())?;
+    let celestia_record = da
+        .record(published.batch_id)
+        .cloned()
+        .expect("celestia local record");
     let resolved = da.resolve(&published)?;
     let executor = ShardExecutor::new(topology.placement_table.clone());
     let ticket = executor.mark_running(
@@ -885,8 +1415,10 @@ fn run_happy_path(
         subject,
         theorem_digest,
         publication_binding,
+        publication_request: request,
         commit,
         published,
+        celestia_record,
         verdict,
         dispatch_owner_id: dispatch_verdict.owner_id,
         dispatch_stage: dispatch_verdict.stage,
@@ -1025,7 +1557,7 @@ fn run_dual_primary_isolation(
 fn run_fault_matrix(
     topology: &LiveTopology,
     happy: &HappyPathOutcome,
-) -> Result<Vec<DriftFault>, Scenario11Error> {
+) -> Result<FaultMatrixOutcome, Scenario11Error> {
     let planner = BatchPlanner::new(topology.route_table.clone());
     let ready_secondary = happy
         .placement
@@ -1064,6 +1596,7 @@ fn run_fault_matrix(
     };
 
     let mut faults = Vec::new();
+    let mut evidence_registry = EvidenceRegistry::default();
 
     let mut dispatch = DistDispatch::new(
         topology.route_table.clone(),
@@ -1096,7 +1629,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec!["fault_matrix.json".to_string()],
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
             detail: "dispatch deferred while the shard owner stayed offline before execution began"
                 .to_string(),
             degraded_mode: true,
@@ -1119,10 +1653,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec![
-                "secondary_replay_votes.json".to_string(),
-                "fault_matrix.json".to_string(),
-            ],
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
             detail: "one ready secondary stayed offline, quorum preserved with no synthetic vote"
                 .to_string(),
             degraded_mode: true,
@@ -1144,10 +1676,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: Some("StaleSecondaryState".to_string()),
-            evidence_refs: vec![
-                "secondary_replay_votes.json".to_string(),
-                "fault_matrix.json".to_string(),
-            ],
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
             detail: "stale secondary replay failed closed before any vote was created".to_string(),
             degraded_mode: false,
         },
@@ -1196,7 +1726,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec!["fault_matrix.json".to_string()],
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
             detail: "observer stayed pending and could not contribute before readiness".to_string(),
             degraded_mode: false,
         },
@@ -1258,7 +1789,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec!["fault_matrix.json".to_string()],
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
             detail:
                 "observer became ready, joined the active membership digest, and voted lawfully"
                     .to_string(),
@@ -1312,6 +1844,16 @@ fn run_fault_matrix(
             ],
         )
         .expect_err("removed member must not vote");
+    let removed_member_refs =
+        evidence_registry.insert(EvidenceRecord::StaleMember(StaleMemberEvidence::new(
+            removed_secondary.aggregator_id,
+            removed_member_subject.shard_id,
+            removed_member_subject.term,
+            removed_member_subject.membership_digest,
+            happy.subject.membership_digest,
+            removed_member_err.detail.clone(),
+        )
+        .map_err(reject_record_to_error)?));
     faults.push(DriftFault {
         entry: FaultMatrixEntry {
             scenario_id: "scenario_11".to_string(),
@@ -1323,7 +1865,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec!["fault_matrix.json".to_string()],
+            evidence_refs: removed_member_refs.ids,
+            artifact_digests_hex: removed_member_refs.artifact_digests_hex,
             detail: "removed committee member could not reappear in the next shard commit"
                 .to_string(),
             degraded_mode: false,
@@ -1374,7 +1917,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec!["fault_matrix.json".to_string()],
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
             detail: "certificate formation rejected when the subject generation drifted"
                 .to_string(),
             degraded_mode: false,
@@ -1429,6 +1973,17 @@ fn run_fault_matrix(
             ],
         )
         .expect_err("same term must stay frozen after divergence");
+    let split_brain_refs =
+        evidence_registry.insert(EvidenceRecord::SplitBrain(SplitBrainEvidence::new(
+            happy.placement.primary_id,
+            divergent_subject.shard_id,
+            divergent_subject.term,
+            divergent_subject.membership_digest,
+            happy.subject.digest(),
+            divergent_subject.digest(),
+            divergent_err.detail.clone(),
+        )
+        .map_err(reject_record_to_error)?));
     faults.push(DriftFault {
         entry: FaultMatrixEntry {
             scenario_id: "scenario_11".to_string(),
@@ -1442,7 +1997,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec!["fault_matrix.json".to_string()],
+            evidence_refs: split_brain_refs.ids,
+            artifact_digests_hex: split_brain_refs.artifact_digests_hex,
             detail:
                 "same-term divergent root froze the quorum term before any conflicting certificate"
                     .to_string(),
@@ -1502,7 +2058,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec!["fault_matrix.json".to_string()],
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
             detail:
                 "partitioned replication deferred, healed cleanly, and ignored replay instead of forking"
                     .to_string(),
@@ -1582,16 +2139,346 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec![
-                "quorum_certificate.json".to_string(),
-                "fault_matrix.json".to_string(),
-            ],
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
             detail:
                 "one shard failed over to a lawful new primary while an unrelated shard kept producing a lawful certificate"
                     .to_string(),
             degraded_mode: true,
         },
         vote: None,
+    });
+
+    let first_equivocation_vote =
+        vote_for_subject(&happy.subject, ready_secondary, ShardVoteRole::Secondary);
+    let mut conflicting_equivocation_subject = happy.subject.clone();
+    mutate_theorem_digest(&mut conflicting_equivocation_subject);
+    let second_equivocation_vote = vote_for_subject(
+        &conflicting_equivocation_subject,
+        ready_secondary,
+        ShardVoteRole::Secondary,
+    );
+    let mut equivocation_tracker = VoteEvidenceTracker::default();
+    equivocation_tracker
+        .record_vote(first_equivocation_vote)
+        .map_err(|_| {
+            Scenario11Error::Message(
+                "first same-voter vote unexpectedly emitted equivocation evidence".to_string(),
+            )
+        })?;
+    let equivocation_record = match equivocation_tracker.record_vote(second_equivocation_vote) {
+        Err(record) => record,
+        Ok(()) => {
+            return Err(Scenario11Error::Message(
+                "conflicting same-voter votes failed to emit structured equivocation evidence"
+                    .to_string(),
+            ))
+        }
+    };
+    let equivocation_evidence = EvidenceRecord::from(equivocation_record);
+    let equivocation_id_hex = hex::encode(equivocation_evidence.digest());
+    let equivocation_kind = equivocation_evidence.kind().as_str().to_string();
+    let equivocation_artifacts = artifact_digests_hex(&equivocation_evidence);
+    let equivocation_refs = evidence_registry.insert(equivocation_evidence);
+    faults.push(DriftFault {
+        entry: FaultMatrixEntry {
+            scenario_id: "scenario_11".to_string(),
+            fault_id: "equivocation_same_voter".to_string(),
+            expected_status: "same_voter_conflict_emits_evidence".to_string(),
+            observed_status: if equivocation_tracker.records().len() == 1 {
+                "evidence_as_expected".to_string()
+            } else {
+                "unexpected_result".to_string()
+            },
+            reject_code: None,
+            evidence_refs: equivocation_refs.ids,
+            artifact_digests_hex: equivocation_refs.artifact_digests_hex,
+            detail: "conflicting same-voter votes emitted structured equivocation evidence"
+                .to_string(),
+            degraded_mode: false,
+        },
+        vote: Some(SecondaryReplayVoteReport {
+            case_id: "equivocation_same_voter".to_string(),
+            voter_id: ready_secondary.as_u16(),
+            voter_role: "secondary".to_string(),
+            verdict: "degraded".to_string(),
+            transport_verdict: "evidence_emitted".to_string(),
+            signature_scheme: None,
+            vote_digest_hex: None,
+            evidence_id_hex: Some(equivocation_id_hex),
+            evidence_kind: Some(equivocation_kind),
+            artifact_digests_hex: equivocation_artifacts,
+            reject_code: None,
+            detail: "same-voter conflicting replay emitted structured equivocation evidence"
+                .to_string(),
+        }),
+    });
+
+    let mut duplicate_transport = InMemoryVoteTransport::default();
+    duplicate_transport.enqueue_planned(
+        VoteTransportEnvelope::available(
+            happy.placement.primary_id,
+            ready_secondary,
+            happy.subject.clone(),
+            ShardVoteKind::LocalCommit,
+        ),
+        TransportDeliveryPlan::default()
+            .with_duplicate_after(1)
+            .with_replay_after(2),
+    );
+    let mut duplicate_service = ReplayVerifiedVoteService::local();
+    let duplicate_first = duplicate_transport
+        .step()
+        .into_iter()
+        .next()
+        .ok_or_else(|| Scenario11Error::Message("missing first duplicate delivery".to_string()))?;
+    let (duplicate_accept, _) = replay_vote_report(
+        "transport_duplicate_replay",
+        ready_secondary,
+        duplicate_service.process_envelope(
+            &duplicate_first,
+            VoteExchangeContext {
+                voter_role: ShardVoteRole::Secondary,
+                replay_request: request,
+            },
+        ),
+    );
+    let duplicate_second = duplicate_transport
+        .step()
+        .into_iter()
+        .next()
+        .ok_or_else(|| Scenario11Error::Message("missing duplicate delivery".to_string()))?;
+    let (duplicate_report, _) = replay_vote_report(
+        "transport_duplicate_replay",
+        ready_secondary,
+        duplicate_service.process_envelope(
+            &duplicate_second,
+            VoteExchangeContext {
+                voter_role: ShardVoteRole::Secondary,
+                replay_request: request,
+            },
+        ),
+    );
+    let duplicate_third = duplicate_transport
+        .step()
+        .into_iter()
+        .next()
+        .ok_or_else(|| Scenario11Error::Message("missing replay delivery".to_string()))?;
+    let (replay_report, _) = replay_vote_report(
+        "transport_duplicate_replay",
+        ready_secondary,
+        duplicate_service.process_envelope(
+            &duplicate_third,
+            VoteExchangeContext {
+                voter_role: ShardVoteRole::Secondary,
+                replay_request: request,
+            },
+        ),
+    );
+    let duplicate_refs = evidence_registry.insert_many(
+        duplicate_transport
+            .fault_records()
+            .iter()
+            .cloned()
+            .map(EvidenceRecord::from),
+    );
+    faults.push(DriftFault {
+        entry: FaultMatrixEntry {
+            scenario_id: "scenario_11".to_string(),
+            fault_id: "transport_duplicate_replay".to_string(),
+            expected_status: "duplicate_and_replay_do_not_double_count".to_string(),
+            observed_status: if duplicate_accept.verdict == "accept"
+                && duplicate_report.transport_verdict == "duplicate_message"
+                && replay_report.transport_verdict == "duplicate_message"
+            {
+                "ignored_as_expected".to_string()
+            } else {
+                "unexpected_result".to_string()
+            },
+            reject_code: None,
+            evidence_refs: duplicate_refs.ids,
+            artifact_digests_hex: duplicate_refs.artifact_digests_hex,
+            detail: "duplicate and replayed envelopes stayed bounded to one replay-verified vote"
+                .to_string(),
+            degraded_mode: false,
+        },
+        vote: Some(duplicate_report),
+    });
+
+    let mut evidence_service = ReplayVerifiedVoteService::local();
+    let payload_envelope = VoteTransportEnvelope::missing_payload(
+        happy.placement.primary_id,
+        ready_secondary,
+        happy.subject.clone(),
+        ShardVoteKind::LocalCommit,
+        "payload missing before replay",
+    );
+    let (payload_report, _) = replay_vote_report(
+        "transport_payload_withholding",
+        ready_secondary,
+        evidence_service.process_envelope(
+            &payload_envelope,
+            VoteExchangeContext {
+                voter_role: ShardVoteRole::Secondary,
+                replay_request: request,
+            },
+        ),
+    );
+    let payload_refs = evidence_registry.insert_many(
+        evidence_service
+            .evidence_records()
+            .iter()
+            .cloned()
+            .map(EvidenceRecord::from),
+    );
+    faults.push(DriftFault {
+        entry: FaultMatrixEntry {
+            scenario_id: "scenario_11".to_string(),
+            fault_id: "transport_payload_withholding".to_string(),
+            expected_status: "evidence_without_vote".to_string(),
+            observed_status: if payload_report.transport_verdict == "evidence_emitted" {
+                "evidence_as_expected".to_string()
+            } else {
+                "unexpected_result".to_string()
+            },
+            reject_code: None,
+            evidence_refs: payload_refs.ids,
+            artifact_digests_hex: payload_refs.artifact_digests_hex,
+            detail: "transport emitted structured withholding evidence instead of a vote"
+                .to_string(),
+            degraded_mode: true,
+        },
+        vote: Some(payload_report),
+    });
+
+    let mut missing_payload_da = CelestiaLocalAdapter::new("scenario_11_local_da_missing");
+    let missing_payload_publish = missing_payload_da.publish(happy.publication_request.clone())?;
+    if !missing_payload_da.mark_payload_missing(missing_payload_publish.batch_id) {
+        return Err(Scenario11Error::Message(
+            "failed to mark Celestia-local payload missing".to_string(),
+        ));
+    }
+    let missing_payload_err = missing_payload_da
+        .resolve(&missing_payload_publish)
+        .expect_err("missing Celestia-local payload must reject");
+    let missing_blob_refs =
+        evidence_registry.insert(EvidenceRecord::MissingBlob(MissingBlobEvidence::new(
+            ready_secondary,
+            happy.subject.shard_id,
+            happy.subject.term,
+            happy.subject.membership_digest,
+            happy.subject.digest(),
+            decode_namespace_hex(&happy.celestia_record.namespace_hex)?,
+            happy.celestia_record.blob_commitment,
+            happy.commit.certificate.digest(),
+            format!(
+                "celestia-local payload resolution failed with {:?}",
+                missing_payload_err
+            ),
+        )
+        .map_err(reject_record_to_error)?));
+    faults.push(DriftFault {
+        entry: FaultMatrixEntry {
+            scenario_id: "scenario_11".to_string(),
+            fault_id: "celestia_missing_blob".to_string(),
+            expected_status: "missing_payload_rejects".to_string(),
+            observed_status: if missing_payload_err == DaError::MissingPayload {
+                "rejected_as_expected".to_string()
+            } else {
+                "unexpected_result".to_string()
+            },
+            reject_code: Some(format!("{missing_payload_err:?}")),
+            evidence_refs: missing_blob_refs.ids,
+            artifact_digests_hex: missing_blob_refs.artifact_digests_hex,
+            detail:
+                "celestia-local resolve rejected when blob bytes were unavailable inside the challenge window"
+                    .to_string(),
+            degraded_mode: true,
+        },
+        vote: None,
+    });
+
+    let mut reconnect_transport = InMemoryVoteTransport::default();
+    reconnect_transport.restart_peer(ready_secondary);
+    reconnect_transport.reconnect_peer(ready_secondary);
+    reconnect_transport.enqueue(VoteTransportEnvelope::available(
+        happy.placement.primary_id,
+        ready_secondary,
+        happy.subject.clone(),
+        ShardVoteKind::LocalCommit,
+    ));
+    let reconnect_envelope = reconnect_transport
+        .step()
+        .into_iter()
+        .next()
+        .ok_or_else(|| Scenario11Error::Message("missing reconnect delivery".to_string()))?;
+    let mut drifted_placement = happy.placement.clone();
+    drifted_placement
+        .secondaries
+        .retain(|secondary| secondary.aggregator_id == ready_secondary);
+    let mut drifted_table = ShardPlacementTable::default();
+    drifted_table.insert(drifted_placement.clone());
+    let mut reconnect_service = ReplayVerifiedVoteService::local();
+    let (reconnect_report, _) = replay_vote_report(
+        "restart_reconnect_old_membership",
+        ready_secondary,
+        reconnect_service.process_envelope(
+            &reconnect_envelope,
+            VoteExchangeContext {
+                voter_role: ShardVoteRole::Secondary,
+                replay_request: SecondaryReplayRequest {
+                    placement_table: &drifted_table,
+                    ..request
+                },
+            },
+        ),
+    );
+    let reconnect_membership = membership_digest_for_voters(
+        drifted_placement.route,
+        drifted_placement.primary_id,
+        drifted_placement
+            .secondaries
+            .iter()
+            .filter(|secondary| secondary.is_ready)
+            .map(|secondary| secondary.aggregator_id),
+    );
+    let reconnect_refs = evidence_registry.insert_many(
+        reconnect_transport
+            .fault_records()
+            .iter()
+            .cloned()
+            .map(EvidenceRecord::from)
+            .chain(std::iter::once(EvidenceRecord::StaleMember(
+                StaleMemberEvidence::new(
+                    ready_secondary,
+                    happy.subject.shard_id,
+                    happy.subject.term,
+                    reconnect_membership,
+                    happy.subject.membership_digest,
+                    reconnect_report.detail.clone(),
+                )
+                .map_err(reject_record_to_error)?,
+            ))),
+    );
+    faults.push(DriftFault {
+        entry: FaultMatrixEntry {
+            scenario_id: "scenario_11".to_string(),
+            fault_id: "restart_reconnect_old_membership".to_string(),
+            expected_status: "old_membership_generation_rejects".to_string(),
+            observed_status: if reconnect_report.reject_code.as_deref() == Some("MembershipDrift") {
+                "rejected_as_expected".to_string()
+            } else {
+                "unexpected_result".to_string()
+            },
+            reject_code: reconnect_report.reject_code.clone(),
+            evidence_refs: reconnect_refs.ids,
+            artifact_digests_hex: reconnect_refs.artifact_digests_hex,
+            detail:
+                "restart or reconnect could not replay an envelope against a drifted membership"
+                    .to_string(),
+            degraded_mode: false,
+        },
+        vote: Some(reconnect_report),
     });
 
     for (fault_id, mutate, expected_code, detail) in [
@@ -1605,7 +2492,7 @@ fn run_fault_matrix(
             "wrong_generation",
             mutate_generation as fn(&mut CommitSubject),
             SecondaryReplayRejectCode::WrongRoute,
-            "wrong route",
+            "wrong generation",
         ),
         (
             "wrong_plan_digest",
@@ -1643,7 +2530,7 @@ fn run_fault_matrix(
         let envelope = VoteTransportEnvelope::available(
             happy.placement.primary_id,
             ready_secondary,
-            claimed,
+            claimed.clone(),
             ShardVoteKind::LocalCommit,
         );
         let mut service = ReplayVerifiedVoteService::local();
@@ -1667,6 +2554,33 @@ fn run_fault_matrix(
         } else {
             "unexpected_result"
         };
+        let evidence_refs = match fault_id {
+            "wrong_route_digest" => evidence_registry.insert(EvidenceRecord::WrongRouteDigest(
+                WrongRouteDigestEvidence::new(
+                    ready_secondary,
+                    claimed.shard_id,
+                    claimed.term,
+                    happy.subject.digest(),
+                    happy.subject.route_table_digest,
+                    claimed.route_table_digest,
+                    vote.detail.clone(),
+                )
+                .map_err(reject_record_to_error)?,
+            )),
+            "wrong_state_root" => evidence_registry.insert(EvidenceRecord::WrongRoot(
+                WrongRootEvidence::new(
+                    ready_secondary,
+                    claimed.shard_id,
+                    claimed.term,
+                    happy.subject.digest(),
+                    happy.subject.new_state_root.into_bytes(),
+                    claimed.new_state_root.into_bytes(),
+                    vote.detail.clone(),
+                )
+                .map_err(reject_record_to_error)?,
+            )),
+            _ => EvidenceRefs::default(),
+        };
         faults.push(DriftFault {
             entry: FaultMatrixEntry {
                 scenario_id: "scenario_11".to_string(),
@@ -1674,10 +2588,8 @@ fn run_fault_matrix(
                 expected_status: "rejected".to_string(),
                 observed_status: status.to_string(),
                 reject_code: vote.reject_code.clone(),
-                evidence_refs: vec![
-                    "commit_subject.json".to_string(),
-                    "secondary_replay_votes.json".to_string(),
-                ],
+                evidence_refs: evidence_refs.ids,
+                artifact_digests_hex: evidence_refs.artifact_digests_hex,
                 detail: detail.to_string(),
                 degraded_mode: false,
             },
@@ -1711,7 +2623,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec!["fault_matrix.json".to_string()],
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
             detail: "primary crash before quorum produced no certificate".to_string(),
             degraded_mode: true,
         },
@@ -1729,10 +2642,8 @@ fn run_fault_matrix(
                 "unexpected_result".to_string()
             },
             reject_code: None,
-            evidence_refs: vec![
-                "quorum_certificate.json".to_string(),
-                "local_da_binding.json".to_string(),
-            ],
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
             detail: "ready secondary resumed publication using the same certificate digest"
                 .to_string(),
             degraded_mode: true,
@@ -1740,7 +2651,58 @@ fn run_fault_matrix(
         vote: None,
     });
 
-    Ok(faults)
+    let mut takeover_secondaries = vec![SecondaryState::ready(happy.placement.primary_id)];
+    takeover_secondaries.extend(
+        happy
+            .placement
+            .secondaries
+            .iter()
+            .filter(|secondary| secondary.aggregator_id != ready_secondary)
+            .cloned(),
+    );
+    let mut taken_over = ShardPlacementTable::default();
+    taken_over.insert(ShardPlacement::new(
+        happy.placement.route,
+        ready_secondary,
+        takeover_secondaries,
+        recovery.journal_lineage,
+    ));
+    let old_primary_reject = RecoveryBoundary
+        .resume(
+            happy.placement.primary_id,
+            &taken_over,
+            &record,
+            &recovery,
+            RecoveryIntent::RestartPrimary,
+        )
+        .expect_err("old primary restart must reject after lawful takeover");
+    faults.push(DriftFault {
+        entry: FaultMatrixEntry {
+            scenario_id: "scenario_11".to_string(),
+            fault_id: "old_primary_restart_after_takeover".to_string(),
+            expected_status: "reject_until_lawful_rejoin".to_string(),
+            observed_status: if old_primary_reject.detail.contains("live primary owner") {
+                "rejected_as_expected".to_string()
+            } else {
+                "unexpected_result".to_string()
+            },
+            reject_code: None,
+            evidence_refs: vec![],
+            artifact_digests_hex: vec![],
+            detail:
+                "restarted old primary could not reclaim the role after lawful secondary takeover"
+                    .to_string(),
+            degraded_mode: false,
+        },
+        vote: None,
+    });
+
+    validate_fault_evidence(&faults, &evidence_registry)?;
+
+    Ok(FaultMatrixOutcome {
+        faults,
+        evidence_registry,
+    })
 }
 
 fn subject_for_placement(
@@ -1992,6 +2954,9 @@ fn offline_secondary_case(
             transport_verdict: "offline_no_delivery".to_string(),
             signature_scheme: None,
             vote_digest_hex: None,
+            evidence_id_hex: None,
+            evidence_kind: None,
+            artifact_digests_hex: Vec::new(),
             reject_code: None,
             detail: "secondary remained offline and produced no synthetic vote".to_string(),
         });
@@ -2067,6 +3032,9 @@ fn replay_vote_report(
                 transport_verdict: "delivered_in_memory".to_string(),
                 signature_scheme: Some(vote.signature_scheme().as_str().to_string()),
                 vote_digest_hex: Some(hex::encode(vote.digest())),
+                evidence_id_hex: None,
+                evidence_kind: None,
+                artifact_digests_hex: Vec::new(),
                 reject_code: None,
                 detail: "secondary replay recomputed the exact primary subject through in-memory transport".to_string(),
             },
@@ -2085,13 +3053,18 @@ fn replay_vote_report(
                 },
                 signature_scheme: None,
                 vote_digest_hex: None,
+                evidence_id_hex: None,
+                evidence_kind: None,
+                artifact_digests_hex: Vec::new(),
                 reject_code: Some(format!("{:?}", reject.code)),
                 detail: reject.detail,
             },
             None,
         ),
-        VoteExchangeOutcome::Evidence(evidence) => (
-            SecondaryReplayVoteReport {
+        VoteExchangeOutcome::Evidence(evidence) => {
+            let record = EvidenceRecord::from(evidence.clone());
+            (
+                SecondaryReplayVoteReport {
                 case_id: case_id.to_string(),
                 voter_id: voter_id.as_u16(),
                 voter_role: "secondary".to_string(),
@@ -2099,14 +3072,18 @@ fn replay_vote_report(
                 transport_verdict: "evidence_emitted".to_string(),
                 signature_scheme: None,
                 vote_digest_hex: None,
+                evidence_id_hex: Some(hex::encode(record.digest())),
+                evidence_kind: Some(record.kind().as_str().to_string()),
+                artifact_digests_hex: artifact_digests_hex(&record),
                 reject_code: None,
                 detail: format!(
                     "structured evidence emitted instead of vote: {}",
                     evidence_kind_name(&evidence)
                 ),
             },
-            None,
-        ),
+                None,
+            )
+        }
         VoteExchangeOutcome::DuplicateMessage => (
             SecondaryReplayVoteReport {
                 case_id: case_id.to_string(),
@@ -2116,6 +3093,9 @@ fn replay_vote_report(
                 transport_verdict: "duplicate_message".to_string(),
                 signature_scheme: None,
                 vote_digest_hex: None,
+                evidence_id_hex: None,
+                evidence_kind: None,
+                artifact_digests_hex: Vec::new(),
                 reject_code: None,
                 detail: "in-memory transport replayed an already-processed envelope".to_string(),
             },

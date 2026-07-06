@@ -29,51 +29,51 @@ etot folder uzhe suwestvuet; novij ne sozdavat; rabotat s nim
 ## 🟥 2. gsd-discuss-phase
 
 ```
-/gsd-discuss-phase 066
+/gsd-discuss-phase 067
 Goal:
 -----
-Understand the problems and issues described in 066-TODO.md and provide comprehensive answers and solutions.
+Understand the problems and issues described in 067-TODO.md and provide comprehensive answers and solutions.
 ----
-066-TODO.md is the canonical planning inventory for Phase 066.
-The planner must cover all canonical Phase 066 tasks.
+067-TODO.md is the canonical planning inventory for Phase 067.
+The planner must cover all canonical Phase 067 tasks.
 Planning must proceed sequentially, one canonical task after another.
 
-066-TODO.md describes the specific tasks that must be scheduled for execution. You are forbidden from changing the task titles or their wording. Create a simple 066-CONTEXT.md describing this situation.
+067-TODO.md describes the specific tasks that must be scheduled for execution. You are forbidden from changing the task titles or their wording. Create a simple 067-CONTEXT.md describing this situation.
 
 MANDATORY: Do not duplicate the existing codebase or its logic. Do not introduce a parallel layer. Prevent codebase concept drift.
 
-During the planning phase, you will need to schedule the specific execution of these 066-TODO.md tasks, one after the another.
+During the planning phase, you will need to schedule the specific execution of these 067-TODO.md tasks, one after the another.
 
 None of the tasks in the table can be excluded. Only in extreme cases where it is impossible to bypass a principle blocker will it be necessary to record this in the final report.
 ```
 
 ```
-/gsd-ai-integration-phase 066
+/gsd-ai-integration-phase 067
 ```
 
 ## 🟥 3. gsd-research-phase <mark>NOT IN USE</mark>
 
 ```
-/gsd-research-phase 066
-goal: ponjat problemi i voprosi opisannie v 066-TODO.md i dat' na nih polnocennij otvet i  reshenija
+/gsd-research-phase 067
+goal: ponjat problemi i voprosi opisannie v 067-TODO.md i dat' na nih polnocennij otvet i  reshenija
 ```
 
 ## 🟥 4. GSD-Review-Context <mark>x3 times</mark>
 
 ```
 /GSD-Review-Context
-current_context = 066-CONTEXT.md + 066-TODO.md
+current_context = 067-CONTEXT.md + 067-TODO.md
 review_goal = 
 -----
-Verify that everything mentioned in 066-TODO.md has been transferred to the context for implementing 066-CONTEXT.md.
+Verify that everything mentioned in 067-TODO.md has been transferred to the context for implementing 067-CONTEXT.md.
 -----
-Create a table in the 066-CONTEXT.md file confirming the transfer of each task from the 066-TODO.md that needs to be completed/checked/confirmed, etc.
+Create a table in the 067-CONTEXT.md file confirming the transfer of each task from the 067-TODO.md that needs to be completed/checked/confirmed, etc.
 
-Verify that all suggestions and issues of 066-TODO.md are included in context and in 066-CONTEXT.md. I need to verify everything 100% before implementation
+Verify that all suggestions and issues of 067-TODO.md are included in context and in 067-CONTEXT.md. I need to verify everything 100% before implementation
 
 MANDATORY: Do not duplicate the existing codebase or its logic. Do not introduce a parallel layer. Prevent codebase concept drift.
 
-Run the second `doublecheck` against 066-TODO.md to confirm that all issues are in 066-CONTEXT.md.
+Run the second `doublecheck` against 067-TODO.md to confirm that all issues are in 067-CONTEXT.md.
 ```
 
 ---------------------
@@ -292,7 +292,7 @@ MUST pay special attention to following instructions:
 ## 🟪 11. GSD-Finalization
 
 ```
-/gsd-secure-phase 066
+/gsd-secure-phase 067
 ```
 
 ```
@@ -353,7 +353,7 @@ phase_dir = 067-Sharded-Concensus
 
 ```markdown
 /alert-concept-drift current codebase vs git branch `main` feat(v2.175.0)
-create 066-CONCEPT-DRIFT-REPORT.md
+create 067-CONCEPT-DRIFT-REPORT.md
 ```
 
 ---
@@ -381,7 +381,7 @@ phase_dir = 067-Sharded-Concensus
 ```
 
 ```markdown
-/z00z-design-foundation-compliance
+/z00z-design-foundation-compliance   fix all issues in yolo mode
 ```
 ---
 
@@ -389,9 +389,9 @@ phase_dir = 067-Sharded-Concensus
 
 ```markdown
 /attack-surfaces-create
-scope = 066-TODO.md
-report_path = 066-Strix-report.md
-db_path = 066-Strix-db.jsonl
+scope = 067-TODO.md + 067-verdict.md
+report_path = 067-Sharded-Concensus
+db_path = 067-Sharded-Concensus-db.jsonl
 max_variants = 20
 ```
 
@@ -399,9 +399,9 @@ max_variants = 20
 
 ```markdown
 /attack-surfaces-resolve
-db_path = 066-Strix-db.jsonl
+db_path = 067-Sharded-Concensus-db.jsonl
 surface_id = [id1,id2,...]
-out_spec = 066-Strix-report.md
+out_spec = 067-Sharded-Concensus-report.md
 ```
 
 
@@ -444,7 +444,7 @@ Don't just compare, achieve this state.
 ## 🔷 crypto-architect
 
 ```
-/crypto-architect sozdaj glubokij otchet `.planning/phases/066-Strix/storage-audit-sonet46.md` konkretno po crate `z00z_wallets/` izuchi tolko *.rs implementaciju i ne trogaj drugie dokumenti (ne vkluchaj tari/ vendor)
+/crypto-architect sozdaj glubokij otchet `.planning/phases/067-Strix/storage-audit-sonet46.md` konkretno po crate `z00z_wallets/` izuchi tolko *.rs implementaciju i ne trogaj drugie dokumenti (ne vkluchaj tari/ vendor)
 ```
 
 -------------------------
@@ -452,7 +452,7 @@ Don't just compare, achieve this state.
 ## 🔷 smart-docs-fusion
 
 ```
-/smart-docs-fusion [ ] --> .planning/phases/066-Strix/FUSION.md
+/smart-docs-fusion [ ] --> .planning/phases/067-Strix/FUSION.md
 ```
 
 

@@ -1,6 +1,6 @@
 # Phase 067 Plan Review
 
-**Reviewed:** 2026-07-05
+**Reviewed:** 2026-07-05; late-addendum update 2026-07-06
 **Prompt:** `/GSD-Review-Plan current_plan={067-*-PLAN.md}`
 **Goal:** Verify that every bullet from
 `.planning/phases/067-Sharded-Concensus/067-TODO.md` and its referenced local
@@ -8,9 +8,10 @@ Markdown corpus is reflected in
 `.planning/phases/067-Sharded-Concensus/067-CONTEXT.md`,
 `.planning/phases/067-Sharded-Concensus/067-COVERAGE.md`, and
 `.planning/phases/067-Sharded-Concensus/067-01-PLAN.md` through
-`.planning/phases/067-Sharded-Concensus/067-19-PLAN.md` before implementation,
-without duplicating codebase logic, introducing a parallel layer, or allowing
-Graphify to become an evidence source.
+`.planning/phases/067-Sharded-Concensus/067-21-PLAN.md` on the current branch,
+with `067-20` and `067-21` treated as late addendum overlays on the original
+`19` required groups, without duplicating codebase logic, introducing a
+parallel layer, or allowing Graphify to become an evidence source.
 
 ## Scope
 
@@ -29,9 +30,13 @@ Graphify to become an evidence source.
 - `.planning/phases/067-Sharded-Concensus/067-08-PLAN.md`
 - `.planning/phases/067-Sharded-Concensus/067-09-PLAN.md`
 - `.planning/phases/067-Sharded-Concensus/067-10-PLAN.md` through
-  `.planning/phases/067-Sharded-Concensus/067-19-PLAN.md`
+  `.planning/phases/067-Sharded-Concensus/067-21-PLAN.md`
+- `.planning/phases/067-Sharded-Concensus/067-GLOSSARY-CLAIMS.md`
+- `.planning/phases/067-Sharded-Concensus/067-CLAIM-AUDIT.md`
+- `.planning/phases/067-Sharded-Concensus/067-FINAL-CONFORMANCE.md`
 - `.planning/phases/090-New-Scenarios/90-TODO.md`
 - `crates/z00z_runtime/aggregators/README.md`
+- `scripts/audit/audit_067_claims.py`
 - legacy non-canonical aggregator-consensus references, reviewed as stale
   drift only
 - live runtime, rollup, validator, config, and simulator anchors cited by the
@@ -147,8 +152,9 @@ review fixes above.
 
 The base review above remains historical evidence for `067-01` through
 `067-09`. After `067-verdict.md` became normative for strong
-Local-Conformance-Simulation closure, Phase 067 expanded from 9 to 19 plan
-packets.
+Local-Conformance-Simulation closure, Phase 067 expanded from 9 to `19`
+required plan packets. The current branch packet now carries a `21`-file plan
+corpus once addendum closeout packets `067-20` and `067-21` are included.
 
 | Check | Result |
 | --- | --- |
@@ -157,7 +163,7 @@ packets.
 | Verdict expansion mapping | PASS: `VERDICT-LCS-01` through `VERDICT-LCS-10` map to `067-10` through `067-19` |
 | Required plan fields in expansion packet | PASS: each new plan includes inputs, outputs, dependencies, acceptance tests, simulation gate, negative tests, artifacts, results, anti-placeholder gate, evidence gate, and not-recommendation gate |
 | Four-plan split challenge | PASS: rejected as too coarse for independent blockers; expansion uses ten executable waves |
-| Coverage artifacts updated | PASS: `067-verdict.md`, `067-COVERAGE.md`, `067-CONTEXT.md`, `067-TEST-SPEC.md`, `067-TESTS-TASKS.md`, `067-SOURCE-AUDIT.md`, `.planning/STATE.md`, and `.planning/ROADMAP.md` reflect the 19-plan corpus |
+| Coverage artifacts updated | PASS: `067-verdict.md`, `067-COVERAGE.md`, `067-CONTEXT.md`, `067-TEST-SPEC.md`, `067-TESTS-TASKS.md`, `067-SOURCE-AUDIT.md`, `.planning/STATE.md`, and `.planning/ROADMAP.md` reflect the `19` required groups and the current `21`-file branch corpus |
 
 ## Second Verdict Doublecheck Result
 
@@ -167,11 +173,11 @@ The requested second `doublecheck` against
 
 | Check | Result |
 | --- | --- |
-| `067-verdict.md` is referenced by all numbered plans | PASS: `067-01-PLAN.md` through `067-19-PLAN.md` |
+| `067-verdict.md` is referenced by all numbered plans | PASS: `067-01-PLAN.md` through `067-21-PLAN.md` |
 | Required plan fields in every numbered plan | PASS: `plan_id`, `task_ids`, `copied_task_rows`, `source_refs`, `inputs`, `outputs`, `dependencies`, `acceptance_tests`, `simulation_gate`, `negative_tests`, artifact/test/result sections, `anti_placeholder_gate`, `current_code_refs`, `blockers`, `evidence_gate`, `not_recommendation_gate`, `implementation_depth`, and `<verify>` |
 | `current_code_refs` file existence | PASS: all current anchors resolve to live repo files |
 | `source_refs` file existence | PASS: all source refs resolve to live repo files or explicit stale-drift prose |
-| Coverage Appendix source refs include `067-verdict.md` | PASS: all `067-01-PLAN.md` through `067-19-PLAN.md` appendix rows include the verdict source |
+| Coverage Appendix source refs include `067-verdict.md` | PASS: all `067-01-PLAN.md` through `067-21-PLAN.md` appendix rows include the verdict source |
 | Proposed future modules in source/current/read anchors | PASS: proposed future modules are absent from `source_refs`, `current_code_refs`, and `<read_first>` anchors |
 | Context coverage for Strong Gates 1-15 | PASS |
 | Context/review Strong Gate owner consistency | PASS: Gate 8 and Gate 14 owner lists are aligned |
@@ -229,7 +235,7 @@ post-verdict plan expansion and the referenced-corpus fixes above.
 | `067-TODO.md` exact inventory | PASS: `19` H2 sections, `55` H3 sections, `447` dash bullets, `80` numbered items |
 | Bullet-level coverage | PASS: all `527/527` dash or numbered TODO items map to a covered source-audit row with context or plan owners |
 | Referenced `scenario_11` corpus | PASS: `.planning/phases/090-New-Scenarios/90-TODO.md` section `15` range `1050-1290`, `15` H3 sections, `81` dash bullets, and `13` numbered items are locked; exact `Duplicate voter` and `one-secondary-stale` rows are represented |
-| Numbered plan packet | PASS: `19` plan files, `PHASE-0..8` plus `VERDICT-LCS-01..10`, no missing or duplicate frontmatter task ids |
+| Numbered plan packet | PASS: `19` required groups (`PHASE-0..8` plus `VERDICT-LCS-01..10`) plus branch addendum overlays `067-20` and `067-21`; no missing or duplicate frontmatter task ids |
 | Current/source anchor grounding | PASS: all parsed `current_code_refs` and `source_refs` resolve to live files or explicit stale-drift prose |
 | No parallel layer / concept drift | PASS: context and plans preserve Graphify non-authority, stale legacy-reference handling, proposed-target discipline, and no duplicate runtime owner rule |
 | Referenced Markdown corpus in plans | PASS: all `20/20` Markdown refs parsed from `067-TODO.md` and `067-verdict.md` exist locally, appear in `.planning/phases/067-Sharded-Concensus/067-CONTEXT.md`, and are now machine-checkable in the plan packet |
@@ -245,15 +251,15 @@ the planning summaries.
 
 | Check | Result |
 | --- | --- |
-| Plan-file inventory | PASS: `.planning/phases/067-Sharded-Concensus/067-01-PLAN.md` through `.planning/phases/067-Sharded-Concensus/067-19-PLAN.md` exist |
-| Required plan fields | PASS: all `19/19` plans include `plan_id`, `task_ids`, `copied_task_rows`, `source_refs`, `inputs`, `outputs`, `dependencies`, `acceptance_tests`, `simulation_gate`, `negative_tests`, artifacts/tests/results, `anti_placeholder_gate`, `current_code_refs`, `blockers`, `evidence_gate`, and `not_recommendation_gate` |
+| Plan-file inventory | PASS: `.planning/phases/067-Sharded-Concensus/067-01-PLAN.md` through `.planning/phases/067-Sharded-Concensus/067-21-PLAN.md` exist on the current branch |
+| Required plan fields | PASS: all current-branch plans (`067-01` through `067-21`) include `plan_id`, `task_ids`, `copied_task_rows`, `source_refs`, `inputs`, `outputs`, `dependencies`, `acceptance_tests`, `simulation_gate`, `negative_tests`, artifacts/tests/results, `anti_placeholder_gate`, `current_code_refs`, `blockers`, `evidence_gate`, and `not_recommendation_gate` |
 | Required group mapping | PASS: `PHASE-0` through `PHASE-8` map one-to-one to `067-01` through `067-09`; `VERDICT-LCS-01` through `VERDICT-LCS-10` map one-to-one to `067-10` through `067-19` |
 | Literal `TASK-NNN` rows | PASS: none exist in `067-TODO.md` or `067-verdict.md`; the packet correctly uses phase groups and `VERDICT-LCS-*` ids instead of inventing fake task ids |
 | Current core code anchors | PASS: `commit_subject.rs`, `shard_vote.rs`, `shard_quorum_certificate.rs`, `secondary_replay.rs`, `signature.rs`, `transport.rs`, `evidence.rs`, `bft_committee.rs`, `bft_engine.rs`, `celestia_local.rs`, and `scenario_11` report/module files exist |
 | Current implemented test anchors | PASS: commit subject, QC, secondary replay, signature adapter, transport adapter, equivocation evidence, BFT committee rules, DA quorum binding, and Celestia-local binding tests exist |
 | Runnable rollup-node command | PASS after `067-10` implementation: `cargo run --release -p z00z_rollup_node -- --help` resolves to the live binary target and matches the canonical manifest command contract |
-| Missing late verdict test homes | PLANNED BLOCKER: `test_transport_fault_matrix.rs`, `test_hotstuff_local_backend.rs`, `test_structured_evidence_registry.rs`, `test_hjmt_process_devnet.rs`, and `scripts/audit/audit_067_claims.py` are absent and therefore cannot be claimed complete |
-| Additional still-missing owned artifacts | PLANNED BLOCKER: `test_planner_authority.rs`, `scripts/hjmt_local_devnet.sh`, `docker/compose.hjmt-local.yaml`, `067-GLOSSARY-CLAIMS.md`, `067-CLAIM-AUDIT.md`, and `067-FINAL-CONFORMANCE.md` are still absent; they remain owned by `067-12`, `067-13`, `067-18`, and `067-19` and therefore must stay non-claimed until created |
+| Missing late verdict test homes | HISTORICAL 2026-07-05 BLOCKER: `test_transport_fault_matrix.rs`, `test_hotstuff_local_backend.rs`, `test_structured_evidence_registry.rs`, `test_hjmt_process_devnet.rs`, and `scripts/audit/audit_067_claims.py` were absent at the time of that pass; this row is superseded by `Late Addendum Review 2026-07-06` below |
+| Additional still-missing owned artifacts | HISTORICAL 2026-07-05 BLOCKER: `test_planner_authority.rs`, `scripts/hjmt_local_devnet.sh`, `docker/compose.hjmt-local.yaml`, `067-GLOSSARY-CLAIMS.md`, `067-CLAIM-AUDIT.md`, and `067-FINAL-CONFORMANCE.md` were absent at the time of that pass; this row is superseded by `Late Addendum Review 2026-07-06` below |
 | Active `standby` terminology | PASS: no active `standby`, `TakeoverStandby`, `standby_ids`, `standby_aggregator_ids`, or `standby_shard_ids` hits were found under the 067 runtime/rollup/simulator/config code search scope |
 | Placeholder/stub scan in key 067 source modules | PASS: no `todo!`, `unimplemented!`, `PLACEHOLDER`, or `stub` hits were found in the inspected 067 source modules; panic hits in tests/helpers are assertion failures, not implementation placeholders |
 | Test artifact coverage for verdict gates | PASS after fix: every Gate 1-15 and every hard blocker maps to `TS-*`, `TT-*`, test homes, and measurable pass/fail oracles |
@@ -265,3 +271,40 @@ runtime surfaces listed as planned blockers. Those blockers are explicit and
 must be closed by real code/tests or deterministic local simulation, not by
 scaffold files, empty test homes, dependency-only imports, or report-only
 claims.
+
+## Late Addendum Review 2026-07-06
+
+Prompt applied: `/GSD-Review-Plan current_plan = 067-19-PLAN.md, 067-21-PLAN.md`
+
+This section supersedes the stale missing-file statements from the
+2026-07-05 review where the current branch state has changed. The historical
+rows remain as dated evidence only; the branch-local truth for the late
+closeout packet is the table below.
+
+| Check | Result |
+| --- | --- |
+| Branch plan-file inventory | PASS: the current branch packet is `067-01-PLAN.md` through `067-21-PLAN.md`; `067-20` and `067-21` are late addendum plans over the original `19` required groups |
+| `067-19` final-gate sequencing | PASS after fix: `.planning/phases/067-Sharded-Concensus/067-19-PLAN.md` now names `067-20` and `067-21` explicitly in `source_refs`, inputs, outputs, blockers, evidence gates, artifacts, Coverage Appendix, and `<verify>` rerun commands |
+| Late test and audit homes | PASS: the previously missing late anchors are now present in the workspace, including `test_planner_authority.rs`, `test_transport_fault_matrix.rs`, `test_hotstuff_local_backend.rs`, `test_structured_evidence_registry.rs`, `test_hjmt_process_devnet.rs`, `scripts/hjmt_local_devnet.sh`, and `scripts/audit/audit_067_claims.py` |
+| Claim-audit contract completeness | PASS after fix: `.planning/phases/067-Sharded-Concensus/067-CLAIM-AUDIT.md` now contains inputs, outputs, claim-level rules, a mandatory `Component Presence Matrix`, current audit status, and unresolved non-claims |
+| Final conformance artifact presence | PASS after fix: `.planning/phases/067-Sharded-Concensus/067-FINAL-CONFORMANCE.md` now exists as a pre-execution closeout contract; it is not a closure verdict until real rerun outputs are pasted into it |
+| Claim-level vocabulary alignment | PASS after fix: `scripts/audit/audit_067_claims.py` and `.planning/phases/067-Sharded-Concensus/067-GLOSSARY-CLAIMS.md` both allow `live`, `simulated-full`, `live-claim-removed`, and `not-claimed` |
+| Flow-id versus executable-anchor mismatch | PASS after fix: `.planning/phases/067-Sharded-Concensus/067-21-PLAN.md` and `.planning/phases/067-Sharded-Concensus/067-FINAL-CONFORMANCE.md` now carry an explicit `Flow Alias Matrix` mapping required addendum flow ids to current runtime or `scenario_11` anchors |
+| Packet-truth docs versus live branch state | PASS after fix: `.planning/phases/067-Sharded-Concensus/067-CONTEXT.md`, `.planning/phases/067-Sharded-Concensus/067-COVERAGE.md`, `.planning/phases/067-Sharded-Concensus/067-verdict.md`, `.planning/phases/067-Sharded-Concensus/067-TEST-SPEC.md`, and `.planning/phases/067-Sharded-Concensus/067-TESTS-TASKS.md` now distinguish present late anchors from still-open execution gaps |
+
+Applied late-addendum constraints:
+
+- Crypto-architect constraints remain mandatory: commit subject, QC, theorem,
+  publication, lineage, and validator bindings stay canonical and fail closed;
+  no addendum text may invent a second certificate truth model.
+- Security-audit constraints remain mandatory: no parallel runtime owner, no
+  docs-only closure, and no Graphify-derived execution evidence.
+- Doublecheck-style packet verification was rerun against the late-closeout
+  docs to ensure `067-20` and `067-21` are named wherever exhaustive plan
+  inventory or final-gate closure is claimed.
+
+Residual late-closeout status:
+
+- `067-21` has removed packet inconsistencies, not the execution burden.
+- `067-19` remains open until the rerun commands succeed and the exact outcomes
+  are written into `.planning/phases/067-Sharded-Concensus/067-FINAL-CONFORMANCE.md`.

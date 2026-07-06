@@ -23,6 +23,20 @@ pub struct BftCommit {
     pub certificate: ShardQuorumCertificate,
 }
 
+impl BftCommit {
+    pub(crate) fn new(subject: CommitSubject, certificate: ShardQuorumCertificate) -> Self {
+        Self {
+            term: subject.term,
+            batch_id: subject.batch_id,
+            route: subject.route(),
+            state_root: subject.new_state_root,
+            journal_lineage: subject.journal_lineage,
+            subject,
+            certificate,
+        }
+    }
+}
+
 /// Minimal local BFT backend for simulated `3f+1` and `2f+1` proofs.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BftEngine {
@@ -86,15 +100,7 @@ impl BftEngine {
         )?;
         self.term = subject.term;
 
-        Ok(BftCommit {
-            term: subject.term,
-            batch_id: subject.batch_id,
-            route: subject.route(),
-            state_root: subject.new_state_root,
-            journal_lineage: subject.journal_lineage,
-            subject: subject.clone(),
-            certificate,
-        })
+        Ok(BftCommit::new(subject.clone(), certificate))
     }
 }
 

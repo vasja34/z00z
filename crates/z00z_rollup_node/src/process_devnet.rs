@@ -214,7 +214,13 @@ fn run_process_devnet(
         observed_unix_ms: now_ms,
     };
     save_json(&ready_path, &ready)?;
-    write_heartbeat(&heartbeat_path, run_id, agg.aggregator_id.as_u16(), pid, "running")?;
+    write_heartbeat(
+        &heartbeat_path,
+        run_id,
+        agg.aggregator_id.as_u16(),
+        pid,
+        "running",
+    )?;
     append_event(
         &event_path,
         run_id,
@@ -250,7 +256,13 @@ fn run_process_devnet(
             break "timeout";
         }
         thread::sleep(Duration::from_millis(heartbeat_ms));
-        write_heartbeat(&heartbeat_path, run_id, agg.aggregator_id.as_u16(), pid, "running")?;
+        write_heartbeat(
+            &heartbeat_path,
+            run_id,
+            agg.aggregator_id.as_u16(),
+            pid,
+            "running",
+        )?;
     };
 
     write_heartbeat(
@@ -280,7 +292,9 @@ fn run_process_devnet(
 }
 
 fn env_value(name: &str) -> Option<String> {
-    std::env::var(name).ok().filter(|value| !value.trim().is_empty())
+    std::env::var(name)
+        .ok()
+        .filter(|value| !value.trim().is_empty())
 }
 
 fn required_env(name: &str) -> Result<String, String> {
@@ -318,7 +332,8 @@ fn load_json<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<Option<T>, Str
     if !path.is_file() {
         return Ok(None);
     }
-    let bytes = fs::read(path).map_err(|err| format!("failed to read {}: {err}", path.display()))?;
+    let bytes =
+        fs::read(path).map_err(|err| format!("failed to read {}: {err}", path.display()))?;
     serde_json::from_slice(&bytes)
         .map(Some)
         .map_err(|err| format!("failed to decode {}: {err}", path.display()))

@@ -28,7 +28,7 @@ impl BftThresholds {
                 "invalid BFT committee: membership must satisfy 3f+1 with at least four members",
             ));
         }
-        if (member_count - 1) % 3 != 0 {
+        if !(member_count - 1).is_multiple_of(3) {
             return Err(reject(
                 RejectClass::PolicyReject,
                 "invalid BFT committee: membership must satisfy 3f+1 exactly",

@@ -7,8 +7,11 @@
 `067-TODO.md` describes a staged local-conformance buildout rather than a
 production BFT network: first a live local CFT quorum pipeline, then validator
 binding, then signature or transport seams, then a simulated-full
-BFT/Celestia layer. Current status per `067-COVERAGE.md` and `STATE.md`:
-`067-01` through `067-13` are closed, and the next active step is `067-14`.
+BFT/Celestia layer. The current branch packet now includes
+`067-01-PLAN.md` through `067-21-PLAN.md`: `067-01` through `067-19` remain
+the original required group mapping, while `067-20` and `067-21` are late
+addendum closure plans that reopen the final gate for certificate-bound resume,
+packet-truth reconciliation, and final conformance closeout.
 
 ## 🔎 Ответы по твоим пунктам
 
@@ -188,11 +191,14 @@ manifest-only gap.
 
 What is still not claimed here is real network transport. `scenario_11`
 continues to carry deterministic in-process transport semantics for partition
-or heal or crash-report honesty, and the executable transport-fault matrix
-remains the `067-14` lane. The stronger production-approximation target is now
-explicitly split across both landed workstreams: `067-13` provides minimal
-multi-process operator realism, and `067-14` must provide deterministic
-transport exhaustiveness without bypassing replay or signature verification.
+or heal or crash-report honesty, and the executable transport-fault matrix now
+closes on `067-14`. The stronger production-approximation target is now
+explicitly split across landed workstreams: `067-13` provides minimal
+multi-process operator realism, `067-14` provides deterministic transport
+exhaustiveness without bypassing replay or signature verification, `067-15`
+closes the HotStuff-like local backend contract, `067-16` closes the
+Celestia-local artifact contract, and `067-18` is now the next lane for the
+glossary claim registry and report honesty closeout.
 
 ### 7. Planner Authority, Primary/Secondary Planner Question, And Failover
 
@@ -887,6 +893,8 @@ uses ten additional executable plan groups instead of four.
 - Required verdict Local-Conformance-Simulation groups: `10`
   (`067-10` through `067-19`).
 - Total required Phase 067 executable plan groups after this addendum: `19`.
+- Current branch plan corpus: `21` plan files = `19` required groups plus late
+  addendum plans `067-20` and `067-21`.
 - No `TASK-NNN` is invented. The verdict expansion uses `VERDICT-LCS-01`
   through `VERDICT-LCS-10` because the source files contain no literal
   `TASK-NNN` rows.
@@ -915,6 +923,13 @@ The files `067-12-PLAN.md`, `067-13-PLAN.md`, `067-14-PLAN.md`, and
 `067-15-PLAN.md` are mandatory standalone implementation plans. They must not be
 merged into `067-10`, `067-11`, `067-16`, or any wave-summary row.
 
+The current branch also carries:
+
+| Addendum file | Scope | Relation |
+| --- | --- | --- |
+| `.planning/phases/067-Sharded-Concensus/067-20-PLAN.md` | certificate-bound publication resume and recovered-primary anti-failback closure | late runtime addendum that MUST be consumed by the final rerun |
+| `.planning/phases/067-Sharded-Concensus/067-21-PLAN.md` | packet closure, claim-audit completion, flow-alias reconciliation, and final conformance closeout | late packet addendum that MUST be consumed by the final rerun |
+
 ### Added Waves
 
 This table is a sequencing summary only. The authoritative one-to-one coverage
@@ -938,6 +953,11 @@ mapping is the Task-To-Plan Coverage Table below.
 The verdict Local-Conformance-Simulation expansion is exactly `067-10` through
 `067-19`. Plans `067-12` through `067-15` are intentionally separate executable
 groups and must not be merged into adjacent work.
+
+The branch inventory is broader than the required-group mapping: it now also
+includes `067-20-PLAN.md` and `067-21-PLAN.md` as explicit closeout addenda.
+They do not create new `VERDICT-LCS-*` ids, but any exhaustive packet-inventory
+claim MUST name them.
 
 This table is a file inventory, not a second coverage map. The authoritative
 task-to-plan mapping remains the Task-To-Plan Coverage Table below.
@@ -985,10 +1005,10 @@ imports fail the anti-placeholder gate.
 | none; `VERDICT-LCS-02` | `067-11` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, `090-New-Scenarios/90-TODO.md`, recovery and storage anchors | QC, DA binding, recovery, storage primitives | durable consensus store, restart tests | store, recovery, scenario tests | votes/QCs/anchors survive restart or fail closed | storage commit/recovery is real; wall-clock may be simulated | no in-memory-only or log-only evidence | complete |
 | none; `VERDICT-LCS-03` | `067-12` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, `090-New-Scenarios/90-TODO.md`, planner code/config anchors | planner config, route digest, placement generation | planner authority checks, claim-registry row | planner drift and dispatch tests | planner HA is implemented or removed as a live claim | each aggregator recomputes canonical plan locally | no docs-only HA removal or planner stub | complete |
 | none; `VERDICT-LCS-04` | `067-13` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, `090-New-Scenarios/90-TODO.md`, `sim_5a7s` manifest/process anchors | runnable binary, durable store, planner authority | local devnet script, optional Compose, process evidence | process tests, smoke script, scenario test | process/devnet behavior is local simulated-full | local OS/Docker boundary only; consensus primitives real | no manifest-only or Docker-file-only proof | complete |
-| none; `VERDICT-LCS-05` | `067-14` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, transport/vote/QC anchors | signature, transport, durable evidence, process harness | fault scheduler, transport evidence | transport fault, adapter, scenario tests | network simulation cannot inject consensus truth | fake delivery timing only; replay/signature real | no label-only fault simulation | planned |
-| none; `VERDICT-LCS-06` | `067-15` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, BFT and subject/replay anchors | BFT committee, subject/replay, transport, store | HotStuff-local backend, view-change evidence | HotStuff-local, BFT rules, scenario tests | local HotStuff-like claim is executable | backend local; subject/replay/validator real | no name-only HotStuff or CFT-as-BFT | planned |
-| none; `VERDICT-LCS-07` | `067-16` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, DA and validator anchors | QC binding, local DA, validator, BFT local artifacts | Celestia-local adapter and artifact schema | Celestia binding, DA, validator, scenario tests | Celestia term is local simulated-full | fake provider transport only; artifact contract real | no provider-name-only or constant blob adapter | planned |
-| none; `VERDICT-LCS-08` | `067-17` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, evidence/report anchors | transport, Celestia-local, durable store, report writer | evidence registry, scenario evidence JSON | evidence and scenario tests | safety evidence is machine-auditable | local faults simulated; artifact refs real | no string-only or un-emitted evidence | planned |
+| none; `VERDICT-LCS-05` | `067-14` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, transport/vote/QC anchors | signature, transport, durable evidence, process harness | fault scheduler, transport evidence | transport fault, adapter, scenario tests | network simulation cannot inject consensus truth | fake delivery timing only; replay/signature real | no label-only fault simulation | complete |
+| none; `VERDICT-LCS-06` | `067-15` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, BFT and subject/replay anchors | BFT committee, subject/replay, transport, store | HotStuff-local backend, view-change evidence | HotStuff-local, BFT rules, scenario tests | local HotStuff-like claim is executable | backend local; subject/replay/validator real | no name-only HotStuff or CFT-as-BFT | complete |
+| none; `VERDICT-LCS-07` | `067-16` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, DA and validator anchors | QC binding, local DA, validator, BFT local artifacts | Celestia-local adapter and artifact schema | Celestia binding, DA, validator, scenario tests | Celestia term is local simulated-full | fake provider transport only; artifact contract real | no provider-name-only or constant blob adapter | complete |
+| none; `VERDICT-LCS-08` | `067-17` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, evidence/report anchors | transport, Celestia-local, durable store, report writer | evidence registry, scenario evidence JSON | evidence and scenario tests | safety evidence is machine-auditable | local faults simulated; artifact refs real | no string-only or un-emitted evidence | complete |
 | none; `VERDICT-LCS-09` | `067-18` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, all plan files, glossary/report anchors | all plan files, glossary terms, evidence artifacts | claim registry, audit script, report tests | claim audit and scenario tests | every term has enforced claim state | simulated-full must cite executable local evidence | no prose-only glossary | planned |
 | none; `VERDICT-LCS-10` | `067-19` | `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-COVERAGE.md`, all plan files, scenario_11 anchors | all prior plans and evidence | final conformance doc, final evidence bundle | scenario_11, claim audit, devnet smoke, release tests | integrated local conformance proof closes all hard blockers | only allowed external boundaries faked | no compile-only or disconnected-unit closure | planned |
 

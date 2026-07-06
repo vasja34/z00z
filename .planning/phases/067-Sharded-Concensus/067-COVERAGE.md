@@ -2,7 +2,7 @@
 
 **Source:** `.planning/phases/067-Sharded-Concensus/067-TODO.md` plus
 `.planning/phases/067-Sharded-Concensus/067-verdict.md`
-**Generated:** 2026-07-05
+**Generated:** 2026-07-06
 **Status:** Expanded planning coverage ledger
 
 ## Coverage Audit
@@ -11,6 +11,8 @@
 - Base required GSD Plan Groups from `067-TODO.md`: `9`
 - Required verdict Local-Conformance-Simulation groups: `10`
 - Total Required GSD Plan Groups: `19`
+- Current branch plan corpus: `21` plan files = `19` required groups plus
+  addendum plans `067-20` and `067-21`
 - Base group source: `067-TODO.md` `14.1` through `14.9`
 - Verdict group source: `067-verdict.md` Strong Acceptance Gate, Concrete Add
   List, and MUST-solve list
@@ -33,6 +35,11 @@ replace plan ids. The required verdict expansion files are:
 `067-10-PLAN.md`, `067-11-PLAN.md`, `067-12-PLAN.md`, `067-13-PLAN.md`,
 `067-14-PLAN.md`, `067-15-PLAN.md`, `067-16-PLAN.md`, `067-17-PLAN.md`,
 `067-18-PLAN.md`, and `067-19-PLAN.md`.
+
+The current branch also carries late addendum plans
+`067-20-PLAN.md` and `067-21-PLAN.md`. They do not change the `19` required
+group mapping, but they MUST be named explicitly wherever the branch inventory
+or final closure packet is described exhaustively.
 
 `067-12-PLAN.md` through `067-15-PLAN.md` are mandatory standalone plans:
 planner authority, multi-process devnet, network fault matrix, and
@@ -60,16 +67,29 @@ HotStuff-like local backend contract.
 | `VERDICT-LCS-02` Durable consensus evidence store | `067-11` | `067-verdict.md` Gates 12 and Hard Blockers; `067-TODO.md` restart/resume matrix and Section `13`; `090-New-Scenarios` `15` | QC, votes, DA binding, recovery, storage primitives | consensus store API, restart recovery tests, scenario evidence | store, recovery, failover, scenario tests | votes/QCs/anchors survive restart or fail closed | storage commit/recovery real; process and wall-clock may be simulated | no in-memory-only or log-only persistence | complete |
 | `VERDICT-LCS-03` Planner authority and failover claim boundary | `067-12` | `067-verdict.md` Gate 11 and planner answer; `067-TODO.md` replay/planner requirements; `090-New-Scenarios` `15` | planner config, route digest, placement generation | planner authority checks, drift tests, claim registry row | planner, dispatch, scenario tests | planner truth is deterministic replicated config or real HA is tested | every aggregator recomputes canonical plan locally | no docs-only HA removal or planner stub | complete |
 | `VERDICT-LCS-04` Multi-process devnet harness | `067-13` | `067-verdict.md` Gate 10 and process model answer; `067-TODO.md` Sections `13`, `14.8`; `090-New-Scenarios` `15` | runnable binary, durable store, planner authority, manifest | devnet script, optional Compose, process tests, per-process evidence | process-devnet tests, process tests, smoke script, scenario tests | process/devnet behavior is local simulated-full | local OS/Docker process boundary; consensus primitives real | no manifest-only or Docker-file-only proof | complete |
-| `VERDICT-LCS-05` Network fault matrix and transport conformance | `067-14` | `067-verdict.md` Gate 6 and hard blockers; `067-TODO.md` partition/heal and failure telemetry requirements | signature, transport, durable evidence, process harness | fault scheduler, transport/evidence tests, fault evidence JSON | transport fault, adapter, equivocation, scenario tests | network simulation cannot inject consensus truth | delivery timing/faults simulated; replay/signature real | no label-only transport faults | planned |
-| `VERDICT-LCS-06` HotStuff-like local backend contract | `067-15` | `067-verdict.md` Gates 7 and 8; `067-TODO.md` `14.9`; `090-New-Scenarios` `15` | BFT committee, subject/replay, transport, durable store | HotStuff-local backend, view/change tests, evidence | HotStuff-local, BFT rules, transport, scenario tests | HotStuff-like claim is executable locally | backend local; commit subject/replay/validator real | no name-only HotStuff or CFT-as-BFT | planned |
-| `VERDICT-LCS-07` Celestia-local artifact conformance | `067-16` | `067-verdict.md` Gates 4 and 5; Concrete Add List; `067-TODO.md` DA/Celestia notes | QC binding, local DA, validator, BFT local artifacts | Celestia-local adapter, artifact schema, binding tests | Celestia binding, DA, validator, scenario tests | Celestia term is local simulated-full | fake external provider only; local artifact contract real | no provider-name-only or constant blob adapter | planned |
-| `VERDICT-LCS-08` Structured evidence registry | `067-17` | `067-verdict.md` Gate 14; `067-TODO.md` evidence/report requirements; `090-New-Scenarios` `15` | transport, durable store, Celestia-local, report writer | evidence registry, evidence tests, scenario report JSON | evidence registry, equivocation, Celestia, scenario tests | safety evidence is machine-auditable | local faults simulated; artifact refs real | no string-only or un-emitted evidence | planned |
+| `VERDICT-LCS-05` Network fault matrix and transport conformance | `067-14` | `067-verdict.md` Gate 6 and hard blockers; `067-TODO.md` partition/heal and failure telemetry requirements | signature, transport, durable evidence, process harness | fault scheduler, transport/evidence tests, fault evidence JSON | transport fault, adapter, equivocation, scenario tests | network simulation cannot inject consensus truth | delivery timing/faults simulated; replay/signature real | no label-only transport faults | complete |
+| `VERDICT-LCS-06` HotStuff-like local backend contract | `067-15` | `067-verdict.md` Gates 7 and 8; `067-TODO.md` `14.9`; `090-New-Scenarios` `15` | BFT committee, subject/replay, transport, durable store | HotStuff-local backend, view/change tests, evidence | HotStuff-local, BFT rules, transport, scenario tests | HotStuff-like claim is executable locally | backend local; commit subject/replay/validator real | no name-only HotStuff or CFT-as-BFT | complete |
+| `VERDICT-LCS-07` Celestia-local artifact conformance | `067-16` | `067-verdict.md` Gates 4 and 5; Concrete Add List; `067-TODO.md` DA/Celestia notes | QC binding, local DA, validator, BFT local artifacts | Celestia-local adapter, artifact schema, binding tests | Celestia binding, DA, validator, scenario tests | Celestia term is local simulated-full | fake external provider only; local artifact contract real | no provider-name-only or constant blob adapter | complete |
+| `VERDICT-LCS-08` Structured evidence registry | `067-17` | `067-verdict.md` Gate 14; `067-TODO.md` evidence/report requirements; `090-New-Scenarios` `15` | transport, durable store, Celestia-local, report writer | evidence registry, evidence tests, scenario report JSON | evidence registry, equivocation, Celestia, scenario tests | safety evidence is machine-auditable | local faults simulated; artifact refs real | no string-only or un-emitted evidence | complete |
 | `VERDICT-LCS-09` Glossary claim registry and report honesty | `067-18` | `067-verdict.md` Gates 1 and 15; all plan files; `067-TEST-SPEC.md`; `067-TESTS-TASKS.md` | plan corpus, evidence artifacts, glossary terms | claim registry, claim audit script, report tests | claim audit and scenario report tests | every term has enforced claim state | simulated-full must cite executable local evidence | no prose-only glossary or unqualified overclaim | planned |
 | `VERDICT-LCS-10` Final local conformance simulation gate | `067-19` | `067-verdict.md` Gate 2 and hard blockers; `067-TODO.md` Section `13`; all plan files | all prior plans and evidence | final conformance doc, final evidence bundle, claim registry | scenario_11, claim audit, devnet smoke, release tests | integrated local conformance proof closes all local blockers | only allowed external boundaries faked; local primitives real | no compile-only or disconnected-unit closure | planned |
+
+## Late Addendum Inventory
+
+The rows below are branch-local closure overlays, not new required plan-group
+ids. They MUST be consumed by `067-19` during the final rerun and by packet
+docs that claim exhaustive branch coverage.
+
+| Addendum row | PLAN id | Purpose | Relation to required groups | Status |
+| --- | --- | --- | --- | --- |
+| `ADDENDUM-067-20` | `067-20` | certificate-bound publication resume and recovered-primary anti-failback closure | reopens late runtime recovery and failback gaps underneath `VERDICT-LCS-10` | planned |
+| `ADDENDUM-067-21` | `067-21` | packet closure, claim-audit completion, flow-alias reconciliation, and final conformance closeout | reopens late packet/doc/flow gaps underneath `VERDICT-LCS-10` | planned |
 
 ## Exact Mapping Assertion
 
 The two coverage tables above are authoritative. They assign all `19` required
 groups to exactly one `067-NN-PLAN.md` each, with no missing or duplicate group
-assignments. Summary tables in `067-verdict.md` are sequencing/file inventory
-only and do not create additional mappings.
+assignments. `067-20` and `067-21` are explicit addendum overlays on the
+current branch; they do not create extra required group ids, but they do reopen
+late closure obligations for `067-19`. Summary tables in `067-verdict.md` are
+sequencing/file inventory only and do not create additional mappings.

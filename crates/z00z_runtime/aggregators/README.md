@@ -11,6 +11,9 @@ may fork a second authority path.
 - `batch_planner`: route verified `WorkItem` input, apply the live `ShardRouteTable`, enforce the exact `ShardRouteTableV1` byte contract, and build `BatchPlanned` or `OrderedBatch`. The current runtime wave stays single-shard per batch.
 - `placement`: operational shard ownership via `AggregatorId`, `ShardPlacement`, `ShardPlacementTable`, `ShardPlacementView`, and secondary metadata.
 - `consensus_adapter`: deterministic local quorum, term, and membership seam over real `ShardRecoveryRecord` and `SettlementRecoveryState` inputs. External replicated-log or discovery systems stay adapter-only until this seam is proven locally.
+- `bft_committee`: exact `3f+1` membership and `2f+1` threshold math for the local BFT-valid committee path; it keeps the `2-of-3` path explicitly CFT-only.
+- `bft_engine`: low-level BFT quorum-certificate builder over the live `CommitSubject` contract. It proves threshold math only; it is not the full HotStuff-like backend.
+- `hotstuff_local`: local HotStuff-like view, leader, timeout, view-change, and backend-QC state machine that still binds the canonical shard certificate and validator decision seam.
 - `dist_dispatch`: local route-rollout activation, owner-bound remote dispatch, process restart fencing, storage-lock hazards, and advisory runtime notes over real planner and placement inputs.
 - `dist_scheduler`: deterministic scheduler waves over shard-owned workers. It groups planner-ready work by live shard ownership and keeps durable throughput claims scoped to published roots rather than scheduler fanout.
 - `dist_sim`: deterministic local multi-aggregator simulator for journal replication, secondary catch-up, delay/drop/replay/partition faults, and fail-closed replay fencing.

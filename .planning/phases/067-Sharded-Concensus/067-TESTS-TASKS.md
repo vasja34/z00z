@@ -3,7 +3,7 @@ phase: 067
 artifact: tests-tasks
 status: planned
 source: 067-TEST-SPEC.md
-updated: 2026-07-05
+updated: 2026-07-06
 ---
 
 # Phase 067 Test Tasks
@@ -14,7 +14,7 @@ This document converts the Phase 067 planning packet into an implementation-read
 
 📌 This document translates `067-TEST-SPEC.md` into one concrete implementation order for test work.
 
-📌 It preserves the `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-01-PLAN.md` through `067-19-PLAN.md`, and `067-VERDICT-ITEM-AUDIT.md` authority chain without adding a parallel consensus, storage, transport, validator, report, or simulator layer.
+📌 It preserves the `067-TODO.md`, `067-verdict.md`, `067-CONTEXT.md`, `067-01-PLAN.md` through `067-21-PLAN.md`, and `067-VERDICT-ITEM-AUDIT.md` authority chain without adding a parallel consensus, storage, transport, validator, report, or simulator layer.
 
 ## 📚 Scope Inputs
 
@@ -23,7 +23,7 @@ This document converts the Phase 067 planning packet into an implementation-read
 - `.planning/phases/067-Sharded-Concensus/067-verdict.md`
 - `.planning/phases/067-Sharded-Concensus/067-CONTEXT.md`
 - `.planning/phases/067-Sharded-Concensus/067-VERDICT-ITEM-AUDIT.md`
-- `.planning/phases/067-Sharded-Concensus/067-01-PLAN.md` through `.planning/phases/067-Sharded-Concensus/067-19-PLAN.md`
+- `.planning/phases/067-Sharded-Concensus/067-01-PLAN.md` through `.planning/phases/067-Sharded-Concensus/067-21-PLAN.md`
 - `.planning/phases/090-New-Scenarios/90-TODO.md` section `15`
 - `crates/z00z_runtime/aggregators/README.md`
 
@@ -32,6 +32,7 @@ This document converts the Phase 067 planning packet into an implementation-read
 - Start with packet integrity because every later test must preserve the one-to-one mapping from `PHASE-0` through `PHASE-8` and `VERDICT-LCS-01` through `VERDICT-LCS-10`.
 - Land primitive and boundary tests before end-to-end assertions: terminology, subject encoding, replay, certificate validation, DA/validator binding, and transport gates must exist before `scenario_11` can be a meaningful proof.
 - Implement verdict expansion tests in dependency order: runnable process surface, durable store, planner authority, local process harness, fault scheduler, BFT/HotStuff-local backend, Celestia-local artifact, evidence registry, claim audit, final conformance.
+- `067-20` and `067-21` do not add new `TT-*` ids, but `TT-19` MUST rerun after their runtime and packet-level outputs are reconciled.
 - Treat each task as blocked until it has positive cases, negative cases, exact commands, expected artifacts, and anti-placeholder evidence.
 - Do not create runtime tests for APIs that do not yet exist; create them in the owning slice when the implementation lands, using the target homes below.
 
@@ -85,16 +86,16 @@ These homes are required by `067-verdict.md`. Some are already present in the cu
 | `crates/z00z_runtime/aggregators/tests/test_signature_adapter.rs` | present in current workspace | `TS-08` |
 | `crates/z00z_runtime/aggregators/tests/test_transport_adapter.rs` | present in current workspace | `TS-08` |
 | `crates/z00z_runtime/aggregators/tests/test_equivocation_evidence.rs` | present in current workspace | `TS-08` |
-| `crates/z00z_runtime/aggregators/tests/test_bft_committee_rules.rs` | missing | `TS-09`, `TS-15` |
-| `crates/z00z_rollup_node/tests/test_celestia_local_binding.rs` | missing | `TS-09`, `TS-16` |
-| `crates/z00z_runtime/aggregators/tests/test_consensus_store.rs` | missing | `TS-11` |
-| `crates/z00z_runtime/aggregators/tests/test_consensus_recovery_restart.rs` | missing | `TS-11` |
-| `crates/z00z_runtime/aggregators/tests/test_planner_authority.rs` | missing | `TS-12` |
-| `crates/z00z_rollup_node/tests/test_hjmt_process_devnet.rs` | missing | `TS-13` |
-| `crates/z00z_runtime/aggregators/tests/test_transport_fault_matrix.rs` | missing | `TS-14` |
-| `crates/z00z_runtime/aggregators/tests/test_hotstuff_local_backend.rs` | missing | `TS-15` |
-| `crates/z00z_runtime/aggregators/tests/test_structured_evidence_registry.rs` | missing | `TS-17` |
-| `scripts/audit/audit_067_claims.py` | missing | `TS-18` |
+| `crates/z00z_runtime/aggregators/tests/test_bft_committee_rules.rs` | present in current workspace | `TS-09`, `TS-15` |
+| `crates/z00z_rollup_node/tests/test_celestia_local_binding.rs` | present in current workspace | `TS-09`, `TS-16` |
+| `crates/z00z_runtime/aggregators/tests/test_consensus_store.rs` | present in current workspace | `TS-11` |
+| `crates/z00z_runtime/aggregators/tests/test_consensus_recovery_restart.rs` | present in current workspace | `TS-11` |
+| `crates/z00z_runtime/aggregators/tests/test_planner_authority.rs` | present in current workspace | `TS-12` |
+| `crates/z00z_rollup_node/tests/test_hjmt_process_devnet.rs` | present in current workspace | `TS-13` |
+| `crates/z00z_runtime/aggregators/tests/test_transport_fault_matrix.rs` | present in current workspace | `TS-14` |
+| `crates/z00z_runtime/aggregators/tests/test_hotstuff_local_backend.rs` | present in current workspace | `TS-15` |
+| `crates/z00z_runtime/aggregators/tests/test_structured_evidence_registry.rs` | present in current workspace | `TS-17` |
+| `scripts/audit/audit_067_claims.py` | present in current workspace | `TS-18` |
 
 ## 🔒 Shared Gates
 
@@ -140,12 +141,14 @@ This index binds the strong gates from `067-verdict.md` to concrete test tasks. 
   - `067-CONTEXT.md`
   - `067-VERDICT-ITEM-AUDIT.md`
   - `067-TEST-SPEC.md`
-  - `067-01-PLAN.md` through `067-19-PLAN.md`
+  - `067-01-PLAN.md` through `067-21-PLAN.md`
   - `.planning/phases/090-New-Scenarios/90-TODO.md` section `15`
   - `crates/z00z_runtime/aggregators/README.md`
 - Required checks:
   - preserve the exact `PHASE-0` through `PHASE-8` mapping and the
     `VERDICT-LCS-01` through `VERDICT-LCS-10` expansion mapping;
+  - treat `067-20` and `067-21` as branch-local addendum overlays consumed by
+    `TT-19`, not as replacement required-group mappings;
   - confirm every row in `067-VERDICT-ITEM-AUDIT.md` maps to one `TS-01` through `TS-19` test slice;
   - keep `scenario_11` independent;
   - do not add a second authority document.
@@ -764,6 +767,7 @@ This index binds the strong gates from `067-verdict.md` to concrete test tasks. 
 ### ✅ TT-19 TS-19 Final Local Conformance Simulation Gate
 
 - Maps to `TS-19`, `VERDICT-LCS-10`, and `067-19`.
+- `TT-19` MUST consume the late addendum outputs from `067-20` and `067-21` before closure.
 - Target files:
   - `crates/z00z_simulator/src/scenario_11/mod.rs`
   - `crates/z00z_simulator/src/scenario_11/report.rs`
@@ -780,6 +784,7 @@ This index binds the strong gates from `067-verdict.md` to concrete test tasks. 
 | `067-T19-04` | verdict hard blockers reject | all blocker negatives from `067-verdict.md` produce expected reject/degraded status |
 | `067-T19-05` | process/devnet smoke is represented | smoke evidence links to final report and claim registry |
 | `067-T19-06` | no parallel authority was introduced | tests reuse route, placement, theorem, storage, crypto, and validator owners |
+| `067-T19-07` | late addendum reconciliation is complete | `067-FINAL-CONFORMANCE.md` records `067-20`/`067-21` flow aliases, component presence results, and unresolved non-claims explicitly |
 
 - Negative matrix:
   - missing QC rejects;
@@ -803,7 +808,8 @@ This index binds the strong gates from `067-verdict.md` to concrete test tasks. 
 
 - Evidence assertions:
   - `067-FINAL-CONFORMANCE.md` records exact commands, timestamps or deterministic run ids, artifact paths, artifact hashes, pass/fail states, claim levels, and review results;
-  - final `report_honesty.json` agrees with `067-GLOSSARY-CLAIMS.md`.
+  - `.planning/phases/067-Sharded-Concensus/067-CLAIM-AUDIT.md` records the `Component Presence Matrix` and current unresolved non-claims;
+  - final `report_honesty.json` agrees with `067-GLOSSARY-CLAIMS.md`, `067-CLAIM-AUDIT.md`, and `067-FINAL-CONFORMANCE.md`.
 
 - Anti-placeholder reminders:
   - final closure cannot rely on compile-only, docs-only, disconnected unit tests, TODOs, stubs, fixture-only checks, or string-only evidence.

@@ -276,3 +276,99 @@ fn test_blocks_failover_reentry() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn test_old_primary_failback_rejects() -> Result<(), Box<dyn std::error::Error>> {
+    let live_route = route(6, 13);
+    let recovery = route_bound_recovery_state(
+        0x85,
+        batch_id("old-primary-failback"),
+        live_route,
+        [0x45; 32],
+    )?;
+    let old_primary = AggregatorId::new(31);
+    let takeover = AggregatorId::new(32);
+    let witness = AggregatorId::new(33);
+    let record = recovery_record(
+        "old-primary-failback",
+        live_route,
+        old_primary,
+        vec![
+            SecondaryState::ready(takeover),
+            SecondaryState::ready(witness),
+        ],
+        recovery.clone(),
+    );
+    let taken_over = placement_table(
+        live_route,
+        takeover,
+        vec![
+            SecondaryState::ready(old_primary),
+            SecondaryState::ready(witness),
+        ],
+        recovery.journal_lineage,
+    );
+
+    let err = RecoveryBoundary
+        .resume(
+            old_primary,
+            &taken_over,
+            &record,
+            &recovery,
+            RecoveryIntent::RestartPrimary,
+        )
+        .expect_err("old primary restart must reject after takeover");
+
+    assert_eq!(err.class, RejectClass::PolicyReject);
+    assert!(err.detail.contains("live primary owner"));
+
+    Ok(())
+}
+
+#[test]
+fn test_rotated_primary_reentry_rejects() -> Result<(), Box<dyn std::error::Error>> {
+    let live_route = route(7, 14);
+    let recovery = route_bound_recovery_state(
+        0x86,
+        batch_id("rotated-primary-reentry"),
+        live_route,
+        [0x46; 32],
+    )?;
+    let old_primary = AggregatorId::new(41);
+    let takeover = AggregatorId::new(42);
+    let rotated = AggregatorId::new(43);
+    let record = recovery_record(
+        "rotated-primary-reentry",
+        live_route,
+        old_primary,
+        vec![
+            SecondaryState::ready(takeover),
+            SecondaryState::ready(rotated),
+        ],
+        recovery.clone(),
+    );
+    let rotated_live = placement_table(
+        live_route,
+        rotated,
+        vec![
+            SecondaryState::ready(old_primary),
+            SecondaryState::ready(takeover),
+        ],
+        recovery.journal_lineage,
+    );
+
+    let err = RecoveryBoundary
+        .resume(
+            old_primary,
+            &rotated_live,
+            &record,
+            &recovery,
+            RecoveryIntent::RestartPrimary,
+        )
+        .expect_err("old primary restart must reject after planned rotation");
+
+    assert_eq!(err.class, RejectClass::PolicyReject);
+    assert!(err.detail.contains("live primary owner"));
+
+    Ok(())
+}

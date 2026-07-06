@@ -66,12 +66,19 @@ docs-only claims, or compile-only proof for runtime behavior.
 - Total required Phase 067 executable plan groups after the verdict addendum:
   `19`.
 - Each required group maps to exactly one `067-NN-PLAN.md`.
+- The current branch plan corpus is `21` files: the original `19` required
+  groups plus late addendum plans `067-20-PLAN.md` and `067-21-PLAN.md`.
+- `067-20` and `067-21` do not create new required group ids; they reopen and
+  harden late closure sequencing, packet truth, and final conformance.
 
 ### D-067-03 Existing Runtime Seam First
 - Implementation starts inside `crates/z00z_runtime/aggregators`.
 - Public exports go through the `z00z_aggregators` crate root.
 - Do not create a separate production consensus crate before the local seam is
   proven through tests and `scenario_11`.
+- `067-TODO.md` Section `8.2` keeps `crates/z00z_agg_consensus/` only as a
+  later split-shape illustration; it is not a current required workspace path,
+  current code anchor, or second implementation authority.
 
 ### D-067-04 Honest Consensus Vocabulary
 - The live system is local deterministic CFT quorum until stronger proof exists.
@@ -596,7 +603,8 @@ Per-group implementation depth must be one of:
 
 ### Current Live Gaps
 - `067-10` now owns a live `z00z_rollup_node` binary and the canonical manifest command head is `cargo run --release -p z00z_rollup_node --`; later slices must preserve that runnable contract before any devnet or process-backed claim closes.
-- The following late-slice artifacts are still absent and remain plan-owned targets only until created: `crates/z00z_runtime/aggregators/tests/test_planner_authority.rs`, `crates/z00z_runtime/aggregators/tests/test_transport_fault_matrix.rs`, `crates/z00z_runtime/aggregators/tests/test_hotstuff_local_backend.rs`, `crates/z00z_runtime/aggregators/tests/test_structured_evidence_registry.rs`, `crates/z00z_rollup_node/tests/test_hjmt_process_devnet.rs`, `scripts/hjmt_local_devnet.sh`, `docker/compose.hjmt-local.yaml`, `scripts/audit/audit_067_claims.py`, `.planning/phases/067-Sharded-Concensus/067-GLOSSARY-CLAIMS.md`, `.planning/phases/067-Sharded-Concensus/067-CLAIM-AUDIT.md`, and `.planning/phases/067-Sharded-Concensus/067-FINAL-CONFORMANCE.md`.
+- The following late-slice anchors are now present in the current workspace and MUST be treated as live packet inputs rather than as missing proposed files: `crates/z00z_runtime/aggregators/tests/test_planner_authority.rs`, `crates/z00z_runtime/aggregators/tests/test_transport_fault_matrix.rs`, `crates/z00z_runtime/aggregators/tests/test_hotstuff_local_backend.rs`, `crates/z00z_runtime/aggregators/tests/test_structured_evidence_registry.rs`, `crates/z00z_rollup_node/tests/test_hjmt_process_devnet.rs`, `scripts/hjmt_local_devnet.sh`, `scripts/audit/audit_067_claims.py`, `.planning/phases/067-Sharded-Concensus/067-GLOSSARY-CLAIMS.md`, and `.planning/phases/067-Sharded-Concensus/067-CLAIM-AUDIT.md`.
+- The remaining late packet closeout gap is the execution content inside `.planning/phases/067-Sharded-Concensus/067-FINAL-CONFORMANCE.md`: the file now exists as a pre-execution contract, but it MUST record the final rerun evidence before Phase 067 can close. Optional process packaging such as `docker/compose.hjmt-local.yaml` remains non-authoritative until explicitly implemented and exercised.
 </current_code_refs>
 
 <plan_waves>
@@ -606,7 +614,9 @@ Plan ids are file numbers. Wave numbers are execution order only. The verdict
 expansion must remain ten standalone files: `067-10-PLAN.md` through
 `067-19-PLAN.md`. In particular, `067-12-PLAN.md`, `067-13-PLAN.md`,
 `067-14-PLAN.md`, and `067-15-PLAN.md` are required files and must not be
-collapsed into neighboring plans.
+collapsed into neighboring plans. The current branch then continues with
+addendum closeout waves `067-20` and `067-21`; they do not change the `19`
+required-group mapping, but they do extend the live branch execution order.
 
 - Wave 1: `067-01` through `067-03`
   - terminology cleanup
@@ -642,6 +652,11 @@ collapsed into neighboring plans.
   - glossary claim registry and report honesty
 - Wave 15: `067-19`
   - final integrated Local-Conformance-Simulation gate
+- Wave 16: `067-20`
+  - certificate-bound publication resume and recovered-primary rejoin addendum
+- Wave 17: `067-21`
+  - packet-truth reconciliation, claim-audit freeze, and final conformance
+    closeout addendum
 </plan_waves>
 
 <task_inventory>

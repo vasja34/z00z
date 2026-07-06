@@ -55,7 +55,7 @@ pub struct SecondaryReplayAccept {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SecondaryReplayVerdict {
-    Accept(SecondaryReplayAccept),
+    Accept(Box<SecondaryReplayAccept>),
     Reject(SecondaryReplayReject),
 }
 
@@ -141,7 +141,7 @@ impl SecondaryReplayVerifier {
         match self.replay_subject(request) {
             Ok(subject) => {
                 if &subject == claimed_subject {
-                    SecondaryReplayVerdict::Accept(SecondaryReplayAccept { subject })
+                    SecondaryReplayVerdict::Accept(Box::new(SecondaryReplayAccept { subject }))
                 } else {
                     SecondaryReplayVerdict::Reject(compare_subjects(&subject, claimed_subject))
                 }
@@ -327,12 +327,6 @@ fn classify_subject_reject(err: RejectRecord) -> SecondaryReplayReject {
         SecondaryReplayRejectCode::WrongPublicationBinding
     } else if err.detail.contains("new settlement root") {
         SecondaryReplayRejectCode::WrongRoot
-    } else if err.detail.contains("batch id drifted")
-        || err.detail.contains("op_count drifted")
-        || err.detail.contains("intake ids drifted")
-        || err.detail.contains("empty ordered batch")
-    {
-        SecondaryReplayRejectCode::WrongPlanDigest
     } else {
         SecondaryReplayRejectCode::WrongPlanDigest
     };

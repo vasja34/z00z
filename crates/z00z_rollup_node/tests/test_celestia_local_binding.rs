@@ -13,6 +13,23 @@ fn test_celestia_roundtrip() {
     let mut adapter = CelestiaLocalAdapter::new("local-celestia");
 
     let published = adapter.publish(request.clone()).expect("publish");
+    let record = adapter.record(published.batch_id).expect("record").clone();
+    assert!(!record.blob_bytes.is_empty());
+    assert!(record
+        .inclusion_reference
+        .starts_with("celestia-local-inclusion://"));
+    assert_eq!(
+        record.retention_until_height,
+        record.blob_height + record.challenge_window
+    );
+    assert!(!record.degraded_mode);
+    assert_eq!(
+        adapter.retrieve_blob(published.batch_id).expect("blob"),
+        record.blob_bytes
+    );
+    adapter
+        .verify_blob(published.batch_id)
+        .expect("verify blob");
     let resolved = adapter.resolve(&published).expect("resolve");
 
     assert!(published.blob_ref.starts_with("celestia-local://"));
@@ -56,6 +73,37 @@ fn test_celestia_commitment_drift() {
 }
 
 #[test]
+fn test_celestia_blob_bytes_drift() {
+    let request = theorem_fixture::publication_request([0x4A; 32], "celestia-blob-drift");
+    let mut adapter = CelestiaLocalAdapter::new("local-celestia");
+    let published = adapter.publish(request).expect("publish");
+    assert!(adapter.forge_blob_bytes(published.batch_id, vec![0xAA; 16]));
+
+    let err = adapter
+        .verify_blob(published.batch_id)
+        .expect_err("wrong blob bytes must reject");
+
+    assert_eq!(err, DaError::BlobBytesMismatch);
+}
+
+#[test]
+fn test_celestia_inclusion_reference_drift() {
+    let request = theorem_fixture::publication_request([0x4B; 32], "celestia-inclusion-drift");
+    let mut adapter = CelestiaLocalAdapter::new("local-celestia");
+    let published = adapter.publish(request).expect("publish");
+    assert!(adapter.forge_inclusion_reference(
+        published.batch_id,
+        "celestia-local-inclusion://9999/deadbeef"
+    ));
+
+    let err = adapter
+        .verify_blob(published.batch_id)
+        .expect_err("wrong inclusion reference must reject");
+
+    assert_eq!(err, DaError::InclusionReferenceMismatch);
+}
+
+#[test]
 fn test_celestia_missing_payload() {
     let request = theorem_fixture::publication_request([0x44; 32], "celestia-4");
     let mut adapter = CelestiaLocalAdapter::new("local-celestia");
@@ -67,6 +115,25 @@ fn test_celestia_missing_payload() {
         .expect_err("missing payload must reject during the challenge window");
 
     assert_eq!(err, DaError::MissingPayload);
+}
+
+#[test]
+fn test_celestia_degraded_mode_before_unanchored_limit() {
+    let request = theorem_fixture::publication_request([0x4C; 32], "celestia-degraded");
+    let mut adapter = CelestiaLocalAdapter::new("local-celestia");
+    let published = adapter.publish(request).expect("publish");
+    let record = adapter.record(published.batch_id).expect("record").clone();
+    assert!(adapter.clear_anchor(published.batch_id));
+    adapter.set_current_height(record.blob_height + 1);
+
+    let degraded = adapter.record(published.batch_id).expect("record");
+    assert!(degraded.degraded_mode);
+    adapter
+        .verify_blob(published.batch_id)
+        .expect("verify degraded blob");
+    adapter
+        .resolve(&published)
+        .expect("resolve stays live before unanchored limit");
 }
 
 #[test]
@@ -115,6 +182,27 @@ fn test_celestia_unanchored_limit() {
         .expect_err("unanchored height limit must reject");
 
     assert_eq!(err, DaError::UnanchoredHeightExceeded);
+}
+
+#[test]
+fn test_celestia_retention_expiry_rejects_retrieve() {
+    let request = theorem_fixture::publication_request([0x49; 32], "celestia-retention");
+    let mut adapter = CelestiaLocalAdapter::new("local-celestia");
+    let published = adapter.publish(request).expect("publish");
+    let record = adapter.record(published.batch_id).expect("record").clone();
+    adapter.set_current_height(record.retention_until_height + 1);
+
+    let err = adapter
+        .retrieve_blob(published.batch_id)
+        .expect_err("expired retention must reject retrieval");
+
+    assert_eq!(err, DaError::BlobRetentionExpired);
+    assert!(
+        adapter
+            .record(published.batch_id)
+            .expect("record")
+            .degraded_mode
+    );
 }
 
 #[test]
